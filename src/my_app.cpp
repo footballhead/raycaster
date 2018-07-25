@@ -70,11 +70,11 @@ void my_app::render()
 		auto camera_radians = local_radians - _camera.yaw;
 		auto ray_radians = camera_radians;
 
-		auto step = step_size;
-		while (step < max_distance) {
+		auto distance = step_size;
+		while (distance < max_distance) {
 			SDL_Point point{
-				_camera.x + cos(ray_radians)*step,
-				_camera.y + sin(ray_radians)*step
+				static_cast<int>(_camera.x + cos(ray_radians)*distance),
+				static_cast<int>(_camera.y + sin(ray_radians)*distance)
 			};
 
 			int index = point.y * _level.width + point.x;
@@ -82,13 +82,15 @@ void my_app::render()
 				break;
 			}
 
-			step += step_size;
+			distance += step_size;
 		}
+
+		distance *= cos(local_radians);
 
 		color ray_color{0, 0, 0};
 		ray_color.r = ray_color.g = ray_color.b =
-					static_cast<uint8_t>(255 - (256 / max_distance) * step);
-		auto wall_size = static_cast<int>(half_height - 50*(step * abs(cos(local_radians))));
+					static_cast<uint8_t>(255 - (255 / max_distance) * distance);
+		auto wall_size = static_cast<int>(half_height/distance);
 
 		set_render_draw_color(_renderer.get(), ray_color);
 		SDL_CHECK(SDL_RenderDrawLine(_renderer.get(), i, half_height - wall_size,
