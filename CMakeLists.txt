@@ -16,6 +16,7 @@ set(SOURCES
 	)
 
 set(HEADERS
+	src/color.hpp
 	src/my_app.hpp
 	src/sdl_app.hpp
 	)
