@@ -4,6 +4,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <stdexcept>
 
 int main(int argc, char** argv)
 {
@@ -17,10 +18,23 @@ int main(int argc, char** argv)
 	auto renderer = make_SDL_Renderer(
 		SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_SOFTWARE));
 
-	SDL_RenderClear(renderer.get());
-	SDL_RenderPresent(renderer.get());
+	auto running = true;
+	while (running) {
+		SDL_Event evt;
 
-	std::cout << "Hello world" << std::endl;
-	SDL_Delay(3000);
+		while (SDL_PollEvent(&evt)) {
+			switch (evt.type) {
+			case SDL_QUIT:
+				running = false;
+				break;
+			}
+		}
+
+		if (SDL_RenderClear(renderer.get()) != 0) {
+			throw std::runtime_error{SDL_GetError()};
+		}
+		SDL_RenderPresent(renderer.get());
+	}
+
 	return EXIT_SUCCESS;
 }
