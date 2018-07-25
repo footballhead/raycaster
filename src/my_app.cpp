@@ -17,21 +17,31 @@ int my_app::exec()
 
 	_running = true;
 	while (_running) {
-		SDL_Event evt;
-
-		while (SDL_PollEvent(&evt)) {
-			switch (evt.type) {
-			case SDL_QUIT:
-				_running = false;
-				break;
-			}
-		}
+		update();
 
 		if (SDL_RenderClear(_renderer.get()) != 0) {
 			throw std::runtime_error{SDL_GetError()};
 		}
+		render();
 		SDL_RenderPresent(_renderer.get());
 	}
 
 	return 0;
+}
+
+void my_app::update()
+{
+	SDL_Event evt;
+	while (SDL_PollEvent(&evt)) {
+		switch (evt.type) {
+		case SDL_QUIT:
+			_running = false;
+			break;
+		}
+	}
+}
+
+void my_app::render()
+{
+
 }

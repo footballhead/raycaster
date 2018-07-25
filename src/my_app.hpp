@@ -9,6 +9,9 @@ public:
 	int exec();
 
 private:
+	void update();
+	void render();
+
 	SDL_Renderer_ptr _renderer = nullptr;
 
 	bool _running = false;
