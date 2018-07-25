@@ -34,10 +34,43 @@ struct SDL_Window_deleter {
 
 using SDL_Window_ptr = std::unique_ptr<SDL_Window, SDL_Window_deleter>;
 
+/// Wrap an existing SDL_Window.
 inline auto make_SDL_Window(SDL_Window* window)
 {
 	if (!window) {
 		throw std::runtime_error{SDL_GetError()};
 	}
 	return SDL_Window_ptr{window, SDL_Window_deleter{}};
+}
+
+/// Convenience helper with parameters that make more sense.
+inline auto make_SDL_Window(const std::string& title, const SDL_Rect& bounds,
+	Uint32 flags)
+{
+	auto window = SDL_CreateWindow(title.c_str(), bounds.x, bounds.y, bounds.w,
+		bounds.h, flags);
+	if (!window) {
+		throw std::runtime_error{SDL_GetError()};
+	}
+	return SDL_Window_ptr{window, SDL_Window_deleter{}};
+}
+
+//
+// SDL_Renderer_ptr
+//
+
+struct SDL_Renderer_deleter {
+	void operator() (SDL_Renderer* other) const {
+		SDL_DestroyRenderer(other);
+	}
+};
+
+using SDL_Renderer_ptr = std::unique_ptr<SDL_Renderer, SDL_Renderer_deleter>;
+
+inline auto make_SDL_Renderer(SDL_Renderer* renderer)
+{
+	if (!renderer) {
+		throw std::runtime_error{SDL_GetError()};
+	}
+	return SDL_Renderer_ptr{renderer, SDL_Renderer_deleter{}};
 }
