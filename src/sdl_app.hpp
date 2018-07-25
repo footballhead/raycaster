@@ -5,6 +5,11 @@
 #include <memory>
 #include <stdexcept>
 
+#define SDL_CHECK(pred) if (!(pred)) { \
+							SDL_Log("%s", SDL_GetError()); \
+							throw std::runtime_error(SDL_GetError()); \
+						} 
+
 //
 // sdl_app
 //
@@ -37,9 +42,7 @@ using SDL_Window_ptr = std::unique_ptr<SDL_Window, SDL_Window_deleter>;
 /// Wrap an existing SDL_Window.
 inline auto make_SDL_Window(SDL_Window* window)
 {
-	if (!window) {
-		throw std::runtime_error{SDL_GetError()};
-	}
+	SDL_CHECK(window);
 	return SDL_Window_ptr{window, SDL_Window_deleter{}};
 }
 
@@ -48,9 +51,7 @@ inline auto make_SDL_Window(const std::string& title, const SDL_Point& extents)
 {
 	auto window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED, extents.x, extents.y, 0);
-	if (!window) {
-		throw std::runtime_error{SDL_GetError()};
-	}
+	SDL_CHECK(window);
 	return SDL_Window_ptr{window, SDL_Window_deleter{}};
 }
 
@@ -69,9 +70,7 @@ using SDL_Renderer_ptr = std::unique_ptr<SDL_Renderer, SDL_Renderer_deleter>;
 /// Wrap an existing SDL_Renderer
 inline auto make_SDL_Renderer(SDL_Renderer* renderer)
 {
-	if (!renderer) {
-		throw std::runtime_error{SDL_GetError()};
-	}
+	SDL_CHECK(renderer);
 	return SDL_Renderer_ptr{renderer, SDL_Renderer_deleter{}};
 }
 
@@ -79,8 +78,6 @@ inline auto make_SDL_Renderer(SDL_Renderer* renderer)
 inline auto make_SDL_Renderer(SDL_Window* window)
 {
 	auto renderer = SDL_CreateRenderer(window, -1, 0);
-	if (!renderer) {
-		throw std::runtime_error{SDL_GetError()};
-	}
+	SDL_CHECK(renderer);
 	return SDL_Renderer_ptr{renderer, SDL_Renderer_deleter{}};
 }

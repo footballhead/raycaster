@@ -1,5 +1,7 @@
 #include "my_app.hpp"
 
+#include "sdl_app.hpp"
+
 #include <SDL.h>
 
 #include <stdexcept>
@@ -19,9 +21,7 @@ int my_app::exec()
 	while (_running) {
 		update();
 
-		if (SDL_RenderClear(_renderer.get()) != 0) {
-			throw std::runtime_error{SDL_GetError()};
-		}
+		SDL_CHECK(SDL_RenderClear(_renderer.get()) == 0);
 		render();
 		SDL_RenderPresent(_renderer.get());
 	}
