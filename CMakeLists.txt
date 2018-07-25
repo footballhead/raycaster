@@ -1,13 +1,20 @@
 cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 project(raycaster C CXX)
 
+find_package(SDL2 REQUIRED CONFIG)
+
 # Force 64 bit for now
 if(NOT "${CMAKE_SIZEOF_VOID_P}" STREQUAL "8")
 	message(FATAL_ERROR "Not 64 bit! Try again.")
 endif()
 
-# Yes, this is Windows-only. No, I don't care ATM.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+# Force C++14 compiler
+set(CXX_STANDARD_REQUIRED TRUE)
+set(CMAKE_CXX_STANDARD 14)
+
+#
+# raycaster
+#
 
 set(SOURCES
 	src/my_app.cpp
@@ -23,12 +30,10 @@ set(HEADERS
 
 add_executable(raycaster ${SOURCES} ${HEADERS})
 
-# Yes, this is Windows-only. No, I don't care ATM.
 target_include_directories(raycaster
 	PRIVATE
-		C:/SDL2-2.0.8/include
+		${SDL2_INCLUDE_DIRS}
 	)
 target_link_libraries(raycaster
-	C:/SDL2-2.0.8/lib/x64/SDL2.lib
-	C:/SDL2-2.0.8/lib/x64/SDL2main.lib
+	${SDL2_LIBRARIES}
 	)
