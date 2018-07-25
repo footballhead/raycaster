@@ -17,8 +17,11 @@ int main(int argc, char** argv)
 	const auto window = make_SDL_Window(window_title, window_bounds);
 
 	auto renderer = make_SDL_Renderer(window.get());
-	SDL_CHECK(SDL_RenderSetLogicalSize(renderer.get(), window_bounds.x,
-		window_bounds.y) == 0);
+
+	auto scaling_factor = 4;
+	SDL_CHECK(SDL_RenderSetLogicalSize(renderer.get(),
+		window_bounds.x/scaling_factor,
+		window_bounds.y/scaling_factor) == 0);
 
 	level test_level = {
 		8,	// width

@@ -57,7 +57,7 @@ void my_app::render()
 	const auto fov = M_PI / 2.f;
 	const auto max_distance = 4;
 
-	const auto step_size = 0.1f;
+	const auto step_size = 0.025f;
 
 	int width = 0, height = 0;
 	SDL_RenderGetLogicalSize(_renderer.get(), &width, &height);
