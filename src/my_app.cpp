@@ -55,9 +55,9 @@ void my_app::update()
 void my_app::render()
 {
 	const auto fov = M_PI / 2.f;
-	const auto max_distance = 8;
+	const auto max_distance = 4;
 
-	const auto step_size = 0.05f;
+	const auto step_size = 0.1f;
 
 	int width = 0, height = 0;
 	SDL_RenderGetLogicalSize(_renderer.get(), &width, &height);
@@ -71,7 +71,7 @@ void my_app::render()
 		auto ray_radians = camera_radians;
 
 		auto step = step_size;
-		while (step_size < max_distance) {
+		while (step < max_distance) {
 			SDL_Point point{
 				_camera.x + cos(ray_radians)*step,
 				_camera.y + sin(ray_radians)*step
@@ -88,7 +88,7 @@ void my_app::render()
 		color ray_color{0, 0, 0};
 		ray_color.r = ray_color.g = ray_color.b =
 					static_cast<uint8_t>(255 - (256 / max_distance) * step);
-		auto wall_size = static_cast<int>(half_height - step*step*step);
+		auto wall_size = static_cast<int>(half_height - 50*(step * abs(cos(local_radians))));
 
 		set_render_draw_color(_renderer.get(), ray_color);
 		SDL_CHECK(SDL_RenderDrawLine(_renderer.get(), i, half_height - wall_size,
@@ -105,6 +105,9 @@ void my_app::keydown(SDL_Keycode key)
 		break;
 	case SDLK_d:
 		_camera.yaw -= yaw_step;
+		break;
+	case SDLK_ESCAPE:
+		_running = false;
 		break;
 	}
 }
