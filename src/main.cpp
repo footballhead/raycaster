@@ -3,7 +3,6 @@
 
 #include <SDL.h>
 
-#include <cstdlib>
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
@@ -36,6 +35,18 @@ int main(int argc, char** argv)
 		}
 	};
 
-	my_app app{std::move(renderer), test_level};
-	return app.exec();
+	camera cam = {
+		3.5f,// x
+		3.5f,// y
+		0.f, // yaw
+	};
+
+	my_app app{std::move(renderer), test_level, cam};
+	try {
+		app.exec();
+	} catch (const std::exception& e) {
+		SDL_Log("EXCEPTION: %s", e.what());
+	}
+
+	return 0;
 }

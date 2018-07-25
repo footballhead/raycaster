@@ -6,7 +6,7 @@
 #include <stdexcept>
 
 #define SDL_CHECK(pred) if (!(pred)) { \
-							SDL_Log("%s", SDL_GetError()); \
+							SDL_Log(__FUNCTION__ " - %s", SDL_GetError()); \
 							throw std::runtime_error(SDL_GetError()); \
 						} 
 
