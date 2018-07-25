@@ -5,6 +5,7 @@
 
 #include <SDL.h>
 
+#include <cmath>
 #include <stdexcept>
 
 my_app::my_app(SDL_Renderer_ptr renderer, level lvl)
@@ -27,6 +28,7 @@ int my_app::exec()
 		SDL_RenderPresent(_renderer.get());
 
 		++_ticks;
+		SDL_Delay(1);
 	}
 
 	return 0;
@@ -46,8 +48,17 @@ void my_app::update()
 
 void my_app::render()
 {
-	auto col = hueToRgb(static_cast<float>(_ticks) / 100000.f);
-	SDL_CHECK(
-		SDL_SetRenderDrawColor(_renderer.get(), col.r, col.g, col.b, 255) == 0);
-	SDL_CHECK(SDL_RenderClear(_renderer.get()) == 0);
+	const auto fov = 90;
+
+	int width = 0, height = 0;
+	SDL_RenderGetLogicalSize(_renderer.get(), &width, &height);
+
+	for (int i = 0; i < width; ++i) {
+		auto ray_angle = i / static_cast<float>(width) * fov;
+		auto ray_radians = ray_angle / 180.f * M_PI;
+
+		auto const ray_color = hueToRgb(ray_radians / (M_PI / 2.f));
+		set_render_draw_color(_renderer.get(), ray_color);
+		SDL_CHECK(SDL_RenderDrawLine(_renderer.get(), i, 0, i, height) == 0);
+	}
 }

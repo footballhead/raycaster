@@ -1,5 +1,9 @@
 #pragma once
 
+#include "sdl_app.hpp"
+
+#include <SDL.h>
+
 #include <cstdint>
 
 struct color {
@@ -7,6 +11,11 @@ struct color {
 	uint8_t g;
 	uint8_t b;
 };
+
+inline auto set_render_draw_color(SDL_Renderer* renderer, const color& c)
+{
+	SDL_CHECK(SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 255) == 0);
+}
 
 constexpr color hueToRgb(float hue)
 {

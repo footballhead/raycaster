@@ -17,6 +17,10 @@ int main(int argc, char** argv)
 	const SDL_Point window_bounds = {640, 480};
 	const auto window = make_SDL_Window(window_title, window_bounds);
 
+	auto renderer = make_SDL_Renderer(window.get());
+	SDL_CHECK(SDL_RenderSetLogicalSize(renderer.get(), window_bounds.x,
+		window_bounds.y) == 0);
+
 	level test_level = {
 		8,	// width
 		8,	// height
@@ -32,7 +36,6 @@ int main(int argc, char** argv)
 		}
 	};
 
-	auto renderer = make_SDL_Renderer(window.get());
 	my_app app{std::move(renderer), test_level};
 	return app.exec();
 }
