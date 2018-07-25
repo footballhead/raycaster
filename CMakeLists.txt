@@ -10,11 +10,13 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
 
 set(SOURCES
+	src/my_app.cpp
 	src/sdl_app.cpp
 	src/main.cpp
 	)
 
 set(HEADERS
+	src/my_app.hpp
 	src/sdl_app.hpp
 	)
 

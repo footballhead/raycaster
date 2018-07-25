@@ -44,11 +44,10 @@ inline auto make_SDL_Window(SDL_Window* window)
 }
 
 /// Convenience helper with parameters that make more sense.
-inline auto make_SDL_Window(const std::string& title, const SDL_Rect& bounds,
-	Uint32 flags)
+inline auto make_SDL_Window(const std::string& title, const SDL_Point& extents)
 {
-	auto window = SDL_CreateWindow(title.c_str(), bounds.x, bounds.y, bounds.w,
-		bounds.h, flags);
+	auto window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED,
+		SDL_WINDOWPOS_CENTERED, extents.x, extents.y, 0);
 	if (!window) {
 		throw std::runtime_error{SDL_GetError()};
 	}
@@ -67,8 +66,19 @@ struct SDL_Renderer_deleter {
 
 using SDL_Renderer_ptr = std::unique_ptr<SDL_Renderer, SDL_Renderer_deleter>;
 
+/// Wrap an existing SDL_Renderer
 inline auto make_SDL_Renderer(SDL_Renderer* renderer)
 {
+	if (!renderer) {
+		throw std::runtime_error{SDL_GetError()};
+	}
+	return SDL_Renderer_ptr{renderer, SDL_Renderer_deleter{}};
+}
+
+/// Convenience helper
+inline auto make_SDL_Renderer(SDL_Window* window)
+{
+	auto renderer = SDL_CreateRenderer(window, -1, 0);
 	if (!renderer) {
 		throw std::runtime_error{SDL_GetError()};
 	}
