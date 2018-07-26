@@ -114,6 +114,10 @@ void my_app::keydown(SDL_Keycode key)
 		_camera.x += cos(_camera.yaw) * move_step;
 		_camera.y -= sin(_camera.yaw) * move_step;
 		break;
+	case SDLK_s:
+		_camera.x -= cos(_camera.yaw) * move_step;
+		_camera.y += sin(_camera.yaw) * move_step;
+		break;
 	case SDLK_ESCAPE:
 		_running = false;
 		break;
