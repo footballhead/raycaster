@@ -54,7 +54,7 @@ void my_app::update()
 
 void my_app::render()
 {
-	const auto fov = M_PI / 2.f;
+	const auto fov = M_PI / 3.f;
 	const auto max_distance = 4;
 
 	const auto step_size = 0.025f;
@@ -100,13 +100,19 @@ void my_app::render()
 
 void my_app::keydown(SDL_Keycode key)
 {
-	const auto yaw_step = 0.01f;
+	const auto yaw_step = 0.1f;
+	const auto move_step = 0.1f;
+
 	switch (key) {
 	case SDLK_a:
 		_camera.yaw += yaw_step;
 		break;
 	case SDLK_d:
 		_camera.yaw -= yaw_step;
+		break;
+	case SDLK_w:
+		_camera.x += cos(_camera.yaw) * move_step;
+		_camera.y -= sin(_camera.yaw) * move_step;
 		break;
 	case SDLK_ESCAPE:
 		_running = false;
