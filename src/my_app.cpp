@@ -85,7 +85,7 @@ void my_app::render()
 			distance += step_size;
 		}
 
-		distance *= cos(local_radians);
+		distance *= cos(sin(local_radians));
 
 		color ray_color{0, 0, 0};
 		ray_color.r = ray_color.g = ray_color.b =

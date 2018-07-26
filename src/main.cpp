@@ -41,7 +41,7 @@ int main(int argc, char** argv)
 	camera cam = {
 		3.5f,// x
 		3.5f,// y
-		0.f, // yaw
+		M_PI / 4.f, // yaw
 	};
 
 	my_app app{std::move(renderer), test_level, cam};
