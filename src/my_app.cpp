@@ -1,6 +1,7 @@
 #include "my_app.hpp"
 
 #include "color.hpp"
+#include "screenshot.hpp"
 #include "sdl_app.hpp"
 
 #include <SDL.h>
@@ -54,10 +55,10 @@ void my_app::update()
 
 void my_app::render()
 {
-	const auto fov = M_PI / 3.f;
+	const auto fov = M_PI / 2.f;
 	const auto max_distance = 4;
 
-	const auto step_size = 0.025f;
+	const auto step_size = 0.03125f;
 
 	int width = 0, height = 0;
 	SDL_RenderGetLogicalSize(_renderer.get(), &width, &height);
@@ -117,6 +118,11 @@ void my_app::keydown(SDL_Keycode key)
 	case SDLK_s:
 		_camera.x -= cos(_camera.yaw) * move_step;
 		_camera.y += sin(_camera.yaw) * move_step;
+		break;
+	case SDLK_SPACE:
+		if (!sdl::save_screenshot(_renderer.get(), "screenshot.bmp")) {
+			SDL_Log("save_screenshot failed!");
+		}
 		break;
 	case SDLK_ESCAPE:
 		_running = false;

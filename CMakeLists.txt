@@ -18,6 +18,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(SOURCES
 	src/my_app.cpp
+	src/screenshot.cpp
 	src/sdl_app.cpp
 	src/main.cpp
 	)
@@ -25,6 +26,7 @@ set(SOURCES
 set(HEADERS
 	src/color.hpp
 	src/my_app.hpp
+	src/screenshot.hpp
 	src/sdl_app.hpp
 	)
 
