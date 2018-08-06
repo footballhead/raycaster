@@ -31,6 +31,17 @@ my_app::my_app(SDL_Renderer_ptr renderer, level lvl, camera cam)
 , _level{lvl}
 , _camera{cam}
 {
+	auto surface = SDL_LoadBMP("assets/wall.bmp");
+	SDL_CHECK(surface != nullptr);
+
+	_wall_tex = SDL_CreateTextureFromSurface(_renderer.get(), surface);
+	SDL_CHECK(_wall_tex != nullptr);
+	SDL_FreeSurface(surface);
+}
+
+my_app::~my_app()
+{
+	SDL_DestroyTexture(_wall_tex);
 }
 
 int my_app::exec()
@@ -83,6 +94,7 @@ void my_app::render()
 	auto const half_height = logical_size.height / 2;
 
 	color const fog_color{0, 0, 0};
+	color const white_color{255, 255, 255};
 
 	// draw ceiling (top-down)
 	color const ceiling_color{64, 0, 0};
@@ -108,6 +120,8 @@ void my_app::render()
 			draw_y) == 0);
 	}
 
+	set_render_draw_color(_renderer.get(), {255, 255, 255});
+
 	// draw geom
 	for (int i = 0; i < logical_size.width; ++i) {
 		auto const local_radians = (i - half_width) /
@@ -116,7 +130,7 @@ void my_app::render()
 		auto const ray_radians = camera_radians;
 
 		auto distance = step_size;
-		color ray_color{0, 0, 0};
+		auto ray_u = 0.f;
 		while (distance < max_distance) {
 			auto const march_x = _camera.x + cos(ray_radians)*distance;
 			auto const march_y = _camera.y + sin(ray_radians)*distance;
@@ -129,8 +143,7 @@ void my_app::render()
 			auto const u = fabs(march_x - point.x);
 			auto const v = fabs(march_y - point.y);
 			auto const tolerance = 0.03125f;
-			ray_color = hue_to_rgb(u < tolerance || u > 1.f - tolerance
-				? v : u);
+			ray_u = u < tolerance || u > (1.f - tolerance) ? v : u;
 
 			auto const index = point.y * _level.width + point.x;
 			if (_level.data[index] == 1) {
@@ -140,16 +153,18 @@ void my_app::render()
 			distance += step_size;
 		}
 
-		ray_color = linear_interpolate(ray_color, fog_color,
-			distance / max_distance);
+		auto const interp = linear_interpolate(white_color, fog_color, distance / max_distance);
+		SDL_CHECK(SDL_SetTextureColorMod(_wall_tex, interp.r, interp.g, interp.b) == 0);
 
 		distance *= cos(sin(local_radians));
 
 		auto const wall_size = static_cast<int>(half_height/distance);
 
-		set_render_draw_color(_renderer.get(), ray_color);
-		SDL_CHECK(SDL_RenderDrawLine(_renderer.get(), i, half_height - wall_size,
-			i, half_height + wall_size) == 0);
+		auto const image_column = static_cast<int>(ray_u * 16); // MAGIC NNMBER
+		SDL_Rect src{image_column, 0, 1, 16}; // MAGIC NUMBER
+		SDL_Rect dst{i, half_height - wall_size, 1, wall_size*2};
+
+		SDL_CHECK(SDL_RenderCopy(_renderer.get(), _wall_tex, &src, &dst) == 0);
 	}
 }
 

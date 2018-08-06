@@ -21,6 +21,8 @@ class my_app {
 public:
 	explicit my_app(SDL_Renderer_ptr renderer, level lvl, camera cam);
 
+	~my_app();
+
 	int exec();
 
 private:
@@ -36,4 +38,6 @@ private:
 
 	bool _running = false;
 	uint64_t _ticks = 0u;
+
+	SDL_Texture* _wall_tex = nullptr;
 };
