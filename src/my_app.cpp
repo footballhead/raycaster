@@ -82,20 +82,31 @@ void my_app::render()
 	auto const half_width = logical_size.width / 2;
 	auto const half_height = logical_size.height / 2;
 
-	// draw ceiling
-	color const ceiling_color{64, 64, 64};
-	set_render_draw_color(_renderer.get(), ceiling_color);
+	color const fog_color{0, 0, 0};
 
-	SDL_Rect const ceiling_bounds{0, 0, logical_size.width, half_height};
-	SDL_CHECK(SDL_RenderFillRect(_renderer.get(), &ceiling_bounds) == 0);
+	// draw ceiling (top-down)
+	color const ceiling_color{64, 0, 0};
+	for (int i = 0; i < half_height; ++i) {
+		auto const t_scale = max_distance / static_cast<float>(max_distance-1);
+		auto const interp = linear_interpolate(ceiling_color, fog_color,
+			i / static_cast<float>(half_height) * t_scale);
+		set_render_draw_color(_renderer.get(), interp);
+		SDL_CHECK(SDL_RenderDrawLine(_renderer.get(), 0, i, logical_size.width,
+			i) == 0);
+	}
 
-	// draw floor
-	color const floor_color{128, 128, 128};
-	set_render_draw_color(_renderer.get(), floor_color);
+	// draw floor (bottom-up)
+	color const floor_color{64, 128, 255};
+	for (int i = 0; i < half_height; ++i) {
+		auto const t_scale = max_distance / static_cast<float>(max_distance-1);
+		auto const interp = linear_interpolate(floor_color, fog_color,
+			(half_height-i) / static_cast<float>(half_height) * t_scale);
+		set_render_draw_color(_renderer.get(), interp);
 
-	SDL_Rect const floor_bounds{0, half_height, logical_size.width,
-		logical_size.height};
-	SDL_CHECK(SDL_RenderFillRect(_renderer.get(), &floor_bounds) == 0);
+		auto const draw_y = i + half_height;
+		SDL_CHECK(SDL_RenderDrawLine(_renderer.get(), 0, draw_y, logical_size.width,
+			draw_y) == 0);
+	}
 
 	// draw geom
 	for (int i = 0; i < logical_size.width; ++i) {
@@ -129,7 +140,7 @@ void my_app::render()
 			distance += step_size;
 		}
 
-		ray_color = linear_interpolate(ray_color, color{0, 0, 0},
+		ray_color = linear_interpolate(ray_color, fog_color,
 			distance / max_distance);
 
 		distance *= cos(sin(local_radians));

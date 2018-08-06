@@ -19,6 +19,7 @@ inline auto set_render_draw_color(SDL_Renderer* renderer, const color& c)
 
 constexpr color linear_interpolate(color a, color b, float t)
 {
+	t = std::max(std::min(t, 1.f), 0.f);
 	return {
 		static_cast<uint8_t>(a.r * (1.f-t) + b.r * t),
 		static_cast<uint8_t>(a.g * (1.f-t) + b.g * t),
