@@ -99,8 +99,11 @@ void my_app::render()
 				static_cast<int>(march_y)
 			};
 
-			auto const u = march_x - point.x;
-			ray_color = hue_to_rgb(u);
+			auto const u = fabs(march_x - point.x);
+			auto const v = fabs(march_y - point.y);
+			auto const tolerance = 0.03125f;
+			ray_color = hue_to_rgb(u < tolerance || u > 1.f - tolerance
+				? v : u);
 
 			auto const index = point.y * _level.width + point.x;
 			if (_level.data[index] == 1) {
@@ -110,10 +113,11 @@ void my_app::render()
 			distance += step_size;
 		}
 
-		distance *= cos(sin(local_radians));
-
 		ray_color = linear_interpolate(ray_color, color{0, 0, 0},
 			distance / max_distance);
+
+		distance *= cos(sin(local_radians));
+
 		auto const wall_size = static_cast<int>(half_height/distance);
 
 		set_render_draw_color(_renderer.get(), ray_color);
