@@ -24,6 +24,46 @@ extent get_renderer_logical_size(SDL_Renderer* renderer)
 	return {width, height};
 }
 
+struct point2f {
+	float x;
+	float y;
+};
+
+constexpr auto max_distance = 4.f;
+constexpr auto step_size = 1.f / 32.f;
+
+/// @returns The distance, >= 0 if collision (sets out_result)
+float find_collision(const level& lvl, const point2f& origin, float direction,
+	point2f& out_result)
+{
+	auto distance = step_size;
+	while (distance < max_distance) {
+		auto const march_x =
+			static_cast<float>(origin.x + cos(direction) * distance);
+		auto const march_y =
+			static_cast<float>(origin.y + sin(direction) * distance);
+
+		auto const int_x = static_cast<int>(march_x);
+		auto const int_y = static_cast<int>(march_y);
+
+		if (int_x < 0 || int_x > lvl.width-1 || int_y < 0
+			|| int_y > lvl.height-1)
+		{
+			return -1.f;
+		}
+
+		auto const index = int_y * lvl.width + int_x;
+		if (lvl.data[index] == 1) {
+			out_result = point2f{march_x, march_y};
+			return distance;
+		}
+
+		distance += step_size;
+	}
+
+	return -1.f;
+}
+
 } // namespace
 
 my_app::my_app(SDL_Renderer_ptr renderer, level lvl, camera cam)
@@ -77,9 +117,6 @@ void my_app::update()
 void my_app::render()
 {
 	auto const fov = M_PI / 2.f;
-	auto const max_distance = 4;
-
-	auto const step_size = 1.f / 32.f;
 
 	auto const logical_size = get_renderer_logical_size(_renderer.get());
 
@@ -117,33 +154,28 @@ void my_app::render()
 
 	// draw geom
 	for (int i = 0; i < logical_size.width; ++i) {
-		auto const local_radians = (i - half_width) /
+		auto const local_ray_radians = (i - half_width) /
 			static_cast<float>(logical_size.width) * fov;
-		auto const camera_radians = local_radians - _camera.yaw;
-		auto const ray_radians = camera_radians;
+		auto const camera_ray_radians = local_ray_radians - _camera.yaw;
 
-		auto distance = step_size;
-		auto ray_u = 0.f;
-		while (distance < max_distance) {
-			auto const march_x = _camera.x + cos(ray_radians)*distance;
-			auto const march_y = _camera.y + sin(ray_radians)*distance;
+		float ray_u = 0.f;
+		point2f collision{0.f, 0.f};
+		auto distance = find_collision(_level, {_camera.x, _camera.y},
+			camera_ray_radians, collision);
 
+		if (distance > 0) {
 			SDL_Point const point{
-				static_cast<int>(march_x),
-				static_cast<int>(march_y)
+				static_cast<int>(collision.x),
+				static_cast<int>(collision.y)
 			};
 
-			auto const u = fabs(march_x - point.x);
-			auto const v = fabs(march_y - point.y);
-			auto const tolerance = 0.03125f;
+			auto const u = fabs(collision.x - point.x);
+			auto const v = fabs(collision.y - point.y);
+			auto const tolerance = 0.03125f; // TODO set to step size?
 			ray_u = u < tolerance || u > (1.f - tolerance) ? v : u;
-
-			auto const index = point.y * _level.width + point.x;
-			if (_level.data[index] == 1) {
-				break;
-			}
-
-			distance += step_size;
+		} else {
+			// Set to max distance so the color lerp will use the fog color
+			distance = max_distance;
 		}
 
 		auto const interp = linear_interpolate(white_color, fog_color,
@@ -151,7 +183,7 @@ void my_app::render()
 		SDL_CHECK(SDL_SetTextureColorMod(_wall_tex.get(), interp.r, interp.g,
 			interp.b) == 0);
 
-		distance *= cos(sin(local_radians));
+		distance *= cos(sin(local_ray_radians));
 
 		auto const wall_size = static_cast<int>(half_height/distance);
 
