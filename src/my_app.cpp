@@ -82,6 +82,22 @@ void my_app::render()
 	auto const half_width = logical_size.width / 2;
 	auto const half_height = logical_size.height / 2;
 
+	// draw ceiling
+	color const ceiling_color{64, 64, 64};
+	set_render_draw_color(_renderer.get(), ceiling_color);
+
+	SDL_Rect const ceiling_bounds{0, 0, logical_size.width, half_height};
+	SDL_CHECK(SDL_RenderFillRect(_renderer.get(), &ceiling_bounds) == 0);
+
+	// draw floor
+	color const floor_color{128, 128, 128};
+	set_render_draw_color(_renderer.get(), floor_color);
+
+	SDL_Rect const floor_bounds{0, half_height, logical_size.width,
+		logical_size.height};
+	SDL_CHECK(SDL_RenderFillRect(_renderer.get(), &floor_bounds) == 0);
+
+	// draw geom
 	for (int i = 0; i < logical_size.width; ++i) {
 		auto const local_radians = (i - half_width) /
 			static_cast<float>(logical_size.width) * fov;
