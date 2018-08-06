@@ -17,7 +17,16 @@ inline auto set_render_draw_color(SDL_Renderer* renderer, const color& c)
 	SDL_CHECK(SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 255) == 0);
 }
 
-constexpr color hueToRgb(float hue)
+constexpr color linear_interpolate(color a, color b, float t)
+{
+	return {
+		static_cast<uint8_t>(a.r * (1.f-t) + b.r * t),
+		static_cast<uint8_t>(a.g * (1.f-t) + b.g * t),
+		static_cast<uint8_t>(a.b * (1.f-t) + b.b * t)
+	};
+}
+
+constexpr color hue_to_rgb(float hue)
 {
 	auto sixth = 1.f/6.f;
 
