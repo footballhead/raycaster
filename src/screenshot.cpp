@@ -1,5 +1,7 @@
 #include "screenshot.hpp"
 
+#include "sdl_app.hpp"
+
 namespace {
 
 struct extent {
@@ -16,24 +18,6 @@ extent get_renderer_output_size(SDL_Renderer* renderer)
         return extent{-1, -1};
     }
     return extent{width, height};
-}
-
-//
-// SDL_Surface_ptr
-//
-
-struct SDL_Surface_deleter {
-    void operator() (SDL_Surface* other) const {
-        SDL_FreeSurface(other);
-    }
-};
-
-using SDL_Surface_ptr = std::unique_ptr<SDL_Surface, SDL_Surface_deleter>;
-
-/// Wrap an existing SDL_Surface
-SDL_Surface_ptr make_SDL_Surface(SDL_Surface* surface)
-{
-    return SDL_Surface_ptr{surface, SDL_Surface_deleter{}};
 }
 
 } // namespace

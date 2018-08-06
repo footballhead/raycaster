@@ -21,8 +21,6 @@ class my_app {
 public:
 	explicit my_app(SDL_Renderer_ptr renderer, level lvl, camera cam);
 
-	~my_app();
-
 	int exec();
 
 private:
@@ -32,6 +30,7 @@ private:
 	void keydown(SDL_Keycode key);
 
 	SDL_Renderer_ptr _renderer = nullptr;
+	SDL_Texture_ptr _wall_tex = nullptr;
 
 	level _level;
 	camera _camera;
@@ -39,5 +38,5 @@ private:
 	bool _running = false;
 	uint64_t _ticks = 0u;
 
-	SDL_Texture* _wall_tex = nullptr;
+	
 };

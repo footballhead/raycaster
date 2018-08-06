@@ -31,17 +31,10 @@ my_app::my_app(SDL_Renderer_ptr renderer, level lvl, camera cam)
 , _level{lvl}
 , _camera{cam}
 {
-	auto surface = SDL_LoadBMP("assets/wall.bmp");
-	SDL_CHECK(surface != nullptr);
+	auto surface = make_SDL_Surface(SDL_LoadBMP("assets/wall.bmp"));
 
-	_wall_tex = SDL_CreateTextureFromSurface(_renderer.get(), surface);
-	SDL_CHECK(_wall_tex != nullptr);
-	SDL_FreeSurface(surface);
-}
-
-my_app::~my_app()
-{
-	SDL_DestroyTexture(_wall_tex);
+	_wall_tex = make_SDL_Texture(
+		SDL_CreateTextureFromSurface(_renderer.get(), surface.get()));
 }
 
 int my_app::exec()
@@ -86,7 +79,7 @@ void my_app::render()
 	auto const fov = M_PI / 2.f;
 	auto const max_distance = 4;
 
-	auto const step_size = 0.03125f;
+	auto const step_size = 1.f / 32.f;
 
 	auto const logical_size = get_renderer_logical_size(_renderer.get());
 
@@ -116,8 +109,8 @@ void my_app::render()
 		set_render_draw_color(_renderer.get(), interp);
 
 		auto const draw_y = i + half_height;
-		SDL_CHECK(SDL_RenderDrawLine(_renderer.get(), 0, draw_y, logical_size.width,
-			draw_y) == 0);
+		SDL_CHECK(SDL_RenderDrawLine(_renderer.get(), 0, draw_y,
+			logical_size.width, draw_y) == 0);
 	}
 
 	set_render_draw_color(_renderer.get(), {255, 255, 255});
@@ -153,8 +146,10 @@ void my_app::render()
 			distance += step_size;
 		}
 
-		auto const interp = linear_interpolate(white_color, fog_color, distance / max_distance);
-		SDL_CHECK(SDL_SetTextureColorMod(_wall_tex, interp.r, interp.g, interp.b) == 0);
+		auto const interp = linear_interpolate(white_color, fog_color,
+			distance / max_distance);
+		SDL_CHECK(SDL_SetTextureColorMod(_wall_tex.get(), interp.r, interp.g,
+			interp.b) == 0);
 
 		distance *= cos(sin(local_radians));
 
@@ -164,7 +159,8 @@ void my_app::render()
 		SDL_Rect src{image_column, 0, 1, 16}; // MAGIC NUMBER
 		SDL_Rect dst{i, half_height - wall_size, 1, wall_size*2};
 
-		SDL_CHECK(SDL_RenderCopy(_renderer.get(), _wall_tex, &src, &dst) == 0);
+		SDL_CHECK(
+			SDL_RenderCopy(_renderer.get(), _wall_tex.get(), &src, &dst) == 0);
 	}
 }
 

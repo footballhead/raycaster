@@ -82,3 +82,40 @@ inline auto make_SDL_Renderer(SDL_Window* window)
 	SDL_CHECK(renderer);
 	return SDL_Renderer_ptr{renderer, SDL_Renderer_deleter{}};
 }
+
+//
+// SDL_Texture_ptr
+//
+
+struct SDL_Texture_deleter {
+	void operator() (SDL_Texture* other) const {
+		SDL_DestroyTexture(other);
+	}
+};
+
+using SDL_Texture_ptr = std::unique_ptr<SDL_Texture, SDL_Texture_deleter>;
+
+/// Wrap an existing SDL_Texture
+inline SDL_Texture_ptr make_SDL_Texture(SDL_Texture* texture)
+{
+	SDL_CHECK(texture);
+	return SDL_Texture_ptr{texture, SDL_Texture_deleter{}};
+}
+
+//
+// SDL_Surface_ptr
+//
+
+struct SDL_Surface_deleter {
+    void operator() (SDL_Surface* other) const {
+        SDL_FreeSurface(other);
+    }
+};
+
+using SDL_Surface_ptr = std::unique_ptr<SDL_Surface, SDL_Surface_deleter>;
+
+/// Wrap an existing SDL_Surface
+inline SDL_Surface_ptr make_SDL_Surface(SDL_Surface* surface)
+{
+    return SDL_Surface_ptr{surface, SDL_Surface_deleter{}};
+}
