@@ -3,11 +3,6 @@ project(raycaster C CXX)
 
 find_package(SDL2 REQUIRED CONFIG)
 
-# Force 64 bit for now
-if(NOT "${CMAKE_SIZEOF_VOID_P}" STREQUAL "8")
-	message(FATAL_ERROR "Not 64 bit! Try again.")
-endif()
-
 # Force C++14 compiler
 set(CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD 14)

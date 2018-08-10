@@ -1,23 +1,37 @@
-# Windows SDL raycaster sample
+# SDL raycaster sample
+
+![A screenshot of current gameplay](docs/screenshot.png)
 
 ## Requirements
 
- * 64 bit everything. This only compiles for 64 bit machines.
- * Visual Studio 2017 Community Edition with Desktop Development package
- * SDL 2.0.8 (installed to C:/SDL-2.0.8/)
+ * C++14 compiler
+ * SDL 2.0.8
  * CMake 3.11
+
+On macOS, SDL and CMake can be installed through Homebrew:
+
+    brew install sdl2 cmake
 
 ## Building
 
-Open VS x64 terminal
+The usual CMake way:
 
-	mkdir build
-	cd build
-	cmake -G "Visual Studio 15 2017 Win64" ..
-	msbuild raycaster.sln
+    mkdir build && cd build
+    cmake ..
+    make
 
 ## Running
 
-Copy SDL.dll into `build/Debug`. Then, from repo root (NOT `build/`!!), run:
+The binary needs to know where the `assets/` directory is, so it must be run
+from the repo root:
 
-	build\Debug\raycaster.exe
+    ./build/raycaster
+
+## Controls
+
+* W - move forward
+* S - move backward
+* A - turn left
+* D - turn right
+* SPACE - take screenshot
+* ESCAPE - quit
