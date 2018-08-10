@@ -183,7 +183,7 @@ void my_app::render()
 		SDL_CHECK(SDL_SetTextureColorMod(_wall_tex.get(), interp.r, interp.g,
 			interp.b) == 0);
 
-		distance *= cos(sin(local_ray_radians));
+		distance *= sin(M_PI / 2.f - fabs(local_ray_radians));
 
 		auto const wall_size = static_cast<int>(half_height/distance);
 
