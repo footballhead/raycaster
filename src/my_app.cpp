@@ -202,8 +202,10 @@ void my_app::render()
         }
         auto texture_size = get_texture_size(tex);
 
+        auto const fog_scale_factor = 0.75f;
+        auto const fog_distance = max_distance * fog_scale_factor;
         auto const interp = linear_interpolate(
-            white_color, fog_color, distance / max_distance);
+            white_color, fog_color, distance / fog_distance);
         SDL_CHECK(
             SDL_SetTextureColorMod(tex, interp.r, interp.g, interp.b) == 0);
 
