@@ -26,6 +26,14 @@ extent get_renderer_logical_size(SDL_Renderer* renderer)
     return {width, height};
 }
 
+extent get_texture_size(SDL_Texture* texture)
+{
+    int width = 0, height = 0;
+    SDL_CHECK(
+        SDL_QueryTexture(texture, nullptr, nullptr, &width, &height) == 0);
+    return {width, height};
+}
+
 struct point2f {
     float x;
     float y;
@@ -54,7 +62,7 @@ float find_collision(const level& lvl, const point2f& origin, float direction,
         }
 
         auto const index = int_y * lvl.width + int_x;
-        if (lvl.data[index] == 1) {
+        if (lvl.data[index] > 0) {
             out_result = point2f{march_x, march_y};
             return distance;
         }
@@ -69,15 +77,13 @@ float find_collision(const level& lvl, const point2f& origin, float direction,
 
 namespace raycaster {
 
-my_app::my_app(sdl::renderer renderer, level lvl, camera cam)
+my_app::my_app(sdl::renderer renderer, std::unique_ptr<asset_store> assets,
+    level lvl, camera cam)
 : _renderer{std::move(renderer)}
+, _asset_store{std::move(assets)}
 , _level{lvl}
 , _camera{cam}
 {
-    auto surface = sdl::make_surface(SDL_LoadBMP("assets/wall.bmp"));
-
-    _wall_tex = sdl::make_texture(
-        SDL_CreateTextureFromSurface(_renderer.get(), surface.get()));
 }
 
 int my_app::exec()
@@ -165,40 +171,49 @@ void my_app::render()
             = (i - half_width) / static_cast<float>(logical_size.width) * fov;
         auto const camera_ray_radians = local_ray_radians - _camera.yaw;
 
-        float ray_u = 0.f;
         point2f collision{0.f, 0.f};
         auto distance = find_collision(
             _level, {_camera.x, _camera.y}, camera_ray_radians, collision);
 
-        if (distance > 0) {
-            SDL_Point const point{
-                static_cast<int>(collision.x), static_cast<int>(collision.y)};
-
-            auto const u = fabs(collision.x - point.x);
-            auto const v = fabs(collision.y - point.y);
-            auto const tolerance = 0.03125f; // TODO set to step size?
-            ray_u = u < tolerance || u > (1.f - tolerance) ? v : u;
-        } else {
-            // Set to max distance so the color lerp will use the fog color
-            distance = max_distance;
+        // No collision means don't draw anything. The fog effect will be taken
+        // care of by floor/ceiling gradient.
+        if (distance < 0) {
+            continue;
         }
+
+        // "Fix" fish eye distortion by changing distance from euclidean to
+        // pseudo-plane projected using maths.
+        distance *= sin(M_PI / 2.f - fabs(local_ray_radians));
+
+        SDL_Point const point{
+            static_cast<int>(collision.x), static_cast<int>(collision.y)};
+
+        auto const u = fabs(collision.x - point.x);
+        auto const v = fabs(collision.y - point.y);
+        auto const tolerance = 0.03125f; // TODO set to step size?
+        auto const ray_u = u < tolerance || u > (1.f - tolerance) ? v : u;
+
+        SDL_Texture* tex = nullptr;
+        auto const index = point.y * _level.width + point.x;
+        if (_level.data[index] == 1) {
+            tex = _asset_store->get_asset(common_assets::wall_texture).get();
+        } else {
+            tex = _asset_store->get_asset(common_assets::stone_texture).get();
+        }
+        auto texture_size = get_texture_size(tex);
 
         auto const interp = linear_interpolate(
             white_color, fog_color, distance / max_distance);
-        SDL_CHECK(SDL_SetTextureColorMod(
-                      _wall_tex.get(), interp.r, interp.g, interp.b)
-            == 0);
-
-        distance *= sin(M_PI / 2.f - fabs(local_ray_radians));
+        SDL_CHECK(
+            SDL_SetTextureColorMod(tex, interp.r, interp.g, interp.b) == 0);
 
         auto const wall_size = static_cast<int>(half_height / distance);
 
-        auto const image_column = static_cast<int>(ray_u * 16); // MAGIC NNMBER
-        SDL_Rect src{image_column, 0, 1, 16}; // MAGIC NUMBER
+        auto const image_column = static_cast<int>(ray_u * texture_size.width);
+        SDL_Rect src{image_column, 0, 1, texture_size.height};
         SDL_Rect dst{i, half_height - wall_size, 1, wall_size * 2};
 
-        SDL_CHECK(
-            SDL_RenderCopy(_renderer.get(), _wall_tex.get(), &src, &dst) == 0);
+        SDL_CHECK(SDL_RenderCopy(_renderer.get(), tex, &src, &dst) == 0);
     }
 }
 

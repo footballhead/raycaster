@@ -53,7 +53,7 @@ struct surface_deleter {
 
 using window = std::unique_ptr<SDL_Window, detail::window_deleter>;
 
-using renderer = std::unique_ptr<SDL_Renderer, detail::renderer_deleter>;
+using renderer = std::shared_ptr<SDL_Renderer>;
 
 using texture = std::unique_ptr<SDL_Texture, detail::texture_deleter>;
 

@@ -1,3 +1,4 @@
+#include "asset_store.hpp"
 #include "my_app.hpp"
 #include "sdl_app.hpp"
 
@@ -20,6 +21,10 @@ int main(int argc, char** argv)
 
     auto renderer = sdl::make_renderer(window.get());
 
+    auto assets = std::make_unique<asset_store>(renderer, "assets");
+    assets->get_asset(common_assets::wall_texture);
+    assets->get_asset(common_assets::stone_texture);
+
     auto scaling_factor = 4;
     SDL_CHECK(
         SDL_RenderSetLogicalSize(renderer.get(),
@@ -32,12 +37,12 @@ int main(int argc, char** argv)
 		8,	// height
 		{	// data
 			1, 1, 1, 1, 1, 1, 1, 1,
-			1, 0, 1, 0, 0, 0, 0, 1,
-			1, 0, 0, 0, 0, 1, 0, 1,
-			1, 0, 0, 0, 0, 1, 0, 1,
+			1, 0, 2, 0, 0, 0, 0, 1,
+			1, 0, 0, 0, 0, 2, 0, 1,
+			1, 0, 0, 0, 0, 2, 0, 1,
 			1, 0, 0, 0, 0, 0, 0, 1,
-			1, 0, 0, 0, 1, 1, 1, 1,
-			1, 1, 0, 0, 0, 0, 0, 1,
+			1, 0, 0, 0, 2, 2, 2, 1,
+			1, 2, 0, 0, 0, 0, 0, 1,
 			1, 1, 1, 1, 1, 1, 1, 1,
 		},
 	};
@@ -49,7 +54,7 @@ int main(int argc, char** argv)
         M_PI / 4.f, // yaw
     };
 
-    my_app app{std::move(renderer), test_level, cam};
+    my_app app{std::move(renderer), std::move(assets), test_level, cam};
     try {
         app.exec();
     } catch (const std::exception& e) {
