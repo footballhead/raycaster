@@ -11,6 +11,8 @@
 
 namespace {
 
+using namespace raycaster;
+
 struct extent {
     int width;
     int height;
@@ -64,6 +66,8 @@ float find_collision(const level& lvl, const point2f& origin, float direction,
 }
 
 } // namespace
+
+namespace raycaster {
 
 my_app::my_app(SDL_Renderer_ptr renderer, level lvl, camera cam)
 : _renderer{std::move(renderer)}
@@ -219,7 +223,7 @@ void my_app::keydown(SDL_Keycode key)
         _camera.y += sin(_camera.yaw) * move_step;
         break;
     case SDLK_SPACE:
-        if (!sdl::save_screenshot(_renderer.get(), "screenshot.bmp")) {
+        if (!save_screenshot(_renderer.get(), "screenshot.bmp")) {
             SDL_Log("save_screenshot failed!");
         }
         break;
@@ -228,3 +232,5 @@ void my_app::keydown(SDL_Keycode key)
         break;
     }
 }
+
+} // namespace raycaster

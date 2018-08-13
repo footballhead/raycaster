@@ -6,13 +6,15 @@
 
 #include <cstdint>
 
+namespace raycaster {
+
 struct color {
     uint8_t r;
     uint8_t g;
     uint8_t b;
 };
 
-inline auto set_render_draw_color(SDL_Renderer* renderer, const color& c)
+inline void set_render_draw_color(SDL_Renderer* renderer, const color& c)
 {
     SDL_CHECK(SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 255) == 0);
 }
@@ -73,3 +75,5 @@ constexpr color hue_to_rgb(float hue)
         };
     }
 }
+
+} // namespace raycaster

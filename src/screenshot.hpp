@@ -4,7 +4,7 @@
 
 #include <string>
 
-namespace sdl {
+namespace raycaster {
 
 /// @brief Take a screenshot and save it to disk.
 /// @param renderer The SDL renderer to take a screenshot of.
@@ -13,4 +13,4 @@ namespace sdl {
 /// @returns false on error
 bool save_screenshot(SDL_Renderer* renderer, const char* filename);
 
-} // namespace sdl
+} // namespace raycaster

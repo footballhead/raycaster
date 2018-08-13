@@ -22,7 +22,7 @@ extent get_renderer_output_size(SDL_Renderer* renderer)
 
 } // namespace
 
-namespace sdl {
+namespace raycaster {
 
 bool save_screenshot(SDL_Renderer* renderer, const char* filename)
 {
@@ -60,4 +60,4 @@ bool save_screenshot(SDL_Renderer* renderer, const char* filename)
     return true;
 }
 
-} // namespace sdl
+} // namespace raycaster

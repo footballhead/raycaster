@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <vector>
 
+using namespace raycaster;
+
 int main(int argc, char** argv)
 {
     sdl_app sdl;

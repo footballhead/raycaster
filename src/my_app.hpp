@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <vector>
 
+namespace raycaster {
+
 struct level {
     int width;
     int height;
@@ -38,3 +40,5 @@ private:
     bool _running = false;
     uint64_t _ticks = 0u;
 };
+
+} // namespace raycaster
