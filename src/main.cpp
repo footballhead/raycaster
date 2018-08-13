@@ -10,19 +10,21 @@
 
 int main(int argc, char** argv)
 {
-	sdl_app sdl;
+    sdl_app sdl;
 
-	const auto window_title = "Raycaster";
-	const SDL_Point window_bounds = {640, 480};
-	const auto window = make_SDL_Window(window_title, window_bounds);
+    const auto window_title = "Raycaster";
+    const SDL_Point window_bounds = {640, 480};
+    const auto window = make_SDL_Window(window_title, window_bounds);
 
-	auto renderer = make_SDL_Renderer(window.get());
+    auto renderer = make_SDL_Renderer(window.get());
 
-	auto scaling_factor = 4;
-	SDL_CHECK(SDL_RenderSetLogicalSize(renderer.get(),
-		window_bounds.x/scaling_factor,
-		window_bounds.y/scaling_factor) == 0);
+    auto scaling_factor = 4;
+    SDL_CHECK(
+        SDL_RenderSetLogicalSize(renderer.get(),
+            window_bounds.x / scaling_factor, window_bounds.y / scaling_factor)
+        == 0);
 
+    // clang-format off
 	level test_level = {
 		8,	// width
 		8,	// height
@@ -35,21 +37,22 @@ int main(int argc, char** argv)
 			1, 0, 0, 0, 1, 1, 1, 1,
 			1, 1, 0, 0, 0, 0, 0, 1,
 			1, 1, 1, 1, 1, 1, 1, 1,
-		}
+		},
 	};
+    // clang-format on
 
-	camera cam = {
-		3.5f,// x
-		3.5f,// y
-		M_PI / 4.f, // yaw
-	};
+    camera cam = {
+        3.5f, // x
+        3.5f, // y
+        M_PI / 4.f, // yaw
+    };
 
-	my_app app{std::move(renderer), test_level, cam};
-	try {
-		app.exec();
-	} catch (const std::exception& e) {
-		SDL_Log("EXCEPTION: %s", e.what());
-	}
+    my_app app{std::move(renderer), test_level, cam};
+    try {
+        app.exec();
+    } catch (const std::exception& e) {
+        SDL_Log("EXCEPTION: %s", e.what());
+    }
 
-	return 0;
+    return 0;
 }

@@ -33,8 +33,8 @@ bool save_screenshot(SDL_Renderer* renderer, const char* filename)
 
     const auto format = SDL_PIXELFORMAT_BGR888;
 
-    auto temp_surface = SDL_CreateRGBSurfaceWithFormat(0, renderer_size.w,
-        renderer_size.h, 32, format);
+    auto temp_surface = SDL_CreateRGBSurfaceWithFormat(
+        0, renderer_size.w, renderer_size.h, 32, format);
     if (!temp_surface) {
         SDL_Log("save_screenshot: SDL_CreateRGBSurfaceWithFormat failed: %s",
             SDL_GetError());
@@ -43,8 +43,8 @@ bool save_screenshot(SDL_Renderer* renderer, const char* filename)
     auto surface = make_SDL_Surface(temp_surface);
 
     SDL_Rect entire_screen = {0, 0, renderer_size.w, renderer_size.h};
-    auto err = SDL_RenderReadPixels(renderer, &entire_screen, format,
-        surface->pixels, surface->pitch);
+    auto err = SDL_RenderReadPixels(
+        renderer, &entire_screen, format, surface->pixels, surface->pitch);
     if (err != 0) {
         SDL_Log("save_screenshot: SDL_RendererReadPixels failed: %s",
             SDL_GetError());
