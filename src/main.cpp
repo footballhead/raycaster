@@ -12,13 +12,13 @@ using namespace raycaster;
 
 int main(int argc, char** argv)
 {
-    sdl_app sdl;
+    sdl::sdl_app sdl;
 
     const auto window_title = "Raycaster";
     const SDL_Point window_bounds = {640, 480};
-    const auto window = make_SDL_Window(window_title, window_bounds);
+    const auto window = sdl::make_window(window_title, window_bounds);
 
-    auto renderer = make_SDL_Renderer(window.get());
+    auto renderer = sdl::make_renderer(window.get());
 
     auto scaling_factor = 4;
     SDL_CHECK(

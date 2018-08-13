@@ -69,14 +69,14 @@ float find_collision(const level& lvl, const point2f& origin, float direction,
 
 namespace raycaster {
 
-my_app::my_app(SDL_Renderer_ptr renderer, level lvl, camera cam)
+my_app::my_app(sdl::renderer renderer, level lvl, camera cam)
 : _renderer{std::move(renderer)}
 , _level{lvl}
 , _camera{cam}
 {
-    auto surface = make_SDL_Surface(SDL_LoadBMP("assets/wall.bmp"));
+    auto surface = sdl::make_surface(SDL_LoadBMP("assets/wall.bmp"));
 
-    _wall_tex = make_SDL_Texture(
+    _wall_tex = sdl::make_texture(
         SDL_CreateTextureFromSurface(_renderer.get(), surface.get()));
 }
 

@@ -21,7 +21,7 @@ struct camera {
 
 class my_app {
 public:
-    explicit my_app(SDL_Renderer_ptr renderer, level lvl, camera cam);
+    explicit my_app(sdl::renderer renderer, level lvl, camera cam);
 
     int exec();
 
@@ -31,8 +31,8 @@ private:
 
     void keydown(SDL_Keycode key);
 
-    SDL_Renderer_ptr _renderer = nullptr;
-    SDL_Texture_ptr _wall_tex = nullptr;
+    sdl::renderer _renderer = nullptr;
+    sdl::texture _wall_tex = nullptr;
 
     level _level;
     camera _camera;

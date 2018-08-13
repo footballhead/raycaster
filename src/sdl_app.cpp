@@ -4,6 +4,8 @@
 
 #include <stdexcept>
 
+namespace sdl {
+
 unsigned sdl_app::m_init_ref = 0;
 
 sdl_app::sdl_app()
@@ -23,3 +25,5 @@ sdl_app::~sdl_app()
         SDL_Quit();
     }
 }
+
+} // namespace sdl

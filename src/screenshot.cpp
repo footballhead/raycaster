@@ -40,7 +40,7 @@ bool save_screenshot(SDL_Renderer* renderer, const char* filename)
             SDL_GetError());
         return false;
     }
-    auto surface = make_SDL_Surface(temp_surface);
+    auto surface = sdl::make_surface(temp_surface);
 
     SDL_Rect entire_screen = {0, 0, renderer_size.w, renderer_size.h};
     auto err = SDL_RenderReadPixels(

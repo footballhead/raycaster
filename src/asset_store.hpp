@@ -5,6 +5,8 @@
 
 #include "sdl_app.hpp"
 
+namespace raycaster {
+
 /// Manages asset lifetime.
 class asset_store {
 public:
@@ -18,3 +20,5 @@ private:
     std::string _basedir;
     AssetMap _asset_map;
 };
+
+} // namespace raycaster
