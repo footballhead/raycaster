@@ -14,12 +14,11 @@ namespace {
 
 using namespace raycaster;
 
-constexpr auto max_distance = 4.f;
 constexpr auto step_size = 1.f / 32.f;
 
 /// @returns The distance, >= 0 if collision (sets out_result)
 float find_collision(level const& lvl, point2f const& origin, float direction,
-    point2f& out_result)
+    float max_distance, point2f& out_result)
 {
     auto distance = step_size;
     while (distance < max_distance) {
@@ -97,16 +96,16 @@ void my_app::update()
     auto const move_step = 0.01f;
 
     if (_input_buffer->is_pressed(SDL_SCANCODE_W)) {
-        _camera.pos = _camera.pos + vector2f{_camera.yaw, move_step};
+        _camera.move({_camera.get_yaw(), move_step});
     }
     if (_input_buffer->is_pressed(SDL_SCANCODE_S)) {
-        _camera.pos = _camera.pos - vector2f{_camera.yaw, move_step};
+        _camera.move({_camera.get_yaw(), -move_step});
     }
     if (_input_buffer->is_pressed(SDL_SCANCODE_A)) {
-        _camera.yaw += yaw_step;
+        _camera.rotate(yaw_step);
     }
     if (_input_buffer->is_pressed(SDL_SCANCODE_D)) {
-        _camera.yaw -= yaw_step;
+        _camera.rotate(-yaw_step);
     }
 
     if (_input_buffer->is_hit(SDL_SCANCODE_SPACE)) {
@@ -120,9 +119,9 @@ void my_app::update()
 
 void my_app::render()
 {
-    auto const fov = 2 * atan(_camera.near / _camera.right);
-
-    color constexpr fog_color = black_color;
+    auto const fov = _camera.get_fov();
+    auto const fog_color = _camera.get_fog_color();
+    auto const max_distance = _camera.get_far();
 
     auto const logical_size = sdl::get_renderer_logical_size(_renderer.get());
     auto const half_width = logical_size.w / 2;
@@ -161,11 +160,11 @@ void my_app::render()
     for (int i = 0; i < logical_size.w; ++i) {
         auto const local_ray_radians
             = (i - half_width) / static_cast<float>(logical_size.w) * fov;
-        auto const camera_ray_radians = local_ray_radians - _camera.yaw;
+        auto const camera_ray_radians = local_ray_radians - _camera.get_yaw();
 
         point2f collision{0.f, 0.f};
-        auto distance = find_collision(_level, {_camera.pos.x, _camera.pos.y},
-            camera_ray_radians, collision);
+        auto distance = find_collision(_level, _camera.get_position(),
+            camera_ray_radians, max_distance, collision);
 
         // No collision means don't draw anything. The fog effect will be taken
         // care of by floor/ceiling gradient.

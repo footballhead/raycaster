@@ -13,6 +13,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(SOURCES
 	src/asset_store.cpp
+	src/camera.cpp
 	src/input_buffer.cpp
 	src/my_app.cpp
 	src/screenshot.cpp
