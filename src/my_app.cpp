@@ -52,8 +52,8 @@ float find_collision(level const& lvl, point2f const& origin, float direction,
 
 namespace raycaster {
 
-my_app::my_app(sdl::renderer renderer, std::unique_ptr<asset_store> assets, std::unique_ptr<input_buffer> input,
-    level lvl, camera cam)
+my_app::my_app(sdl::renderer renderer, std::unique_ptr<asset_store> assets,
+    std::unique_ptr<input_buffer> input, level lvl, camera cam)
 : _renderer{std::move(renderer)}
 , _asset_store{std::move(assets)}
 , _input_buffer{std::move(input)}
@@ -87,7 +87,8 @@ int my_app::exec()
 
 void my_app::update()
 {
-    if (_input_buffer->is_quit()) {
+    if (_input_buffer->is_quit()
+        || _input_buffer->is_pressed(SDL_SCANCODE_ESCAPE)) {
         _running = false;
         return;
     }
