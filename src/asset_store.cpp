@@ -23,6 +23,7 @@ sdl::texture const& asset_store::get_asset(std::string const& path)
 {
     auto const full_path = _base_dir + "/" + path;
     if (_asset_map.find(full_path) == _asset_map.end()) {
+        SDL_Log("Loading asset: %s", full_path.c_str());
         _asset_map[full_path] = load_image(_renderer.get(), full_path);
     }
     return _asset_map[full_path];

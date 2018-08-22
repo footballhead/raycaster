@@ -111,6 +111,8 @@ void my_app::update()
     if (_input_buffer->is_hit(SDL_SCANCODE_SPACE)) {
         if (!save_screenshot(_renderer.get(), "screenshot.bmp")) {
             SDL_Log("save_screenshot failed!");
+        } else {
+            SDL_Log("saved screenshot to screenshot.bmp");
         }
     }
 }
