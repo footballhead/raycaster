@@ -13,6 +13,7 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(SOURCES
 	src/asset_store.cpp
+	src/input_buffer.cpp
 	src/my_app.cpp
 	src/screenshot.cpp
 	src/sdl_app.cpp
@@ -23,6 +24,7 @@ set(HEADERS
 	src/asset_store.hpp
 	src/camera.hpp
 	src/color.hpp
+	src/input_buffer.hpp
 	src/my_app.hpp
 	src/mymath.hpp
 	src/screenshot.hpp

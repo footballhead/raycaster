@@ -52,10 +52,11 @@ float find_collision(level const& lvl, point2f const& origin, float direction,
 
 namespace raycaster {
 
-my_app::my_app(sdl::renderer renderer, std::unique_ptr<asset_store> assets,
+my_app::my_app(sdl::renderer renderer, std::unique_ptr<asset_store> assets, std::unique_ptr<input_buffer> input,
     level lvl, camera cam)
 : _renderer{std::move(renderer)}
 , _asset_store{std::move(assets)}
+, _input_buffer{std::move(input)}
 , _level{lvl}
 , _camera{cam}
 {
@@ -69,6 +70,7 @@ int my_app::exec()
 
     _running = true;
     while (_running) {
+        _input_buffer->poll_events();
         update();
 
         sdl::set_render_draw_color(_renderer.get(), black_color);
@@ -85,15 +87,30 @@ int my_app::exec()
 
 void my_app::update()
 {
-    SDL_Event evt;
-    while (SDL_PollEvent(&evt)) {
-        switch (evt.type) {
-        case SDL_QUIT:
-            _running = false;
-            break;
-        case SDL_KEYDOWN:
-            keydown(evt.key.keysym.sym);
-            break;
+    if (_input_buffer->is_quit()) {
+        _running = false;
+        return;
+    }
+
+    auto const yaw_step = 0.01f;
+    auto const move_step = 0.01f;
+
+    if (_input_buffer->is_pressed(SDL_SCANCODE_W)) {
+        _camera.pos = _camera.pos + vector2f{_camera.yaw, move_step};
+    }
+    if (_input_buffer->is_pressed(SDL_SCANCODE_S)) {
+        _camera.pos = _camera.pos - vector2f{_camera.yaw, move_step};
+    }
+    if (_input_buffer->is_pressed(SDL_SCANCODE_A)) {
+        _camera.yaw += yaw_step;
+    }
+    if (_input_buffer->is_pressed(SDL_SCANCODE_D)) {
+        _camera.yaw -= yaw_step;
+    }
+
+    if (_input_buffer->is_hit(SDL_SCANCODE_SPACE)) {
+        if (!save_screenshot(_renderer.get(), "screenshot.bmp")) {
+            SDL_Log("save_screenshot failed!");
         }
     }
 }
@@ -188,35 +205,6 @@ void my_app::render()
         SDL_Rect dst{i, half_height - wall_size, 1, wall_size * 2};
 
         SDL_CHECK(SDL_RenderCopy(_renderer.get(), tex, &src, &dst) == 0);
-    }
-}
-
-void my_app::keydown(SDL_Keycode key)
-{
-    auto const yaw_step = 0.1f;
-    auto const move_step = 0.1f;
-
-    switch (key) {
-    case SDLK_a:
-        _camera.yaw += yaw_step;
-        break;
-    case SDLK_d:
-        _camera.yaw -= yaw_step;
-        break;
-    case SDLK_w:
-        _camera.pos = _camera.pos + vector2f{_camera.yaw, move_step};
-        break;
-    case SDLK_s:
-        _camera.pos = _camera.pos - vector2f{_camera.yaw, move_step};
-        break;
-    case SDLK_SPACE:
-        if (!save_screenshot(_renderer.get(), "screenshot.bmp")) {
-            SDL_Log("save_screenshot failed!");
-        }
-        break;
-    case SDLK_ESCAPE:
-        _running = false;
-        break;
     }
 }
 

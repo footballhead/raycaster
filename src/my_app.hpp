@@ -2,6 +2,7 @@
 
 #include "asset_store.hpp"
 #include "camera.hpp"
+#include "input_buffer.hpp"
 #include "mymath.hpp"
 #include "sdl_app.hpp"
 
@@ -18,7 +19,7 @@ struct level {
 class my_app {
 public:
     explicit my_app(sdl::renderer renderer, std::unique_ptr<asset_store> assets,
-        level lvl, camera cam);
+        std::unique_ptr<input_buffer> input, level lvl, camera cam);
 
     int exec();
 
@@ -26,10 +27,9 @@ private:
     void update();
     void render();
 
-    void keydown(SDL_Keycode key);
-
     sdl::renderer _renderer = nullptr;
     std::unique_ptr<asset_store> _asset_store = nullptr;
+    std::unique_ptr<input_buffer> _input_buffer = nullptr;
 
     level _level;
     camera _camera;

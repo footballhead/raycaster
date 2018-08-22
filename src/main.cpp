@@ -60,7 +60,10 @@ int main(int argc, char** argv)
         0.5f,
     };
 
-    my_app app{std::move(renderer), std::move(assets), test_level, cam};
+    auto input = std::make_unique<input_buffer>();
+
+    my_app app{std::move(renderer), std::move(assets), std::move(input),
+        test_level, cam};
     try {
         app.exec();
     } catch (const std::exception& e) {
