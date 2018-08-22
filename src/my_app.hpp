@@ -1,6 +1,8 @@
 #pragma once
 
 #include "asset_store.hpp"
+#include "camera.hpp"
+#include "mymath.hpp"
 #include "sdl_app.hpp"
 
 #include <cstdint>
@@ -9,15 +11,8 @@
 namespace raycaster {
 
 struct level {
-    int width;
-    int height;
+    extent2i bounds;
     std::vector<uint8_t> data;
-};
-
-struct camera {
-    float x;
-    float y;
-    float yaw; // (radians)
 };
 
 class my_app {

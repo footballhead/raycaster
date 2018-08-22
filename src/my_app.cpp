@@ -1,6 +1,7 @@
 #include "my_app.hpp"
 
 #include "color.hpp"
+#include "mymath.hpp"
 #include "screenshot.hpp"
 #include "sdl_app.hpp"
 
@@ -13,37 +14,11 @@ namespace {
 
 using namespace raycaster;
 
-struct extent {
-    int width;
-    int height;
-};
-
-/// @returns {0, 0} if logical size is not set
-extent get_renderer_logical_size(SDL_Renderer* renderer)
-{
-    int width = 0, height = 0;
-    SDL_RenderGetLogicalSize(renderer, &width, &height);
-    return {width, height};
-}
-
-extent get_texture_size(SDL_Texture* texture)
-{
-    int width = 0, height = 0;
-    SDL_CHECK(
-        SDL_QueryTexture(texture, nullptr, nullptr, &width, &height) == 0);
-    return {width, height};
-}
-
-struct point2f {
-    float x;
-    float y;
-};
-
 constexpr auto max_distance = 4.f;
 constexpr auto step_size = 1.f / 32.f;
 
 /// @returns The distance, >= 0 if collision (sets out_result)
-float find_collision(const level& lvl, const point2f& origin, float direction,
+float find_collision(level const& lvl, point2f const& origin, float direction,
     point2f& out_result)
 {
     auto distance = step_size;
@@ -56,12 +31,12 @@ float find_collision(const level& lvl, const point2f& origin, float direction,
         auto const int_x = static_cast<int>(march_x);
         auto const int_y = static_cast<int>(march_y);
 
-        if (int_x < 0 || int_x > lvl.width - 1 || int_y < 0
-            || int_y > lvl.height - 1) {
+        if (int_x < 0 || int_x > lvl.bounds.w - 1 || int_y < 0
+            || int_y > lvl.bounds.h - 1) {
             return -1.f;
         }
 
-        auto const index = int_y * lvl.width + int_x;
+        auto const index = int_y * lvl.bounds.w + int_x;
         if (lvl.data[index] > 0) {
             out_result = point2f{march_x, march_y};
             return distance;
@@ -96,7 +71,7 @@ int my_app::exec()
     while (_running) {
         update();
 
-        set_render_draw_color(_renderer.get(), {0, 0, 0});
+        sdl::set_render_draw_color(_renderer.get(), black_color);
         SDL_CHECK(SDL_RenderClear(_renderer.get()) == 0);
         render();
         SDL_RenderPresent(_renderer.get());
@@ -125,15 +100,13 @@ void my_app::update()
 
 void my_app::render()
 {
-    auto const fov = M_PI / 2.f;
+    auto const fov = 2 * atan(_camera.near / _camera.right);
 
-    auto const logical_size = get_renderer_logical_size(_renderer.get());
+    color constexpr fog_color = black_color;
 
-    auto const half_width = logical_size.width / 2;
-    auto const half_height = logical_size.height / 2;
-
-    color const fog_color{0, 0, 0};
-    color const white_color{255, 255, 255};
+    auto const logical_size = sdl::get_renderer_logical_size(_renderer.get());
+    auto const half_width = logical_size.w / 2;
+    auto const half_height = logical_size.h / 2;
 
     // draw ceiling (top-down)
     color const ceiling_color{64, 0, 0};
@@ -142,10 +115,9 @@ void my_app::render()
             = max_distance / static_cast<float>(max_distance - 1);
         auto const interp = linear_interpolate(ceiling_color, fog_color,
             i / static_cast<float>(half_height) * t_scale);
-        set_render_draw_color(_renderer.get(), interp);
+        sdl::set_render_draw_color(_renderer.get(), interp);
         SDL_CHECK(
-            SDL_RenderDrawLine(_renderer.get(), 0, i, logical_size.width, i)
-            == 0);
+            SDL_RenderDrawLine(_renderer.get(), 0, i, logical_size.w, i) == 0);
     }
 
     // draw floor (bottom-up)
@@ -155,25 +127,25 @@ void my_app::render()
             = max_distance / static_cast<float>(max_distance - 1);
         auto const interp = linear_interpolate(floor_color, fog_color,
             (half_height - i) / static_cast<float>(half_height) * t_scale);
-        set_render_draw_color(_renderer.get(), interp);
+        sdl::set_render_draw_color(_renderer.get(), interp);
 
         auto const draw_y = i + half_height;
         SDL_CHECK(SDL_RenderDrawLine(
-                      _renderer.get(), 0, draw_y, logical_size.width, draw_y)
+                      _renderer.get(), 0, draw_y, logical_size.w, draw_y)
             == 0);
     }
 
-    set_render_draw_color(_renderer.get(), {255, 255, 255});
+    sdl::set_render_draw_color(_renderer.get(), white_color);
 
-    // draw geom
-    for (int i = 0; i < logical_size.width; ++i) {
+    // Fire a ray for each column on the screen.
+    for (int i = 0; i < logical_size.w; ++i) {
         auto const local_ray_radians
-            = (i - half_width) / static_cast<float>(logical_size.width) * fov;
+            = (i - half_width) / static_cast<float>(logical_size.w) * fov;
         auto const camera_ray_radians = local_ray_radians - _camera.yaw;
 
         point2f collision{0.f, 0.f};
-        auto distance = find_collision(
-            _level, {_camera.x, _camera.y}, camera_ray_radians, collision);
+        auto distance = find_collision(_level, {_camera.pos.x, _camera.pos.y},
+            camera_ray_radians, collision);
 
         // No collision means don't draw anything. The fog effect will be taken
         // care of by floor/ceiling gradient.
@@ -194,13 +166,13 @@ void my_app::render()
         auto const ray_u = u < tolerance || u > (1.f - tolerance) ? v : u;
 
         SDL_Texture* tex = nullptr;
-        auto const index = point.y * _level.width + point.x;
+        auto const index = point.y * _level.bounds.w + point.x;
         if (_level.data[index] == 1) {
             tex = _asset_store->get_asset(common_assets::wall_texture).get();
         } else {
             tex = _asset_store->get_asset(common_assets::stone_texture).get();
         }
-        auto texture_size = get_texture_size(tex);
+        auto texture_size = sdl::get_texture_size(tex);
 
         auto const fog_scale_factor = 0.75f;
         auto const fog_distance = max_distance * fog_scale_factor;
@@ -211,8 +183,8 @@ void my_app::render()
 
         auto const wall_size = static_cast<int>(half_height / distance);
 
-        auto const image_column = static_cast<int>(ray_u * texture_size.width);
-        SDL_Rect src{image_column, 0, 1, texture_size.height};
+        auto const image_column = static_cast<int>(ray_u * texture_size.w);
+        SDL_Rect src{image_column, 0, 1, texture_size.h};
         SDL_Rect dst{i, half_height - wall_size, 1, wall_size * 2};
 
         SDL_CHECK(SDL_RenderCopy(_renderer.get(), tex, &src, &dst) == 0);
@@ -221,8 +193,8 @@ void my_app::render()
 
 void my_app::keydown(SDL_Keycode key)
 {
-    const auto yaw_step = 0.1f;
-    const auto move_step = 0.1f;
+    auto const yaw_step = 0.1f;
+    auto const move_step = 0.1f;
 
     switch (key) {
     case SDLK_a:
@@ -232,12 +204,10 @@ void my_app::keydown(SDL_Keycode key)
         _camera.yaw -= yaw_step;
         break;
     case SDLK_w:
-        _camera.x += cos(_camera.yaw) * move_step;
-        _camera.y -= sin(_camera.yaw) * move_step;
+        _camera.pos = _camera.pos + vector2f{_camera.yaw, move_step};
         break;
     case SDLK_s:
-        _camera.x -= cos(_camera.yaw) * move_step;
-        _camera.y += sin(_camera.yaw) * move_step;
+        _camera.pos = _camera.pos - vector2f{_camera.yaw, move_step};
         break;
     case SDLK_SPACE:
         if (!save_screenshot(_renderer.get(), "screenshot.bmp")) {

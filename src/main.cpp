@@ -1,5 +1,7 @@
 #include "asset_store.hpp"
+#include "camera.hpp"
 #include "my_app.hpp"
+#include "mymath.hpp"
 #include "sdl_app.hpp"
 
 #include <SDL.h>
@@ -48,10 +50,14 @@ int main(int argc, char** argv)
 	};
     // clang-format on
 
-    camera cam = {
-        3.5f, // x
-        3.5f, // y
-        M_PI / 4.f, // yaw
+    camera cam{
+        point2f{
+            3.5f, // x
+            3.5f, // y
+        },
+        0.f, // yaw
+        0.5f,
+        0.5f,
     };
 
     my_app app{std::move(renderer), std::move(assets), test_level, cam};

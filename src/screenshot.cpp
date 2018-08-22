@@ -1,32 +1,13 @@
 #include "screenshot.hpp"
 
+#include "mymath.hpp"
 #include "sdl_app.hpp"
-
-namespace {
-
-struct extent {
-    int w;
-    int h;
-};
-
-/// @returns {-1, -1} on error
-extent get_renderer_output_size(SDL_Renderer* renderer)
-{
-    int width = -1, height = -1;
-    if (SDL_GetRendererOutputSize(renderer, &width, &height) != 0) {
-        SDL_Log("SDL_GetRendererOutputSize failed: %s", SDL_GetError());
-        return extent{-1, -1};
-    }
-    return extent{width, height};
-}
-
-} // namespace
 
 namespace raycaster {
 
 bool save_screenshot(SDL_Renderer* renderer, const char* filename)
 {
-    auto renderer_size = get_renderer_output_size(renderer);
+    auto renderer_size = sdl::get_renderer_output_size(renderer);
     if (renderer_size.w == -1 && renderer_size.h == -1) {
         return false;
     }

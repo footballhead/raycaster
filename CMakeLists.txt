@@ -21,8 +21,10 @@ set(SOURCES
 
 set(HEADERS
 	src/asset_store.hpp
+	src/camera.hpp
 	src/color.hpp
 	src/my_app.hpp
+	src/mymath.hpp
 	src/screenshot.hpp
 	src/sdl_app.hpp
 	)

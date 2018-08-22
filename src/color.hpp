@@ -14,10 +14,8 @@ struct color {
     uint8_t b;
 };
 
-inline void set_render_draw_color(SDL_Renderer* renderer, const color& c)
-{
-    SDL_CHECK(SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 255) == 0);
-}
+constexpr color black_color{0, 0, 0};
+constexpr color white_color{255, 255, 255};
 
 constexpr color linear_interpolate(color a, color b, float t)
 {
@@ -77,3 +75,12 @@ constexpr color hue_to_rgb(float hue)
 }
 
 } // namespace raycaster
+
+namespace sdl {
+
+inline void set_render_draw_color(SDL_Renderer* renderer, raycaster::color const& c)
+{
+    SDL_CHECK(SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 255) == 0);
+}
+
+} // namespace sdl
