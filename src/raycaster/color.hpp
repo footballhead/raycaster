@@ -78,7 +78,8 @@ constexpr color hue_to_rgb(float hue)
 
 namespace sdl {
 
-inline void set_render_draw_color(SDL_Renderer* renderer, raycaster::color const& c)
+inline void set_render_draw_color(
+    SDL_Renderer* renderer, raycaster::color const& c)
 {
     SDL_CHECK(SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 255) == 0);
 }

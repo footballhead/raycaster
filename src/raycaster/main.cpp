@@ -1,8 +1,9 @@
 #include "asset_store.hpp"
 #include "camera.hpp"
 #include "my_app.hpp"
-#include "mymath.hpp"
 #include "sdl_app.hpp"
+
+#include <mymath/mymath.hpp>
 
 #include <SDL.h>
 
@@ -11,6 +12,7 @@
 #include <stdexcept>
 #include <vector>
 
+using namespace mymath;
 using namespace raycaster;
 
 int main(int argc, char** argv)
@@ -57,7 +59,7 @@ int main(int argc, char** argv)
         },
         0.f, // yaw
         0.5f, // near
-        4.f, // far 
+        4.f, // far
         0.5f, // right
     };
 

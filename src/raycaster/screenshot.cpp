@@ -1,13 +1,13 @@
 #include "screenshot.hpp"
 
-#include "mymath.hpp"
 #include "sdl_app.hpp"
+#include "sdl_mymath.hpp"
 
 namespace raycaster {
 
 bool save_screenshot(SDL_Renderer* renderer, const char* filename)
 {
-    auto renderer_size = sdl::get_renderer_output_size(renderer);
+    auto renderer_size = get_renderer_output_size(renderer);
     if (renderer_size.w == -1 && renderer_size.h == -1) {
         return false;
     }

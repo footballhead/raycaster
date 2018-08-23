@@ -3,8 +3,9 @@
 #include "asset_store.hpp"
 #include "camera.hpp"
 #include "input_buffer.hpp"
-#include "mymath.hpp"
 #include "sdl_app.hpp"
+
+#include <mymath/mymath.hpp>
 
 #include <cstdint>
 #include <vector>
@@ -12,7 +13,7 @@
 namespace raycaster {
 
 struct level {
-    extent2i bounds;
+    mymath::extent2i bounds;
     std::vector<uint8_t> data;
 };
 

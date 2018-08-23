@@ -1,7 +1,8 @@
 #pragma once
 
 #include "color.hpp"
-#include "mymath.hpp"
+
+#include <mymath/mymath.hpp>
 
 namespace raycaster {
 
@@ -10,23 +11,26 @@ namespace raycaster {
 /// FOV is `atan(near / right)`, so if near == right then FOV is 45 deg.
 class camera {
 public:
-    explicit camera(
-        point2f position, float yaw, float near, float far, float right);
+    explicit camera(mymath::point2f position, float yaw, float near, float far,
+        float right);
 
     void rotate(float yaw_delta);
 
-    void move(vector2f const& vec);
+    void move(mymath::vector2f const& vec);
 
-    point2f const& get_position() const;
+    mymath::point2f const& get_position() const;
     float get_yaw() const;
     float get_near() const;
     float get_far() const;
     float get_right() const;
+    float get_left() const;
     float get_fov() const;
     color const& get_fog_color() const;
 
+    mymath::line2f get_projection_plane() const;
+
 private:
-    point2f _position;
+    mymath::point2f _position;
     /// Camera rotation on the XY plane
     float _yaw; // (radians)
     /// The distance of the projection plane from the camera.

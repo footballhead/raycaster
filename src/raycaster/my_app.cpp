@@ -1,14 +1,18 @@
 #include "my_app.hpp"
 
 #include "color.hpp"
-#include "mymath.hpp"
 #include "screenshot.hpp"
 #include "sdl_app.hpp"
+#include "sdl_mymath.hpp"
+
+#include <mymath/mymath.hpp>
 
 #include <SDL.h>
 
 #include <cmath>
 #include <stdexcept>
+
+using namespace mymath;
 
 namespace {
 
@@ -122,8 +126,9 @@ void my_app::render()
     auto const fov = _camera.get_fov();
     auto const fog_color = _camera.get_fog_color();
     auto const max_distance = _camera.get_far();
+    auto const projection_plane = _camera.get_projection_plane();
 
-    auto const logical_size = sdl::get_renderer_logical_size(_renderer.get());
+    auto const logical_size = get_renderer_logical_size(_renderer.get());
     auto const half_width = logical_size.w / 2;
     auto const half_height = logical_size.h / 2;
 
@@ -158,6 +163,10 @@ void my_app::render()
 
     // Fire a ray for each column on the screen.
     for (int i = 0; i < logical_size.w; ++i) {
+        auto const width_percent = i / static_cast<float>(logical_size.w);
+        // auto const ray_point
+        //     = linear_interpolate(projection_plane, width_percent);
+
         auto const local_ray_radians
             = (i - half_width) / static_cast<float>(logical_size.w) * fov;
         auto const camera_ray_radians = local_ray_radians - _camera.get_yaw();
@@ -191,7 +200,7 @@ void my_app::render()
         } else {
             tex = _asset_store->get_asset(common_assets::stone_texture).get();
         }
-        auto texture_size = sdl::get_texture_size(tex);
+        auto texture_size = get_texture_size(tex);
 
         auto const fog_scale_factor = 0.75f;
         auto const fog_distance = max_distance * fog_scale_factor;
