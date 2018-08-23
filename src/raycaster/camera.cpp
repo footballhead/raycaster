@@ -4,6 +4,7 @@
 
 #include <cmath>
 
+using namespace mycolor;
 using namespace mymath;
 
 namespace raycaster {

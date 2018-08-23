@@ -1,4 +1,4 @@
 #pragma once
 
-#include "cartesian.hpp"
-#include "linear_algebra.hpp"
+#include <mymath/cartesian.hpp>
+#include <mymath/linear_algebra.hpp>

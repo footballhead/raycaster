@@ -1,9 +1,9 @@
 #include "asset_store.hpp"
 #include "camera.hpp"
 #include "my_app.hpp"
-#include "sdl_app.hpp"
 
 #include <mymath/mymath.hpp>
+#include <sdl_raii/sdl_app.hpp>
 
 #include <SDL.h>
 

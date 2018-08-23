@@ -1,5 +1,7 @@
 #include "input_buffer.hpp"
 
+#include <SDL.h>
+
 namespace raycaster {
 
 void input_buffer::poll_events()

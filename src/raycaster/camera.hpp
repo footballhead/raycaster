@@ -1,7 +1,6 @@
 #pragma once
 
-#include "color.hpp"
-
+#include <mycolor/mycolor.hpp>
 #include <mymath/mymath.hpp>
 
 namespace raycaster {
@@ -25,7 +24,7 @@ public:
     float get_right() const;
     float get_left() const;
     float get_fov() const;
-    color const& get_fog_color() const;
+    mycolor::color const& get_fog_color() const;
 
     mymath::line2f get_projection_plane() const;
 
@@ -41,7 +40,7 @@ private:
     float const _right;
     /// FOV is `atan(near / right)`
     float const _fov;
-    color const _fog_color;
+    mycolor::color const _fog_color;
 };
 
 } // namespace raycaster

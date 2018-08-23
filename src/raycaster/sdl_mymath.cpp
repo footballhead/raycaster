@@ -1,9 +1,11 @@
 #include "sdl_mymath.hpp"
 
+#include <mycolor/mycolor.hpp>
 #include <mymath/mymath.hpp>
 
-#include "sdl_app.hpp"
+#include <SDL.h>
 
+using namespace mycolor;
 using namespace mymath;
 
 namespace raycaster {
@@ -33,6 +35,11 @@ extent2i get_renderer_output_size(SDL_Renderer* renderer)
         return {-1, -1};
     }
     return {width, height};
+}
+
+bool set_render_draw_color(SDL_Renderer* renderer, color const& c)
+{
+    return SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 255) == 0;
 }
 
 } // namespace raycaster

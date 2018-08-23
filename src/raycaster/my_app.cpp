@@ -1,17 +1,18 @@
 #include "my_app.hpp"
 
-#include "color.hpp"
 #include "screenshot.hpp"
-#include "sdl_app.hpp"
 #include "sdl_mymath.hpp"
 
+#include <mycolor/mycolor.hpp>
 #include <mymath/mymath.hpp>
+#include <sdl_raii/sdl_app.hpp>
 
 #include <SDL.h>
 
 #include <cmath>
 #include <stdexcept>
 
+using namespace mycolor;
 using namespace mymath;
 
 namespace {
@@ -76,7 +77,7 @@ int my_app::exec()
         _input_buffer->poll_events();
         update();
 
-        sdl::set_render_draw_color(_renderer.get(), black_color);
+        SDL_CHECK(set_render_draw_color(_renderer.get(), black_color));
         SDL_CHECK(SDL_RenderClear(_renderer.get()) == 0);
         render();
         SDL_RenderPresent(_renderer.get());
@@ -139,7 +140,7 @@ void my_app::render()
             = max_distance / static_cast<float>(max_distance - 1);
         auto const interp = linear_interpolate(ceiling_color, fog_color,
             i / static_cast<float>(half_height) * t_scale);
-        sdl::set_render_draw_color(_renderer.get(), interp);
+        SDL_CHECK(set_render_draw_color(_renderer.get(), interp));
         SDL_CHECK(
             SDL_RenderDrawLine(_renderer.get(), 0, i, logical_size.w, i) == 0);
     }
@@ -151,7 +152,7 @@ void my_app::render()
             = max_distance / static_cast<float>(max_distance - 1);
         auto const interp = linear_interpolate(floor_color, fog_color,
             (half_height - i) / static_cast<float>(half_height) * t_scale);
-        sdl::set_render_draw_color(_renderer.get(), interp);
+        SDL_CHECK(set_render_draw_color(_renderer.get(), interp));
 
         auto const draw_y = i + half_height;
         SDL_CHECK(SDL_RenderDrawLine(
@@ -159,7 +160,7 @@ void my_app::render()
             == 0);
     }
 
-    sdl::set_render_draw_color(_renderer.get(), white_color);
+    SDL_CHECK(set_render_draw_color(_renderer.get(), white_color));
 
     // Fire a ray for each column on the screen.
     for (int i = 0; i < logical_size.w; ++i) {

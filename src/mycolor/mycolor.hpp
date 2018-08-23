@@ -1,12 +1,9 @@
 #pragma once
 
-#include "sdl_app.hpp"
-
-#include <SDL.h>
-
+#include <algorithm>
 #include <cstdint>
 
-namespace raycaster {
+namespace mycolor {
 
 struct color {
     uint8_t r;
@@ -17,13 +14,13 @@ struct color {
 constexpr color black_color{0, 0, 0};
 constexpr color white_color{255, 255, 255};
 
-constexpr color linear_interpolate(color a, color b, float t)
+constexpr color linear_interpolate(color const& a, color const& b, float t)
 {
     t = std::max(std::min(t, 1.f), 0.f);
     return {
-        static_cast<uint8_t>(a.r * (1.f - t) + b.r * t),
-        static_cast<uint8_t>(a.g * (1.f - t) + b.g * t),
-        static_cast<uint8_t>(a.b * (1.f - t) + b.b * t),
+        static_cast<uint8_t>(a.r - (a.r * t) + (b.r * t)),
+        static_cast<uint8_t>(a.g - (a.g * t) + (b.g * t)),
+        static_cast<uint8_t>(a.b - (a.b * t) + (b.b * t)),
     };
 }
 
@@ -74,14 +71,4 @@ constexpr color hue_to_rgb(float hue)
     }
 }
 
-} // namespace raycaster
-
-namespace sdl {
-
-inline void set_render_draw_color(
-    SDL_Renderer* renderer, raycaster::color const& c)
-{
-    SDL_CHECK(SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 255) == 0);
-}
-
-} // namespace sdl
+} // namespace mycolor

@@ -1,7 +1,8 @@
 #include "screenshot.hpp"
 
-#include "sdl_app.hpp"
 #include "sdl_mymath.hpp"
+
+#include <sdl_raii/sdl_app.hpp>
 
 namespace raycaster {
 

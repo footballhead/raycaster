@@ -3,9 +3,9 @@
 #include "asset_store.hpp"
 #include "camera.hpp"
 #include "input_buffer.hpp"
-#include "sdl_app.hpp"
 
 #include <mymath/mymath.hpp>
+#include <sdl_raii/sdl_app.hpp>
 
 #include <cstdint>
 #include <vector>
