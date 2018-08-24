@@ -15,11 +15,6 @@ template <typename T> struct vector2 {
     T mag;
 };
 
-template <typename T> vector2<T> operator-(vector2<T> vec)
-{
-    return {vec.dir, -vec.mag};
-}
-
 using vector2f = vector2<float>;
 
 //

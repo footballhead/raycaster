@@ -26,15 +26,16 @@ constexpr auto PI_OVER_2 = M_PI / 2.0;
 float find_collision(level const& lvl, point2f const& origin, float direction,
     float max_distance, point2f& out_result)
 {
+    auto const march = vector2f{direction, step_size};
+
+    auto accum = origin + march;
+
     auto distance = step_size;
     while (distance < max_distance) {
-        auto const march_x
-            = static_cast<float>(origin.x + cos(direction) * distance);
-        auto const march_y
-            = static_cast<float>(origin.y + sin(direction) * distance);
+        accum += march;
 
-        auto const int_x = static_cast<int>(march_x);
-        auto const int_y = static_cast<int>(march_y);
+        auto const int_x = static_cast<int>(accum.x);
+        auto const int_y = static_cast<int>(accum.y);
 
         if (int_x < 0 || int_x > lvl.bounds.w - 1 || int_y < 0
             || int_y > lvl.bounds.h - 1) {
@@ -43,7 +44,7 @@ float find_collision(level const& lvl, point2f const& origin, float direction,
 
         auto const index = int_y * lvl.bounds.w + int_x;
         if (lvl.data[index] > 0) {
-            out_result = point2f{march_x, march_y};
+            out_result = accum;
             return distance;
         }
 
@@ -171,7 +172,7 @@ void my_app::render()
             -_camera.get_fov(), _camera.get_fov(), width_percent);
 
         auto const local_ray_radians = interp_radians;
-        auto const camera_ray_radians = local_ray_radians - _camera.get_yaw();
+        auto const camera_ray_radians = _camera.get_yaw() - local_ray_radians;
 
         point2f collision{0.f, 0.f};
         auto distance = find_collision(_level, proj_point_interp,
