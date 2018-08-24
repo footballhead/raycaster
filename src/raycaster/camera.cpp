@@ -9,9 +9,9 @@ using namespace mymath;
 
 namespace raycaster {
 
-camera::camera(point2f position, float yaw, float near, float far, float right)
+camera::camera(point2f position, float rotation, float near, float far, float right)
 : _position{std::move(position)}
-, _yaw{yaw}
+, _yaw{rotation}
 , _near{near}
 , _far{far}
 , _right{right}
@@ -26,7 +26,7 @@ void camera::move(vector2f const& vec) { _position = _position + vec; }
 
 point2f const& camera::get_position() const { return _position; }
 
-float camera::get_yaw() const { return _yaw; }
+float camera::get_rotation() const { return _yaw; }
 
 float camera::get_near() const { return _near; }
 

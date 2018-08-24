@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     sdl::sdl_app sdl;
 
     const auto window_title = "Raycaster";
-    const SDL_Point window_bounds = {640, 480};
+    const SDL_Point window_bounds = {640, 400};
     const auto window = sdl::make_window(window_title, window_bounds);
 
     auto renderer = sdl::make_renderer(window.get());
@@ -57,7 +57,7 @@ int main(int argc, char** argv)
             3.5f, // x
             3.5f, // y
         },
-        0.f, // yaw
+        0.f, // rotation
         0.01f, // near
         4.f, // far
         0.01f, // right

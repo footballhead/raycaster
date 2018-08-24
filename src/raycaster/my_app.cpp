@@ -99,14 +99,14 @@ void my_app::update()
         return;
     }
 
-    auto const yaw_step = 0.01f;
-    auto const move_step = 0.01f;
+    auto const yaw_step = 0.005f;
+    auto const move_step = 0.005f;
 
     if (_input_buffer->is_pressed(SDL_SCANCODE_W)) {
-        _camera.move({_camera.get_yaw(), move_step});
+        _camera.move({_camera.get_rotation(), move_step});
     }
     if (_input_buffer->is_pressed(SDL_SCANCODE_S)) {
-        _camera.move({_camera.get_yaw(), -move_step});
+        _camera.move({_camera.get_rotation(), -move_step});
     }
     if (_input_buffer->is_pressed(SDL_SCANCODE_A)) {
         _camera.rotate(yaw_step);
@@ -168,11 +168,11 @@ void my_app::render()
         auto const width_percent = i / static_cast<float>(logical_size.w);
         auto const proj_point_interp
             = linear_interpolate(projection_plane, width_percent);
-        auto const interp_radians = linear_interpolate(
-            -_camera.get_fov(), _camera.get_fov(), width_percent);
 
-        auto const local_ray_radians = interp_radians;
-        auto const camera_ray_radians = _camera.get_yaw() - local_ray_radians;
+        auto const diff = proj_point_interp - _camera.get_position();
+        auto const camera_ray_radians = atan2(diff.y, diff.x);
+        auto const local_ray_radians
+            = _camera.get_rotation() - camera_ray_radians;
 
         point2f collision{0.f, 0.f};
         auto distance = find_collision(_level, proj_point_interp,

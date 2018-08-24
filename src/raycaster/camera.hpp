@@ -10,15 +10,15 @@ namespace raycaster {
 /// FOV is `atan(near / right)`, so if near == right then FOV is 45 deg.
 class camera {
 public:
-    explicit camera(mymath::point2f position, float yaw, float near, float far,
-        float right);
+    explicit camera(mymath::point2f position, float rotation, float near,
+        float far, float right);
 
     void rotate(float yaw_delta);
 
     void move(mymath::vector2f const& vec);
 
     mymath::point2f const& get_position() const;
-    float get_yaw() const;
+    float get_rotation() const;
     float get_near() const;
     float get_far() const;
     float get_right() const;

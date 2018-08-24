@@ -50,14 +50,14 @@ template <typename T> struct point2 {
     point2<T>& operator+=(vector2<T> const& rhs)
     {
         x += std::cos(rhs.dir) * rhs.mag;
-        y -= std::sin(rhs.dir) * rhs.mag;
+        y += std::sin(rhs.dir) * rhs.mag;
         return *this;
     }
 
     point2<T>& operator-=(vector2<T> const& rhs)
     {
         x -= std::cos(rhs.dir) * rhs.mag;
-        y += std::sin(rhs.dir) * rhs.mag;
+        y -= std::sin(rhs.dir) * rhs.mag;
         return *this;
     }
 
