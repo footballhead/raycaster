@@ -19,7 +19,7 @@ constexpr const T& clamp(const T& v, const T& lo, const T& hi)
 /// @param b The value when t=1
 /// @param t Value between [0, 1], used as the interpolation factor
 /// @return `a - (a * t) + (b * t)`
-template <typename T> inline T linear_interpolate(const T a, T b, float t)
+template <typename T> inline T linear_interpolate(const T& a, const T& b, float t)
 {
     t = clamp(t, 0.f, 1.f);
     return a - (a * t) + (b * t);

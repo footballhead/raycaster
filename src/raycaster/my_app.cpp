@@ -124,7 +124,6 @@ void my_app::update()
 
 void my_app::render()
 {
-    auto const fov = _camera.get_fov();
     auto const fog_color = _camera.get_fog_color();
     auto const max_distance = _camera.get_far();
     auto const projection_plane = _camera.get_projection_plane();
@@ -165,11 +164,11 @@ void my_app::render()
     // Fire a ray for each column on the screen.
     for (int i = 0; i < logical_size.w; ++i) {
         auto const width_percent = i / static_cast<float>(logical_size.w);
-        // auto const ray_point
-        //     = linear_interpolate(projection_plane, width_percent);
+        auto const proj_point_interp
+            = linear_interpolate(projection_plane, width_percent);
+        auto const local_ray_radians = linear_interpolate(
+            -_camera.get_fov(), _camera.get_fov(), width_percent);
 
-        auto const local_ray_radians
-            = (i - half_width) / static_cast<float>(logical_size.w) * fov;
         auto const camera_ray_radians = local_ray_radians - _camera.get_yaw();
 
         point2f collision{0.f, 0.f};

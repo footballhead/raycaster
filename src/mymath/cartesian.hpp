@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mymath/linear_algebra.hpp>
+
 #include <cmath>
 
 namespace mymath {
@@ -28,20 +30,73 @@ template <typename T> struct point2 {
     T x;
     T y;
 
-    point2<T>& operator+=(vector2<T> const& v)
+    //
+    // point operations
+    //
+
+    point2<T>& operator+=(point2<T> const& rhs)
     {
-        x += std::cos(v.dir) * v.mag;
-        y -= std::sin(v.dir) * v.mag;
+        x += rhs.x;
+        y += rhs.y;
         return *this;
     }
 
-    point2<T>& operator-=(vector2<T> const& v)
+    point2<T>& operator-=(point2<T> const& rhs)
     {
-        x -= std::cos(v.dir) * v.mag;
-        y == std::sin(v.dir) * v.mag;
+        x -= rhs.x;
+        y -= rhs.y;
+        return *this;
+    }
+
+    //
+    // vector operations
+    //
+
+    point2<T>& operator+=(vector2<T> const& rhs)
+    {
+        x += std::cos(rhs.dir) * rhs.mag;
+        y -= std::sin(rhs.dir) * rhs.mag;
+        return *this;
+    }
+
+    point2<T>& operator-=(vector2<T> const& rhs)
+    {
+        x -= std::cos(rhs.dir) * rhs.mag;
+        y += std::sin(rhs.dir) * rhs.mag;
+        return *this;
+    }
+
+    //
+    // scalar operations
+    //
+
+    point2<T>& operator*=(float rhs)
+    {
+        x *= rhs;
+        y *= rhs;
         return *this;
     }
 };
+
+//
+// point-point operations
+//
+
+template <typename T> point2<T> operator+(point2<T> lhs, point2<T> const& rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+
+template <typename T> point2<T> operator-(point2<T> lhs, point2<T> const& rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+
+//
+// point-vector operations
+//
 
 template <typename T> point2<T> operator+(point2<T> lhs, vector2<T> const& rhs)
 {
@@ -55,6 +110,16 @@ template <typename T> point2<T> operator-(point2<T> lhs, vector2<T> const& rhs)
     return lhs;
 }
 
+//
+// point-scalar operations
+//
+
+template <typename T> point2<T> operator*(point2<T> lhs, float rhs)
+{
+    lhs *= rhs;
+    return lhs;
+}
+
 using point2f = point2<float>;
 
 //
@@ -65,6 +130,12 @@ template <typename T> struct line2 {
     point2<T> start;
     point2<T> end;
 };
+
+template <typename T>
+point2<T> linear_interpolate(line2<T> const& line, float t)
+{
+    return linear_interpolate(line.start, line.end, t);
+}
 
 using line2f = line2<float>;
 

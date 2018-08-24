@@ -15,7 +15,7 @@ camera::camera(point2f position, float yaw, float near, float far, float right)
 , _near{near}
 , _far{far}
 , _right{right}
-, _fov{2 * std::atan(near / right)}
+, _fov{std::atan(near / right)}
 , _fog_color{black_color}
 {
 }
