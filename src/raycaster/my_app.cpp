@@ -19,7 +19,8 @@ namespace {
 
 using namespace raycaster;
 
-constexpr auto step_size = 1.f / 32.f;
+constexpr auto step_size = 1.f / 64.f;
+constexpr auto PI_OVER_2 = M_PI / 2.0;
 
 /// @returns The distance, >= 0 if collision (sets out_result)
 float find_collision(level const& lvl, point2f const& origin, float direction,
@@ -166,13 +167,14 @@ void my_app::render()
         auto const width_percent = i / static_cast<float>(logical_size.w);
         auto const proj_point_interp
             = linear_interpolate(projection_plane, width_percent);
-        auto const local_ray_radians = linear_interpolate(
+        auto const interp_radians = linear_interpolate(
             -_camera.get_fov(), _camera.get_fov(), width_percent);
 
+        auto const local_ray_radians = interp_radians;
         auto const camera_ray_radians = local_ray_radians - _camera.get_yaw();
 
         point2f collision{0.f, 0.f};
-        auto distance = find_collision(_level, _camera.get_position(),
+        auto distance = find_collision(_level, proj_point_interp,
             camera_ray_radians, max_distance, collision);
 
         // No collision means don't draw anything. The fog effect will be taken
@@ -181,16 +183,17 @@ void my_app::render()
             continue;
         }
 
-        // "Fix" fish eye distortion by changing distance from euclidean to
-        // pseudo-plane projected using maths.
-        distance *= sin(M_PI / 2.f - fabs(local_ray_radians));
+        // Fix fish eye distortion by changing distance from euclidean to
+        // projection plane using basic trig.
+        auto const projected_distance
+            = distance * sin(PI_OVER_2 - std::abs(local_ray_radians));
 
         SDL_Point const point{
             static_cast<int>(collision.x), static_cast<int>(collision.y)};
 
         auto const u = fabs(collision.x - point.x);
         auto const v = fabs(collision.y - point.y);
-        auto const tolerance = 0.03125f; // TODO set to step size?
+        auto const tolerance = step_size; // TODO set to step size?
         auto const ray_u = u < tolerance || u > (1.f - tolerance) ? v : u;
 
         SDL_Texture* tex = nullptr;
@@ -205,11 +208,12 @@ void my_app::render()
         auto const fog_scale_factor = 0.75f;
         auto const fog_distance = max_distance * fog_scale_factor;
         auto const interp = linear_interpolate(
-            white_color, fog_color, distance / fog_distance);
+            white_color, fog_color, projected_distance / fog_distance);
         SDL_CHECK(
             SDL_SetTextureColorMod(tex, interp.r, interp.g, interp.b) == 0);
 
-        auto const wall_size = static_cast<int>(half_height / distance);
+        auto const wall_size
+            = static_cast<int>(half_height / projected_distance);
 
         auto const image_column = static_cast<int>(ray_u * texture_size.w);
         SDL_Rect src{image_column, 0, 1, texture_size.h};

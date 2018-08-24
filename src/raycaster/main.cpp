@@ -58,9 +58,9 @@ int main(int argc, char** argv)
             3.5f, // y
         },
         0.f, // yaw
-        0.5f, // near
+        0.01f, // near
         4.f, // far
-        0.5f, // right
+        0.01f, // right
     };
 
     auto input = std::make_unique<input_buffer>();
