@@ -5,12 +5,16 @@
 ## Requirements
 
  * C++14 compiler
- * SDL 2.0.8
- * CMake 3.11
+ * SDL2
+ * CMake 3.10
 
 On macOS, SDL and CMake can be installed through Homebrew:
 
     brew install sdl2 cmake
+
+On Ubuntu:
+
+    sudo apt install cmake libsdl2-dev g++ make
 
 ## Building
 
