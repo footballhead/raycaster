@@ -11,6 +11,15 @@ namespace {
 
 template <typename T> int sgn(T val) { return val >= 0 ? 1 : -1; }
 
+SDL_Point abs(SDL_Point const& p) { return {std::abs(p.x), std::abs(p.y)}; }
+
+float slope(SDL_Point const& p) { return p.y / static_cast<float>(p.x); }
+
+float slope_inverse(SDL_Point const& p)
+{
+    return p.x / static_cast<float>(p.y);
+}
+
 SDL_Point get_renderer_logical_size(SDL_Renderer* ren)
 {
     SDL_Point size{0, 0};
@@ -57,37 +66,28 @@ void draw_line(SDL_Renderer* ren, SDL_Point const& src, SDL_Point const& dst)
 {
     auto const delta = dst - src;
 
-    auto x_inc = 0.f;
-    auto y_inc = 0.f;
-
-    if (delta.x == 0) {
-        x_inc = 0.f;
-        y_inc = 1.f;
-    } else if (delta.y == 0) {
-        x_inc = 1.f;
-        y_inc = 0.f;
-    } else {
-        if (std::abs(delta.y) < std::abs(delta.x)) {
-            auto const slope = std::abs(delta.y / static_cast<float>(delta.x));
-            x_inc = 1.f;
-            y_inc = slope;
-        } else {
-            auto const inverse_slope
-                = std::abs(delta.x / static_cast<float>(delta.y));
-            x_inc = inverse_slope;
-            y_inc = 1.f;
-        }
+    // Anticipate division by 0 and short circuit
+    auto const zero_vector = SDL_Point{0, 0};
+    if (delta == zero_vector) {
+        draw_point(ren, dst);
+        return;
     }
 
-    x_inc *= sgn(delta.x);
-    y_inc *= sgn(delta.y);
+    // We can do all the math in absolutes then apply the sign later to get the
+    // right result! This greatly simplfies the code
+    auto const abs_delta = abs(delta);
+    auto const use_unit_x = abs_delta.y < abs_delta.x;
+
+    auto const x_inc
+        = (use_unit_x ? 1.f : slope_inverse(abs_delta)) * sgn(delta.x);
+    auto const y_inc = (use_unit_x ? slope(abs_delta) : 1.f) * sgn(delta.y);
 
     // Put an arbitrary limit in case this goes into infinite loop
     auto const debug_limit = 320;
     for (int i = 0; i < debug_limit; ++i) {
         // The rounding is key to ensuring this algo halts!
-        auto const accum = round_to_point(x_inc * i, y_inc * i);
-        auto const interp = src + accum;
+        auto const iterated_step = round_to_point(x_inc * i, y_inc * i);
+        auto const interp = src + iterated_step;
         draw_point(ren, interp);
 
         if (interp == dst) {
