@@ -4,7 +4,12 @@
 
 #include <SDL.h>
 
+#include <cmath>
+#include <iostream>
+
 namespace {
+
+template <typename T> int sgn(T val) { return val >= 0 ? 1 : -1; }
 
 SDL_Point get_renderer_logical_size(SDL_Renderer* ren)
 {
@@ -13,14 +18,81 @@ SDL_Point get_renderer_logical_size(SDL_Renderer* ren)
     return size;
 }
 
+std::ostream& operator<<(std::ostream& os, SDL_Point const& p)
+{
+    return os << '{' << p.x << '.' << p.y << '}';
+}
+
 SDL_Point operator/(SDL_Point const& a, int scalar)
 {
     return {a.x / scalar, a.y / scalar};
 }
 
-void draw_line(SDL_Renderer* ren, SDL_Point const& a, SDL_Point const& b)
+SDL_Point operator+(SDL_Point const& lhs, SDL_Point const& rhs)
 {
-    SDL_RenderDrawLine(ren, a.x, a.y, b.x, b.y);
+    return {lhs.x + rhs.x, lhs.y + rhs.y};
+}
+
+SDL_Point operator-(SDL_Point const& lhs, SDL_Point const& rhs)
+{
+    return {lhs.x - rhs.x, lhs.y - rhs.y};
+}
+
+bool operator==(SDL_Point const& lhs, SDL_Point const& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+
+SDL_Point round_to_point(float x, float y)
+{
+    return {static_cast<int>(std::round(x)), static_cast<int>(std::round(y))};
+}
+
+void draw_point(SDL_Renderer* ren, SDL_Point const& p)
+{
+    SDL_RenderDrawPoint(ren, p.x, p.y);
+}
+
+void draw_line(SDL_Renderer* ren, SDL_Point const& src, SDL_Point const& dst)
+{
+    auto const delta = dst - src;
+
+    auto x_inc = 0.f;
+    auto y_inc = 0.f;
+
+    if (delta.x == 0) {
+        x_inc = 0.f;
+        y_inc = 1.f;
+    } else if (delta.y == 0) {
+        x_inc = 1.f;
+        y_inc = 0.f;
+    } else {
+        if (std::abs(delta.y) < std::abs(delta.x)) {
+            auto const slope = std::abs(delta.y / static_cast<float>(delta.x));
+            x_inc = 1.f;
+            y_inc = slope;
+        } else {
+            auto const inverse_slope
+                = std::abs(delta.x / static_cast<float>(delta.y));
+            x_inc = inverse_slope;
+            y_inc = 1.f;
+        }
+    }
+
+    x_inc *= sgn(delta.x);
+    y_inc *= sgn(delta.y);
+
+    // Put an arbitrary limit in case this goes into infinite loop
+    auto const debug_limit = 320;
+    for (int i = 0; i < debug_limit; ++i) {
+        auto const accum = round_to_point(x_inc * i, y_inc * i);
+        auto const interp = src + accum;
+        draw_point(ren, interp);
+
+        if (interp == dst) {
+            break;
+        }
+    }
 }
 
 } // namespace
