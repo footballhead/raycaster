@@ -110,3 +110,27 @@ target_link_libraries(raycaster
 	sdl_application
 	sdl_raii
 	)
+
+#
+# line_drawer
+#
+
+set(LINE_DRAWER_SOURCES
+	src/line_drawer/main.cpp
+	src/line_drawer/line_drawer_app.cpp
+	)
+
+set(LINE_DRAWER_HEADERS
+	src/line_drawer/line_drawer_app.hpp
+	)
+
+add_executable(line_drawer ${LINE_DRAWER_SOURCES} ${LINE_DRAWER_HEADERS})
+target_include_directories(line_drawer
+	PRIVATE
+		${SDL2_INCLUDE_DIRS}
+	)
+target_link_libraries(line_drawer
+	${SDL2_LIBRARIES}
+	sdl_application
+	sdl_raii
+	)
