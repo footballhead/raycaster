@@ -5,7 +5,7 @@
 #include "input_buffer.hpp"
 
 #include <mymath/mymath.hpp>
-#include <sdl_raii/sdl_app.hpp>
+#include <sdl_raii/sdl_raii.hpp>
 
 #include <cstdint>
 #include <vector>

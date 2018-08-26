@@ -38,11 +38,11 @@ target_include_directories(mymath INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 #
 
 set(SDL_RAII_SOURCES
-	src/sdl_raii/sdl_app.cpp
+	src/sdl_raii/sdl_init.cpp
 	)
 
 set(SDL_RAII_HEADERS
-	src/sdl_raii/sdl_app.hpp
+	src/sdl_raii/sdl_init.hpp
 	src/sdl_raii/sdl_assert.hpp
 	src/sdl_raii/sdl_raii.hpp
 	src/sdl_raii/sdl_wrappers.hpp

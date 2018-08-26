@@ -1,4 +1,4 @@
-#include "sdl_app.hpp"
+#include <sdl_raii/sdl_init.hpp>
 
 #include <sdl_raii/sdl_assert.hpp>
 
@@ -16,7 +16,7 @@ unsigned& get_init_reference_count()
 
 namespace sdl {
 
-sdl_app::sdl_app()
+sdl_init::sdl_init()
 {
     if (get_init_reference_count() == 0) {
         SDL_CHECK(SDL_Init(SDL_INIT_EVERYTHING) == 0);
@@ -24,7 +24,7 @@ sdl_app::sdl_app()
     ++get_init_reference_count();
 }
 
-sdl_app::~sdl_app()
+sdl_init::~sdl_init()
 {
     --get_init_reference_count();
     if (get_init_reference_count() == 0) {

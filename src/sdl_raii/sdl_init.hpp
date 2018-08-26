@@ -4,18 +4,14 @@
 
 namespace sdl {
 
-//
-// sdl_app
-//
-
 /// RAII wrapper around static SDL initialization.
-class sdl_app {
+class sdl_init {
 public:
     /// Initialize SDL (if not done already)
-    sdl_app();
+    sdl_init();
 
     /// Shut down SDL (if no one else is using it)
-    ~sdl_app();
+    ~sdl_init();
 };
 
 } // namespace sdl

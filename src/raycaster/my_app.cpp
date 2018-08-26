@@ -5,7 +5,7 @@
 
 #include <mycolor/mycolor.hpp>
 #include <mymath/mymath.hpp>
-#include <sdl_raii/sdl_app.hpp>
+#include <sdl_raii/sdl_raii.hpp>
 
 #include <SDL.h>
 

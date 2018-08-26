@@ -3,7 +3,7 @@
 #include "my_app.hpp"
 
 #include <mymath/mymath.hpp>
-#include <sdl_raii/sdl_app.hpp>
+#include <sdl_raii/sdl_raii.hpp>
 
 #include <SDL.h>
 
@@ -17,7 +17,7 @@ using namespace raycaster;
 
 int main(int argc, char** argv)
 {
-    sdl::sdl_app sdl;
+    sdl::sdl_init sdl;
 
     const auto window_title = "Raycaster";
     const SDL_Point window_bounds = {1280, 800};
