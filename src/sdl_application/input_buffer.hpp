@@ -16,6 +16,8 @@ public:
 
     bool is_quit() const;
 
+    SDL_Point get_mouse_position() const;
+
 private:
     std::array<bool, SDL_NUM_SCANCODES> _key_pressed{};
     bool _quit;

@@ -36,4 +36,11 @@ bool input_buffer::is_hit(SDL_Scancode scancode)
 
 bool input_buffer::is_quit() const { return _quit; }
 
+SDL_Point input_buffer::get_mouse_position() const
+{
+    SDL_Point mouse_pos{0, 0};
+    SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y);
+    return mouse_pos;
+}
+
 } // namespace sdl_app
