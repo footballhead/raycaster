@@ -3,7 +3,7 @@
 #include <string>
 #include <unordered_map>
 
-#include <sdl_raii/sdl_app.hpp>
+#include <sdl_raii/sdl_raii.hpp>
 
 namespace raycaster {
 

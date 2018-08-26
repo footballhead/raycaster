@@ -19,14 +19,19 @@ namespace {
 
 using namespace raycaster;
 
-constexpr auto step_size = 1.f / 64.f;
+constexpr auto step_size = 1.f / 128.f;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
 /// @returns The distance, >= 0 if collision (sets out_result)
 float find_collision(level const& lvl, point2f const& origin, float direction,
     float max_distance, point2f& out_result)
 {
-    auto const march = vector2f{direction, step_size};
+    auto const unit_vector = vector2f{direction, step_size};
+
+    // Convert vector into a point (to avoid trig)
+    auto const vector_as_point = point2f{0.f, 0.f} + unit_vector;
+    auto const& march = vector_as_point;
+    // auto const slope = vector_as_point.y / vector_as_point.x;
 
     auto accum = origin + march;
 
@@ -99,8 +104,8 @@ void my_app::update()
         return;
     }
 
-    auto const yaw_step = 0.005f;
-    auto const move_step = 0.005f;
+    auto const yaw_step = 0.05f;
+    auto const move_step = 0.05f;
 
     if (_input_buffer->is_pressed(SDL_SCANCODE_W)) {
         _camera.move({_camera.get_rotation(), move_step});

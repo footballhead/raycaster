@@ -2,7 +2,7 @@
 
 #include "sdl_mymath.hpp"
 
-#include <sdl_raii/sdl_app.hpp>
+#include <sdl_raii/sdl_raii.hpp>
 
 namespace raycaster {
 

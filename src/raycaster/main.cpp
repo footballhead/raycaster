@@ -20,16 +20,16 @@ int main(int argc, char** argv)
     sdl::sdl_app sdl;
 
     const auto window_title = "Raycaster";
-    const SDL_Point window_bounds = {640, 400};
+    const SDL_Point window_bounds = {1280, 800};
     const auto window = sdl::make_window(window_title, window_bounds);
 
     auto renderer = sdl::make_renderer(window.get());
 
-    auto assets = std::make_unique<asset_store>(renderer, "assets");
+    auto assets = std::make_unique<asset_store>(renderer, "../assets");
     assets->get_asset(common_assets::wall_texture);
     assets->get_asset(common_assets::stone_texture);
 
-    auto scaling_factor = 4;
+    auto scaling_factor = 1;
     SDL_CHECK(
         SDL_RenderSetLogicalSize(renderer.get(),
             window_bounds.x / scaling_factor, window_bounds.y / scaling_factor)

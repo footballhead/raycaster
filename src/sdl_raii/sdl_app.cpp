@@ -1,8 +1,8 @@
 #include "sdl_app.hpp"
 
-#include <SDL.h>
+#include <sdl_raii/sdl_assert.hpp>
 
-#include <stdexcept>
+#include <SDL.h>
 
 namespace sdl {
 
@@ -11,9 +11,7 @@ unsigned sdl_app::m_init_ref = 0;
 sdl_app::sdl_app()
 {
     if (m_init_ref == 0) {
-        if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-            throw std::runtime_error{SDL_GetError()};
-        }
+        SDL_CHECK(SDL_Init(SDL_INIT_EVERYTHING) == 0);
     }
     ++m_init_ref;
 }

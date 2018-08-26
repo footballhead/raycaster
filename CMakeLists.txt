@@ -43,13 +43,15 @@ set(SDL_RAII_SOURCES
 
 set(SDL_RAII_HEADERS
 	src/sdl_raii/sdl_app.hpp
+	src/sdl_raii/sdl_assert.hpp
+	src/sdl_raii/sdl_raii.hpp
+	src/sdl_raii/sdl_wrappers.hpp
 	)
 
 add_library(sdl_raii STATIC ${SDL_RAII_SOURCES} ${SDL_RAII_HEADERS})
 target_include_directories(sdl_raii
-	INTERFACE
-		${CMAKE_CURRENT_SOURCE_DIR}/src
 	PUBLIC
+		${CMAKE_CURRENT_SOURCE_DIR}/src
 		${SDL2_INCLUDE_DIRS}
 	)
 
