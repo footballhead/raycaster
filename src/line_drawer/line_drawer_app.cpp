@@ -85,6 +85,7 @@ void draw_line(SDL_Renderer* ren, SDL_Point const& src, SDL_Point const& dst)
     // Put an arbitrary limit in case this goes into infinite loop
     auto const debug_limit = 320;
     for (int i = 0; i < debug_limit; ++i) {
+        // The rounding is key to ensuring this algo halts!
         auto const accum = round_to_point(x_inc * i, y_inc * i);
         auto const interp = src + accum;
         draw_point(ren, interp);
