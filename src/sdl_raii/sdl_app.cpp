@@ -4,22 +4,30 @@
 
 #include <SDL.h>
 
-namespace sdl {
+namespace {
 
-unsigned sdl_app::m_init_ref = 0;
+unsigned& get_init_reference_count()
+{
+    static unsigned ref_count = 0;
+    return ref_count;
+}
+
+} // namespace
+
+namespace sdl {
 
 sdl_app::sdl_app()
 {
-    if (m_init_ref == 0) {
+    if (get_init_reference_count() == 0) {
         SDL_CHECK(SDL_Init(SDL_INIT_EVERYTHING) == 0);
     }
-    ++m_init_ref;
+    ++get_init_reference_count();
 }
 
 sdl_app::~sdl_app()
 {
-    --m_init_ref;
-    if (m_init_ref == 0) {
+    --get_init_reference_count();
+    if (get_init_reference_count() == 0) {
         SDL_Quit();
     }
 }

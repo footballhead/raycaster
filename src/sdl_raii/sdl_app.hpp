@@ -16,9 +16,6 @@ public:
 
     /// Shut down SDL (if no one else is using it)
     ~sdl_app();
-
-private:
-    static unsigned m_init_ref;
 };
 
 } // namespace sdl
