@@ -17,39 +17,39 @@ using namespace raycaster;
 
 int main(int argc, char** argv)
 {
-    sdl::sdl_init sdl;
+    auto sdl = std::make_shared<sdl::sdl_init>();
 
-    const auto window_title = "Raycaster";
-    const SDL_Point window_bounds = {1280, 800};
-    const auto window = sdl::make_window(window_title, window_bounds);
+    auto const window_title = "Raycaster";
+    SDL_Point const window_bounds{1280, 800};
+    auto window = sdl::make_window(window_title, window_bounds);
 
-    auto renderer = sdl::make_renderer(window.get());
+    auto renderer = sdl::shared_renderer{sdl::make_renderer(window.get())};
 
     auto assets = std::make_unique<asset_store>(renderer, "../assets");
     assets->get_asset(common_assets::wall_texture);
     assets->get_asset(common_assets::stone_texture);
 
-    auto scaling_factor = 1;
+    auto const scaling_factor = 1;
     SDL_CHECK(
         SDL_RenderSetLogicalSize(renderer.get(),
             window_bounds.x / scaling_factor, window_bounds.y / scaling_factor)
         == 0);
 
     // clang-format off
-	level test_level = {
-		8,	// width
-		8,	// height
-		{	// data
-			1, 1, 1, 1, 1, 1, 1, 1,
-			1, 0, 2, 0, 0, 0, 0, 1,
-			1, 0, 0, 0, 0, 2, 0, 1,
-			1, 0, 0, 0, 0, 2, 0, 1,
-			1, 0, 0, 0, 0, 0, 0, 1,
-			1, 0, 0, 0, 2, 2, 2, 1,
-			1, 2, 0, 0, 0, 0, 0, 1,
-			1, 1, 1, 1, 1, 1, 1, 1,
-		},
-	};
+    level test_level = {
+        8, // width
+        8, // height
+        {  // data
+            1, 1, 1, 1, 1, 1, 1, 1,
+            1, 0, 2, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 0, 2, 0, 1,
+            1, 0, 0, 0, 0, 2, 0, 1,
+            1, 0, 0, 0, 0, 0, 0, 1,
+            1, 0, 0, 0, 2, 2, 2, 1,
+            1, 2, 0, 0, 0, 0, 0, 1,
+            1, 1, 1, 1, 1, 1, 1, 1,
+        },
+    };
     // clang-format on
 
     camera cam{
@@ -63,10 +63,10 @@ int main(int argc, char** argv)
         0.01f, // right
     };
 
-    auto input = std::make_unique<input_buffer>();
+    auto input = std::make_unique<sdl_app::input_buffer>();
 
-    my_app app{std::move(renderer), std::move(assets), std::move(input),
-        test_level, cam};
+    my_app app{std::move(sdl), std::move(window), std::move(renderer),
+        std::move(input), std::move(assets), test_level, cam};
     try {
         app.exec();
     } catch (const std::exception& e) {

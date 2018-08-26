@@ -1,8 +1,8 @@
-#include "input_buffer.hpp"
+#include <sdl_application/input_buffer.hpp>
 
 #include <SDL.h>
 
-namespace raycaster {
+namespace sdl_app {
 
 void input_buffer::poll_events()
 {
@@ -36,4 +36,4 @@ bool input_buffer::is_hit(SDL_Scancode scancode)
 
 bool input_buffer::is_quit() const { return _quit; }
 
-} // namespace raycaster
+} // namespace sdl_app

@@ -13,7 +13,7 @@ sdl::texture load_image(SDL_Renderer* renderer, std::string const& path)
 
 namespace raycaster {
 
-asset_store::asset_store(sdl::renderer renderer, std::string base_dir)
+asset_store::asset_store(sdl::shared_renderer renderer, std::string base_dir)
 : _renderer{std::move(renderer)}
 , _base_dir{std::move(base_dir)}
 {

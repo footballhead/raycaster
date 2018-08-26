@@ -10,14 +10,14 @@ namespace raycaster {
 /// Manages asset lifetime.
 class asset_store {
 public:
-    explicit asset_store(sdl::renderer renderer, std::string base_dir);
+    explicit asset_store(sdl::shared_renderer renderer, std::string base_dir);
 
     sdl::texture const& get_asset(std::string const& path);
 
 private:
     using asset_map = std::unordered_map<std::string, sdl::texture>;
 
-    sdl::renderer _renderer;
+    sdl::shared_renderer _renderer;
     std::string _base_dir;
     asset_map _asset_map;
 };

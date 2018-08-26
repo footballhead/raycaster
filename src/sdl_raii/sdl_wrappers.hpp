@@ -30,8 +30,10 @@ struct surface_deleter {
 } // namespace detail
 
 using window = std::unique_ptr<SDL_Window, detail::window_deleter>;
+using shared_window = std::shared_ptr<SDL_Window>;
 
-using renderer = std::shared_ptr<SDL_Renderer>;
+using renderer = std::unique_ptr<SDL_Renderer, detail::renderer_deleter>;
+using shared_renderer = std::shared_ptr<SDL_Renderer>;
 
 using texture = std::unique_ptr<SDL_Texture, detail::texture_deleter>;
 

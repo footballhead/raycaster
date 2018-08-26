@@ -14,6 +14,7 @@
 
 using namespace mycolor;
 using namespace mymath;
+using namespace sdl_app;
 
 namespace {
 
@@ -63,65 +64,45 @@ float find_collision(level const& lvl, point2f const& origin, float direction,
 
 namespace raycaster {
 
-my_app::my_app(sdl::renderer renderer, std::unique_ptr<asset_store> assets,
-    std::unique_ptr<input_buffer> input, level lvl, camera cam)
-: _renderer{std::move(renderer)}
+my_app::my_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
+    sdl::shared_renderer renderer, std::unique_ptr<input_buffer> input,
+    std::unique_ptr<asset_store> assets, level lvl, camera cam)
+: sdl_application(
+      std::move(sdl), std::move(window), std::move(renderer), std::move(input))
 , _asset_store{std::move(assets)}
-, _input_buffer{std::move(input)}
 , _level{lvl}
 , _camera{cam}
 {
 }
 
-int my_app::exec()
-{
-    if (_running) {
-        throw std::runtime_error("Already running");
-    }
-
-    _running = true;
-    while (_running) {
-        _input_buffer->poll_events();
-        update();
-
-        SDL_CHECK(set_render_draw_color(_renderer.get(), black_color));
-        SDL_CHECK(SDL_RenderClear(_renderer.get()) == 0);
-        render();
-        SDL_RenderPresent(_renderer.get());
-
-        ++_ticks;
-        SDL_Delay(1);
-    }
-
-    return 0;
-}
-
 void my_app::update()
 {
-    if (_input_buffer->is_quit()
-        || _input_buffer->is_pressed(SDL_SCANCODE_ESCAPE)) {
-        _running = false;
+    auto& input_buffer = get_input_buffer();
+
+    if (input_buffer.is_quit()
+        || input_buffer.is_pressed(SDL_SCANCODE_ESCAPE)) {
+        quit();
         return;
     }
 
     auto const yaw_step = 0.05f;
     auto const move_step = 0.05f;
 
-    if (_input_buffer->is_pressed(SDL_SCANCODE_W)) {
+    if (input_buffer.is_pressed(SDL_SCANCODE_W)) {
         _camera.move({_camera.get_rotation(), move_step});
     }
-    if (_input_buffer->is_pressed(SDL_SCANCODE_S)) {
+    if (input_buffer.is_pressed(SDL_SCANCODE_S)) {
         _camera.move({_camera.get_rotation(), -move_step});
     }
-    if (_input_buffer->is_pressed(SDL_SCANCODE_A)) {
+    if (input_buffer.is_pressed(SDL_SCANCODE_A)) {
         _camera.rotate(yaw_step);
     }
-    if (_input_buffer->is_pressed(SDL_SCANCODE_D)) {
+    if (input_buffer.is_pressed(SDL_SCANCODE_D)) {
         _camera.rotate(-yaw_step);
     }
 
-    if (_input_buffer->is_hit(SDL_SCANCODE_SPACE)) {
-        if (!save_screenshot(_renderer.get(), "screenshot.bmp")) {
+    if (input_buffer.is_hit(SDL_SCANCODE_SPACE)) {
+        if (!save_screenshot(get_renderer(), "screenshot.bmp")) {
             SDL_Log("save_screenshot failed!");
         } else {
             SDL_Log("saved screenshot to screenshot.bmp");
@@ -131,11 +112,13 @@ void my_app::update()
 
 void my_app::render()
 {
+    auto renderer = get_renderer();
+
     auto const fog_color = _camera.get_fog_color();
     auto const max_distance = _camera.get_far();
     auto const projection_plane = _camera.get_projection_plane();
 
-    auto const logical_size = get_renderer_logical_size(_renderer.get());
+    auto const logical_size = get_renderer_logical_size(renderer);
     auto const half_width = logical_size.w / 2;
     auto const half_height = logical_size.h / 2;
 
@@ -146,9 +129,8 @@ void my_app::render()
             = max_distance / static_cast<float>(max_distance - 1);
         auto const interp = linear_interpolate(ceiling_color, fog_color,
             i / static_cast<float>(half_height) * t_scale);
-        SDL_CHECK(set_render_draw_color(_renderer.get(), interp));
-        SDL_CHECK(
-            SDL_RenderDrawLine(_renderer.get(), 0, i, logical_size.w, i) == 0);
+        SDL_CHECK(set_render_draw_color(renderer, interp));
+        SDL_CHECK(SDL_RenderDrawLine(renderer, 0, i, logical_size.w, i) == 0);
     }
 
     // draw floor (bottom-up)
@@ -158,15 +140,15 @@ void my_app::render()
             = max_distance / static_cast<float>(max_distance - 1);
         auto const interp = linear_interpolate(floor_color, fog_color,
             (half_height - i) / static_cast<float>(half_height) * t_scale);
-        SDL_CHECK(set_render_draw_color(_renderer.get(), interp));
+        SDL_CHECK(set_render_draw_color(renderer, interp));
 
         auto const draw_y = i + half_height;
-        SDL_CHECK(SDL_RenderDrawLine(
-                      _renderer.get(), 0, draw_y, logical_size.w, draw_y)
+        SDL_CHECK(
+            SDL_RenderDrawLine(renderer, 0, draw_y, logical_size.w, draw_y)
             == 0);
     }
 
-    SDL_CHECK(set_render_draw_color(_renderer.get(), white_color));
+    SDL_CHECK(set_render_draw_color(renderer, white_color));
 
     // Fire a ray for each column on the screen.
     for (int i = 0; i < logical_size.w; ++i) {
@@ -225,7 +207,7 @@ void my_app::render()
         SDL_Rect src{image_column, 0, 1, texture_size.h};
         SDL_Rect dst{i, half_height - wall_size, 1, wall_size * 2};
 
-        SDL_CHECK(SDL_RenderCopy(_renderer.get(), tex, &src, &dst) == 0);
+        SDL_CHECK(SDL_RenderCopy(renderer, tex, &src, &dst) == 0);
     }
 }
 

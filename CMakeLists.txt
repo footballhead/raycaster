@@ -56,13 +56,34 @@ target_include_directories(sdl_raii
 	)
 
 #
+# sdl_application
+#
+
+set(SDL_APPLICATION_SOURCES
+	src/sdl_application/input_buffer.cpp
+	src/sdl_application/sdl_application.cpp
+	)
+
+set(SDL_APPLICATION_HEADERS
+	src/sdl_application/input_buffer.hpp
+	src/sdl_application/sdl_application.hpp
+	)
+
+add_library(sdl_application STATIC ${SDL_APPLICATION_SOURCES} ${SDL_APPLICATION_HEADERS})
+target_include_directories(sdl_application
+	PUBLIC
+		${CMAKE_CURRENT_SOURCE_DIR}/src
+		${SDL2_INCLUDE_DIRS}
+		sdl_raii
+	)
+
+#
 # raycaster
 #
 
 set(SOURCES
 	src/raycaster/asset_store.cpp
 	src/raycaster/camera.cpp
-	src/raycaster/input_buffer.cpp
 	src/raycaster/my_app.cpp
 	src/raycaster/screenshot.cpp
 	src/raycaster/sdl_mymath.cpp
@@ -72,7 +93,6 @@ set(SOURCES
 set(HEADERS
 	src/raycaster/asset_store.hpp
 	src/raycaster/camera.hpp
-	src/raycaster/input_buffer.hpp
 	src/raycaster/my_app.hpp
 	src/raycaster/screenshot.hpp
 	src/raycaster/sdl_mymath.hpp
@@ -87,5 +107,6 @@ target_include_directories(raycaster
 target_link_libraries(raycaster
 	${SDL2_LIBRARIES}
 	mymath
+	sdl_application
 	sdl_raii
 	)

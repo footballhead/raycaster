@@ -4,7 +4,7 @@
 
 #include <array>
 
-namespace raycaster {
+namespace sdl_app {
 
 class input_buffer {
 public:
@@ -21,4 +21,4 @@ private:
     bool _quit;
 };
 
-} // namespace raycaster
+} // namespace sdl_app
