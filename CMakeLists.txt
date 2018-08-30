@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 project(raycaster C CXX)
 
 find_package(SDL2 REQUIRED CONFIG)
@@ -6,6 +6,9 @@ find_package(SDL2 REQUIRED CONFIG)
 # Force C++14 compiler
 set(CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD 14)
+
+# Some SDL2 configs (*cough* Ubuntu 16.04 *cough*) require this set
+cmake_policy(SET CMP0004 OLD)
 
 #
 # mycolor
