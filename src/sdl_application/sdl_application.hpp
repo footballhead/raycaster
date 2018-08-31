@@ -24,6 +24,7 @@ public:
     void quit();
 
 protected:
+    virtual void unhandled_event(SDL_Event const& event) = 0;
     virtual void update() = 0;
     virtual void render() = 0;
 

@@ -25,10 +25,13 @@ public:
         std::unique_ptr<asset_store> assets, level lvl, camera cam);
 
 protected:
-    void update();
-    void render();
+    void unhandled_event(SDL_Event const& event) override;
+    void update() override;
+    void render() override;
 
 private:
+    void on_window_event(SDL_WindowEvent const& event);
+
     std::unique_ptr<asset_store> _asset_store = nullptr;
 
     level _level;

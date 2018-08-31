@@ -27,7 +27,9 @@ int sdl_application::exec()
 
     _running = true;
     while (_running) {
-        _input_buffer->poll_events();
+        _input_buffer->poll_events([this](SDL_Event const& event) {
+            unhandled_event(event);
+        });
         update();
 
         SDL_CHECK(SDL_SetRenderDrawColor(_renderer.get(), 0, 0, 0, 255) == 0);

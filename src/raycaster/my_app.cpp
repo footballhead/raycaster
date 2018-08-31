@@ -75,6 +75,15 @@ my_app::my_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
 {
 }
 
+void my_app::unhandled_event(SDL_Event const& event)
+{
+    switch (event.type) {
+    case SDL_WINDOWEVENT:
+        on_window_event(event.window);
+        break;
+    }
+}
+
 void my_app::update()
 {
     auto& input_buffer = get_input_buffer();
@@ -208,6 +217,17 @@ void my_app::render()
         SDL_Rect dst{i, half_height - wall_size, 1, wall_size * 2};
 
         SDL_CHECK(SDL_RenderCopy(renderer, tex, &src, &dst) == 0);
+    }
+}
+
+void my_app::on_window_event(SDL_WindowEvent const& event)
+{
+    switch (event.event) {
+    case SDL_WINDOWEVENT_RESIZED:
+        SDL_CHECK(
+            SDL_RenderSetLogicalSize(get_renderer(), event.data1, event.data2)
+            == 0);
+        break;
     }
 }
 

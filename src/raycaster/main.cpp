@@ -20,8 +20,9 @@ int main(int argc, char** argv)
     auto sdl = std::make_shared<sdl::sdl_init>();
 
     auto const window_title = "Raycaster";
-    SDL_Point const window_bounds{1280, 800};
-    auto window = sdl::make_window(window_title, window_bounds);
+    SDL_Point const window_bounds{1280, 720};
+    auto window
+        = sdl::make_window(window_title, window_bounds, SDL_WINDOW_RESIZABLE);
 
     auto renderer = sdl::shared_renderer{sdl::make_renderer(window.get())};
 

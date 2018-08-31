@@ -51,10 +51,11 @@ inline window make_window(SDL_Window* win)
 }
 
 /// Convenience helper with parameters that make more sense.
-inline window make_window(const std::string& title, const SDL_Point& extents)
+inline window make_window(
+    char const* title, SDL_Point const& extents, Uint32 flags = 0)
 {
-    auto win = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED, extents.x, extents.y, 0);
+    auto win = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED, extents.x, extents.y, flags);
     SDL_CHECK(win);
     return sdl::window{win, detail::window_deleter{}};
 }

@@ -4,7 +4,8 @@
 
 namespace sdl_app {
 
-void input_buffer::poll_events()
+void input_buffer::poll_events(
+    std::function<void(SDL_Event const&)> unhandled_event)
 {
     SDL_Event evt;
     while (SDL_PollEvent(&evt)) {
@@ -17,6 +18,11 @@ void input_buffer::poll_events()
             break;
         case SDL_KEYUP:
             _key_pressed[evt.key.keysym.scancode] = false;
+            break;
+        default:
+            if (unhandled_event) {
+                unhandled_event(evt);
+            }
             break;
         }
     }
