@@ -13,10 +13,14 @@ bool save_screenshot(SDL_Renderer* renderer, const char* filename)
         return false;
     }
 
-    const auto format = SDL_PIXELFORMAT_BGR888;
+    auto const format = SDL_PIXELFORMAT_BGR888;
+    auto const r_mask = 0x000000FF;
+    auto const g_mask = 0x0000FF00;
+    auto const b_mask = 0x00FF0000;
+    auto const a_mask = 0;
 
-    auto temp_surface = SDL_CreateRGBSurfaceWithFormat(
-        0, renderer_size.w, renderer_size.h, 32, format);
+    auto temp_surface = SDL_CreateRGBSurface(
+        0, renderer_size.w, renderer_size.h, 32, r_mask, g_mask, b_mask, 0);
     if (!temp_surface) {
         SDL_Log("save_screenshot: SDL_CreateRGBSurfaceWithFormat failed: %s",
             SDL_GetError());
