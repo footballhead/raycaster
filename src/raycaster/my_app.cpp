@@ -318,19 +318,23 @@ void my_app::render()
         // used to account for the draw cutoff being determined by euclidean
         // distance but the render color being determined by the proejcted
         // distance.
-        // auto const fog_scale_factor = 0.75f;
-        // auto const fog_distance = max_distance * fog_scale_factor;
+        auto const fog_scale_factor = 0.75f;
+        auto const fog_distance = max_distance * fog_scale_factor;
+        auto const fog_t = collision.distance / fog_distance;
         // auto const interp = linear_interpolate(
         //   wall_color, fog_color, collision.distance / fog_distance);
 
         auto const line_start = point2i{i, half_height - wall_size};
         auto const line_end = point2i{i, half_height + wall_size};
         SDL_CHECK(draw_line(renderer, line_start, line_end,
-            [&line_start, &line_end, tex, &ray_v](point2i const& draw_pos) {
+            [&line_start, &line_end, tex, &ray_v, &fog_color, &fog_t](
+                point2i const& draw_pos) {
                 auto const y_percent = (draw_pos.y - line_start.y)
                     / static_cast<float>(line_end.y - line_start.y);
 
-                return get_pixel(tex, {ray_v, y_percent});
+                auto const pixel = get_pixel(tex, {ray_v, y_percent});
+
+                return linear_interpolate(pixel, fog_color, fog_t);
             }));
     }
 }
