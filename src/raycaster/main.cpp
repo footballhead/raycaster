@@ -30,7 +30,7 @@ int main(int argc, char** argv)
     assets->get_asset(common_assets::wall_texture);
     assets->get_asset(common_assets::stone_texture);
 
-    auto const scaling_factor = 1;
+    auto const scaling_factor = 4;
     SDL_CHECK(
         SDL_RenderSetLogicalSize(renderer.get(),
             window_bounds.x / scaling_factor, window_bounds.y / scaling_factor)

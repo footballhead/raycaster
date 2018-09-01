@@ -11,6 +11,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <utility>
 
 using namespace mycolor;
 using namespace mymath;
@@ -20,7 +21,22 @@ namespace {
 
 using namespace raycaster;
 
-constexpr auto step_size = 1.f / 128.f;
+std::vector<std::pair<color, color>> const& get_color_table()
+{
+    static const std::vector<std::pair<color, color>> color_table
+        = {std::make_pair(constants::white, constants::white),
+            std::make_pair(constants::white, constants::light_gray),
+            std::make_pair(constants::light_gray, constants::light_gray),
+            std::make_pair(constants::light_gray, constants::gray),
+            std::make_pair(constants::gray, constants::gray),
+            std::make_pair(constants::gray, constants::dark_gray),
+            std::make_pair(constants::dark_gray, constants::dark_gray),
+            std::make_pair(constants::dark_gray, constants::black),
+            std::make_pair(constants::black, constants::black)};
+    return color_table;
+}
+
+constexpr auto step_size = 1.f / 64.f;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
 /// The result of a single ray casting operation
@@ -66,6 +82,64 @@ collision_result find_collision(level const& lvl, point2f const& origin,
     }
 
     return no_result;
+}
+
+point2i round_to_point(float x, float y)
+{
+    return {static_cast<int>(std::round(x)), static_cast<int>(std::round(y))};
+}
+
+point2i floor(point2f const& p)
+{
+    return {static_cast<int>(p.x), static_cast<int>(p.y)};
+}
+
+bool draw_point(SDL_Renderer* ren, point2i const& p)
+{
+    return SDL_RenderDrawPoint(ren, p.x, p.y) == 0;
+}
+
+bool draw_line(
+    SDL_Renderer* ren, point2i const& src, point2i const& dst, color const& col)
+{
+    if (!set_render_draw_color(ren, col)) {
+        return false;
+    }
+
+    auto const delta = dst - src;
+
+    // Anticipate division by 0 and short circuit
+    auto const zero_vector = point2i{0, 0};
+    if (delta == zero_vector) {
+        return draw_point(ren, dst);
+    }
+
+    // We can do all the math in absolutes then apply the sign later to get the
+    // right result! This greatly simplfies the code
+    auto const abs_delta = abs(delta);
+    auto const use_unit_x = abs_delta.y < abs_delta.x;
+
+    auto const x_inc
+        = (use_unit_x ? 1.f : abs_delta.slope_inverse()) * sgn(delta.x);
+    auto const y_inc = (use_unit_x ? abs_delta.slope() : 1.f) * sgn(delta.y);
+
+    // Put an arbitrary limit in case this goes into infinite loop
+    auto const debug_limit = 2048;
+    for (int i = 0; i < debug_limit; ++i) {
+        // The rounding is key to ensuring this algo halts!
+        auto const iterated_step = round_to_point(x_inc * i, y_inc * i);
+        auto const interp = src + iterated_step;
+
+        if (!draw_point(ren, interp)) {
+            return false;
+        }
+
+        if (interp == dst) {
+            break;
+        }
+    }
+
+    return true;
 }
 
 } // namespace
@@ -146,8 +220,7 @@ void my_app::render()
             = max_distance / static_cast<float>(max_distance - 1);
         auto const interp = linear_interpolate(ceiling_color, fog_color,
             i / static_cast<float>(half_height) * t_scale);
-        SDL_CHECK(set_render_draw_color(renderer, interp));
-        SDL_CHECK(SDL_RenderDrawLine(renderer, 0, i, logical_size.w, i) == 0);
+        draw_line(renderer, {0, i}, {logical_size.w, i}, interp);
     }
 
     // draw floor (bottom-up)
@@ -157,15 +230,9 @@ void my_app::render()
             = max_distance / static_cast<float>(max_distance - 1);
         auto const interp = linear_interpolate(floor_color, fog_color,
             (half_height - i) / static_cast<float>(half_height) * t_scale);
-        SDL_CHECK(set_render_draw_color(renderer, interp));
-
         auto const draw_y = i + half_height;
-        SDL_CHECK(
-            SDL_RenderDrawLine(renderer, 0, draw_y, logical_size.w, draw_y)
-            == 0);
+        draw_line(renderer, {0, draw_y}, {logical_size.w, draw_y}, interp);
     }
-
-    SDL_CHECK(set_render_draw_color(renderer, white_color));
 
     auto const num_rays = logical_size.w;
     std::vector<collision_result> collision_buffer;
@@ -205,27 +272,17 @@ void my_app::render()
             continue;
         }
 
-        // Determine which part of the texture to use by looking at the
-        // remainder then trying to figure out which axis is more accurate
-        SDL_Point const point{static_cast<int>(collision.position.x),
-            static_cast<int>(collision.position.y)};
+        auto const wall_size
+            = static_cast<int>(half_height / collision.distance);
 
-        auto const v_x = fabs(collision.position.x - point.x);
-        auto const v_y = fabs(collision.position.y - point.y);
-        auto const tolerance = step_size;
-        auto const ray_v
-            = v_x < tolerance || v_x > (1.f - tolerance) ? v_y : v_x;
+        auto const rounded_collision = floor(collision.position);
 
-        // Figure out which texture to use
-        SDL_Texture* tex = nullptr;
-        auto const index = point.y * _level.bounds.w + point.x;
-        if (_level.data[index] == 1) {
-            tex = _asset_store->get_asset(common_assets::wall_texture).get();
-        } else {
-            tex = _asset_store->get_asset(common_assets::stone_texture).get();
+        auto wall_color = constants::white;
+        auto const index
+            = rounded_collision.y * _level.bounds.w + rounded_collision.x;
+        if (_level.data[index] == 2) {
+            wall_color = color{0, 192, 0};
         }
-
-        auto const texture_size = get_texture_size(tex);
 
         // Color the texture to apply the fog effect. The "fog scale factor" is
         // used to account for the draw cutoff being determined by euclidean
@@ -234,19 +291,10 @@ void my_app::render()
         auto const fog_scale_factor = 0.75f;
         auto const fog_distance = max_distance * fog_scale_factor;
         auto const interp = linear_interpolate(
-            white_color, fog_color, collision.distance / fog_distance);
-        SDL_CHECK(
-            SDL_SetTextureColorMod(tex, interp.r, interp.g, interp.b) == 0);
+            wall_color, fog_color, collision.distance / fog_distance);
 
-        // Draw the texture slice
-        auto const wall_size
-            = static_cast<int>(half_height / collision.distance);
-
-        auto const image_column = static_cast<int>(ray_v * texture_size.w);
-        SDL_Rect src{image_column, 0, 1, texture_size.h};
-        SDL_Rect dst{i, half_height - wall_size, 1, wall_size * 2};
-
-        SDL_CHECK(SDL_RenderCopy(renderer, tex, &src, &dst) == 0);
+        SDL_CHECK(draw_line(renderer, {i, half_height - wall_size},
+            {i, half_height + wall_size}, interp));
     }
 }
 

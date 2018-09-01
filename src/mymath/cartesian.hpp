@@ -71,6 +71,13 @@ template <typename T> struct point2 {
         y *= rhs;
         return *this;
     }
+
+    //
+    // generic operations
+    //
+
+    float slope() const { return y / static_cast<float>(x); }
+    float slope_inverse() const { return x / static_cast<float>(y); }
 };
 
 //
@@ -115,7 +122,25 @@ template <typename T> point2<T> operator*(point2<T> lhs, float rhs)
     return lhs;
 }
 
+// point comparison operations
+
+template <typename T>
+bool operator==(point2<T> const& lhs, point2<T> const& rhs)
+{
+    return lhs.x == rhs.x && lhs.y == rhs.y;
+}
+
+//
+// point generic operations
+//
+
+template <typename T> point2<T> abs(point2<T> const& p)
+{
+    return {std::abs(p.x), std::abs(p.y)};
+}
+
 using point2f = point2<float>;
+using point2i = point2<int>;
 
 //
 // line
