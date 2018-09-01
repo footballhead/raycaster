@@ -17,7 +17,7 @@ point2i round_to_point(float x, float y)
     return {static_cast<int>(std::round(x)), static_cast<int>(std::round(y))};
 }
 
-}
+} // namespace
 
 namespace raycaster {
 
@@ -65,8 +65,10 @@ color get_surface_pixel(SDL_Surface* surf, point2f const& uv)
 
     auto const total_pixels = surf->w * surf->h * 3;
 
-    auto const x_tex_coord = static_cast<int>(surf->w * uv.x);
-    auto const y_tex_coord = static_cast<int>(surf->h * uv.y);
+    auto const x_tex_coord
+        = clamp(static_cast<int>(surf->w * uv.x), 0, surf->w - 1);
+    auto const y_tex_coord
+        = clamp(static_cast<int>(surf->h * uv.y), 0, surf->h - 1);
 
     auto const index = y_tex_coord * surf->h * 3 + x_tex_coord * 3;
 
