@@ -23,10 +23,19 @@ using namespace raycaster;
 constexpr auto step_size = 1.f / 128.f;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
-/// @returns The distance, >= 0 if collision (sets out_result)
-float find_collision(level const& lvl, point2f const& origin, float direction,
-    float max_distance, point2f& out_result)
+/// The result of a single ray casting operation
+struct collision_result {
+    /// The distance to the point of collision. If < 0 then no collision
+    float distance;
+    /// The point of collision. If distance < 0 then this is not valid
+    point2f position;
+};
+
+collision_result find_collision(level const& lvl, point2f const& origin,
+    float direction, float max_distance)
 {
+    auto const no_result = collision_result{-1.f, {-1.f, -1.f}};
+
     auto const unit_vector = vector2f{direction, step_size};
 
     // Convert vector into a point (to avoid trig)
@@ -45,19 +54,18 @@ float find_collision(level const& lvl, point2f const& origin, float direction,
 
         if (int_x < 0 || int_x > lvl.bounds.w - 1 || int_y < 0
             || int_y > lvl.bounds.h - 1) {
-            return -1.f;
+            return no_result;
         }
 
         auto const index = int_y * lvl.bounds.w + int_x;
         if (lvl.data[index] > 0) {
-            out_result = accum;
-            return distance;
+            return collision_result{distance, accum};
         }
 
         distance += step_size;
     }
 
-    return -1.f;
+    return no_result;
 }
 
 } // namespace
@@ -159,9 +167,13 @@ void my_app::render()
 
     SDL_CHECK(set_render_draw_color(renderer, white_color));
 
-    // Fire a ray for each column on the screen.
-    for (int i = 0; i < logical_size.w; ++i) {
-        auto const width_percent = i / static_cast<float>(logical_size.w);
+    auto const num_rays = logical_size.w;
+    std::vector<collision_result> collision_buffer;
+    collision_buffer.reserve(num_rays);
+
+    // Fire a ray for each column on the screen and save the result.
+    for (int i = 0; i < num_rays; ++i) {
+        auto const width_percent = i / static_cast<float>(num_rays);
         auto const proj_point_interp
             = linear_interpolate(projection_plane, width_percent);
 
@@ -170,26 +182,34 @@ void my_app::render()
         auto const local_ray_radians
             = _camera.get_rotation() - camera_ray_radians;
 
-        point2f collision{0.f, 0.f};
-        auto distance = find_collision(_level, proj_point_interp,
-            camera_ray_radians, max_distance, collision);
+        collision_buffer.push_back(find_collision(
+            _level, proj_point_interp, camera_ray_radians, max_distance));
 
-        // No collision means don't draw anything. The fog effect will be taken
-        // care of by floor/ceiling gradient.
-        if (distance < 0) {
+        auto& last_result = collision_buffer.back();
+        if (last_result.distance < 0) {
             continue;
         }
 
         // Fix fish eye distortion by changing distance from euclidean to
         // projection plane using basic trig.
-        auto const projected_distance
-            = distance * sin(PI_OVER_2 - std::abs(local_ray_radians));
+        last_result.distance *= sin(PI_OVER_2 - std::abs(local_ray_radians));
+    }
 
-        SDL_Point const point{
-            static_cast<int>(collision.x), static_cast<int>(collision.y)};
+    // Draw the rays to the screen
+    for (int i = 0; i < collision_buffer.size(); ++i) {
+        auto const& collision = collision_buffer.at(i);
 
-        auto const u = fabs(collision.x - point.x);
-        auto const v = fabs(collision.y - point.y);
+        // No collision means don't draw anything. The fog effect will be taken
+        // care of by floor/ceiling gradient.
+        if (collision.distance < 0) {
+            continue;
+        }
+
+        SDL_Point const point{static_cast<int>(collision.position.x),
+            static_cast<int>(collision.position.y)};
+
+        auto const u = fabs(collision.position.x - point.x);
+        auto const v = fabs(collision.position.y - point.y);
         auto const tolerance = step_size; // TODO set to step size?
         auto const ray_u = u < tolerance || u > (1.f - tolerance) ? v : u;
 
@@ -205,12 +225,12 @@ void my_app::render()
         auto const fog_scale_factor = 0.75f;
         auto const fog_distance = max_distance * fog_scale_factor;
         auto const interp = linear_interpolate(
-            white_color, fog_color, projected_distance / fog_distance);
+            white_color, fog_color, collision.distance / fog_distance);
         SDL_CHECK(
             SDL_SetTextureColorMod(tex, interp.r, interp.g, interp.b) == 0);
 
         auto const wall_size
-            = static_cast<int>(half_height / projected_distance);
+            = static_cast<int>(half_height / collision.distance);
 
         auto const image_column = static_cast<int>(ray_u * texture_size.w);
         SDL_Rect src{image_column, 0, 1, texture_size.h};
