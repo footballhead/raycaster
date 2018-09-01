@@ -24,31 +24,6 @@ using namespace raycaster;
 constexpr auto step_size = 1.f / 64.f;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
-color get_pixel(SDL_Surface* surf, point2f const& uv)
-{
-    if (surf->format->BytesPerPixel != 3) {
-        throw std::runtime_error{"Got BMP texture that is not 3 BPP!"};
-    }
-
-    if (surf->pitch % 3 != 0) {
-        throw std::runtime_error{"Got tex where pitch is not divisible by 3"};
-    }
-
-    auto const total_pixels = surf->w * surf->h * 3;
-
-    auto const x_tex_coord = static_cast<int>(surf->w * uv.x);
-    auto const y_tex_coord = static_cast<int>(surf->h * uv.y);
-
-    auto const index = y_tex_coord * surf->h * 3 + x_tex_coord * 3;
-
-    if (index >= total_pixels) {
-        return constants::red;
-    }
-
-    auto const pixel = static_cast<Uint8*>(surf->pixels) + index;
-    return color{pixel[2], pixel[1], pixel[0]};
-}
-
 SDL_Surface* get_wall_texture(asset_store& assets, unsigned int i)
 {
     static const std::vector<std::string> texture_table{
@@ -332,7 +307,7 @@ void my_app::render()
                 auto const y_percent = (draw_pos.y - line_start.y)
                     / static_cast<float>(line_end.y - line_start.y);
 
-                auto const pixel = get_pixel(tex, {ray_v, y_percent});
+                auto const pixel = get_surface_pixel(tex, {ray_v, y_percent});
 
                 return linear_interpolate(pixel, fog_color, fog_t);
             }));

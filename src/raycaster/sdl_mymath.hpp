@@ -17,4 +17,6 @@ mymath::extent2i get_renderer_output_size(SDL_Renderer* renderer);
 
 bool set_render_draw_color(SDL_Renderer* renderer, mycolor::color const& c);
 
+mycolor::color get_surface_pixel(SDL_Surface* surf, mymath::point2f const& uv);
+
 } // namespace raycaster
