@@ -179,8 +179,6 @@ void my_app::render()
 
         auto const diff = proj_point_interp - _camera.get_position();
         auto const camera_ray_radians = atan2(diff.y, diff.x);
-        auto const local_ray_radians
-            = _camera.get_rotation() - camera_ray_radians;
 
         collision_buffer.push_back(find_collision(
             _level, proj_point_interp, camera_ray_radians, max_distance));
@@ -191,7 +189,9 @@ void my_app::render()
         }
 
         // Fix fish eye distortion by changing distance from euclidean to
-        // projection plane using basic trig.
+        // projected on the projection plane using basic trig.
+        auto const local_ray_radians
+            = _camera.get_rotation() - camera_ray_radians;
         last_result.distance *= sin(PI_OVER_2 - std::abs(local_ray_radians));
     }
 
@@ -205,14 +205,18 @@ void my_app::render()
             continue;
         }
 
+        // Determine which part of the texture to use by looking at the
+        // remainder then trying to figure out which axis is more accurate
         SDL_Point const point{static_cast<int>(collision.position.x),
             static_cast<int>(collision.position.y)};
 
-        auto const u = fabs(collision.position.x - point.x);
-        auto const v = fabs(collision.position.y - point.y);
-        auto const tolerance = step_size; // TODO set to step size?
-        auto const ray_u = u < tolerance || u > (1.f - tolerance) ? v : u;
+        auto const v_x = fabs(collision.position.x - point.x);
+        auto const v_y = fabs(collision.position.y - point.y);
+        auto const tolerance = step_size;
+        auto const ray_v
+            = v_x < tolerance || v_x > (1.f - tolerance) ? v_y : v_x;
 
+        // Figure out which texture to use
         SDL_Texture* tex = nullptr;
         auto const index = point.y * _level.bounds.w + point.x;
         if (_level.data[index] == 1) {
@@ -220,8 +224,13 @@ void my_app::render()
         } else {
             tex = _asset_store->get_asset(common_assets::stone_texture).get();
         }
-        auto texture_size = get_texture_size(tex);
 
+        auto const texture_size = get_texture_size(tex);
+
+        // Color the texture to apply the fog effect. The "fog scale factor" is
+        // used to account for the draw cutoff being determined by euclidean
+        // distance but the render color being determined by the proejcted
+        // distance.
         auto const fog_scale_factor = 0.75f;
         auto const fog_distance = max_distance * fog_scale_factor;
         auto const interp = linear_interpolate(
@@ -229,10 +238,11 @@ void my_app::render()
         SDL_CHECK(
             SDL_SetTextureColorMod(tex, interp.r, interp.g, interp.b) == 0);
 
+        // Draw the texture slice
         auto const wall_size
             = static_cast<int>(half_height / collision.distance);
 
-        auto const image_column = static_cast<int>(ray_u * texture_size.w);
+        auto const image_column = static_cast<int>(ray_v * texture_size.w);
         SDL_Rect src{image_column, 0, 1, texture_size.h};
         SDL_Rect dst{i, half_height - wall_size, 1, wall_size * 2};
 
