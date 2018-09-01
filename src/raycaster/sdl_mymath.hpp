@@ -5,6 +5,8 @@
 
 #include <SDL.h>
 
+#include <functional>
+
 namespace raycaster {
 
 /// @returns {0, 0} if logical size is not set
@@ -18,5 +20,11 @@ mymath::extent2i get_renderer_output_size(SDL_Renderer* renderer);
 bool set_render_draw_color(SDL_Renderer* renderer, mycolor::color const& c);
 
 mycolor::color get_surface_pixel(SDL_Surface* surf, mymath::point2f const& uv);
+
+bool draw_point(SDL_Renderer* ren, mymath::point2i const& p);
+
+bool draw_line(SDL_Renderer* ren, mymath::point2i const& src,
+    mymath::point2i const& dst,
+    std::function<mycolor::color(mymath::point2i const&)> get_color);
 
 } // namespace raycaster

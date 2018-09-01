@@ -80,63 +80,9 @@ collision_result find_collision(level const& lvl, point2f const& origin,
     return no_result;
 }
 
-point2i round_to_point(float x, float y)
-{
-    return {static_cast<int>(std::round(x)), static_cast<int>(std::round(y))};
-}
-
 point2i floor(point2f const& p)
 {
     return {static_cast<int>(p.x), static_cast<int>(p.y)};
-}
-
-bool draw_point(SDL_Renderer* ren, point2i const& p)
-{
-    return SDL_RenderDrawPoint(ren, p.x, p.y) == 0;
-}
-
-bool draw_line(SDL_Renderer* ren, point2i const& src, point2i const& dst,
-    std::function<color(point2i const&)> get_color)
-{
-    auto const delta = dst - src;
-
-    // Anticipate division by 0 and short circuit
-    auto const zero_vector = point2i{0, 0};
-    if (delta == zero_vector) {
-        return set_render_draw_color(ren, get_color(dst))
-            && draw_point(ren, dst);
-    }
-
-    // We can do all the math in absolutes then apply the sign later to get the
-    // right result! This greatly simplfies the code
-    auto const abs_delta = abs(delta);
-    auto const use_unit_x = abs_delta.y < abs_delta.x;
-
-    auto const x_inc
-        = (use_unit_x ? 1.f : abs_delta.slope_inverse()) * sgn(delta.x);
-    auto const y_inc = (use_unit_x ? abs_delta.slope() : 1.f) * sgn(delta.y);
-
-    // Put an arbitrary limit in case this goes into infinite loop
-    auto const debug_limit = 2048;
-    for (int i = 0; i < debug_limit; ++i) {
-        // The rounding is key to ensuring this algo halts!
-        auto const iterated_step = round_to_point(x_inc * i, y_inc * i);
-        auto const interp = src + iterated_step;
-
-        if (!set_render_draw_color(ren, get_color(interp))) {
-            return false;
-        }
-
-        if (!draw_point(ren, interp)) {
-            return false;
-        }
-
-        if (interp == dst) {
-            break;
-        }
-    }
-
-    return true;
 }
 
 } // namespace
