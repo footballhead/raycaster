@@ -17,9 +17,9 @@ struct level {
     std::vector<uint8_t> data;
 };
 
-class my_app : public sdl_app::sdl_application {
+class raycaster_app : public sdl_app::sdl_application {
 public:
-    explicit my_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
+    explicit raycaster_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
         sdl::shared_renderer renderer,
         std::unique_ptr<sdl_app::input_buffer> input,
         std::unique_ptr<asset_store> assets, level lvl, camera cam);

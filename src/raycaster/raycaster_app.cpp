@@ -1,4 +1,4 @@
-#include "my_app.hpp"
+#include "raycaster_app.hpp"
 
 #include "screenshot.hpp"
 #include "sdl_mymath.hpp"
@@ -89,7 +89,7 @@ point2i floor(point2f const& p)
 
 namespace raycaster {
 
-my_app::my_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
+raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
     sdl::shared_renderer renderer, std::unique_ptr<input_buffer> input,
     std::unique_ptr<asset_store> assets, level lvl, camera cam)
 : sdl_application(
@@ -100,7 +100,7 @@ my_app::my_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
 {
 }
 
-void my_app::unhandled_event(SDL_Event const& event)
+void raycaster_app::unhandled_event(SDL_Event const& event)
 {
     switch (event.type) {
     case SDL_WINDOWEVENT:
@@ -109,7 +109,7 @@ void my_app::unhandled_event(SDL_Event const& event)
     }
 }
 
-void my_app::update()
+void raycaster_app::update()
 {
     auto& input_buffer = get_input_buffer();
 
@@ -144,7 +144,7 @@ void my_app::update()
     }
 }
 
-void my_app::render()
+void raycaster_app::render()
 {
     auto renderer = get_renderer();
 
@@ -260,7 +260,7 @@ void my_app::render()
     }
 }
 
-void my_app::on_window_event(SDL_WindowEvent const& event)
+void raycaster_app::on_window_event(SDL_WindowEvent const& event)
 {
     switch (event.event) {
     case SDL_WINDOWEVENT_RESIZED:

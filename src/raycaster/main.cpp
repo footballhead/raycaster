@@ -1,6 +1,6 @@
 #include "asset_store.hpp"
 #include "camera.hpp"
-#include "my_app.hpp"
+#include "raycaster_app.hpp"
 
 #include <mymath/mymath.hpp>
 #include <sdl_raii/sdl_raii.hpp>
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 
     auto input = std::make_unique<sdl_app::input_buffer>();
 
-    my_app app{std::move(sdl), std::move(window), std::move(renderer),
+    raycaster_app app{std::move(sdl), std::move(window), std::move(renderer),
         std::move(input), std::move(assets), test_level, cam};
     try {
         app.exec();

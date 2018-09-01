@@ -87,7 +87,7 @@ target_include_directories(sdl_application
 set(SOURCES
 	src/raycaster/asset_store.cpp
 	src/raycaster/camera.cpp
-	src/raycaster/my_app.cpp
+	src/raycaster/raycaster_app.cpp
 	src/raycaster/screenshot.cpp
 	src/raycaster/sdl_mymath.cpp
 	src/raycaster/main.cpp
@@ -96,7 +96,7 @@ set(SOURCES
 set(HEADERS
 	src/raycaster/asset_store.hpp
 	src/raycaster/camera.hpp
-	src/raycaster/my_app.hpp
+	src/raycaster/raycaster_app.hpp
 	src/raycaster/screenshot.hpp
 	src/raycaster/sdl_mymath.hpp
 	)
