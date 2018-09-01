@@ -2,11 +2,9 @@
 
 namespace {
 
-sdl::texture load_image(SDL_Renderer* renderer, std::string const& path)
+sdl::surface load_image(std::string const& path)
 {
-    auto surface = sdl::make_surface(SDL_LoadBMP(path.c_str()));
-    return sdl::make_texture(
-        SDL_CreateTextureFromSurface(renderer, surface.get()));
+    return sdl::make_surface(SDL_LoadBMP(path.c_str()));
 }
 
 } // namespace
@@ -19,14 +17,15 @@ asset_store::asset_store(sdl::shared_renderer renderer, std::string base_dir)
 {
 }
 
-sdl::texture const& asset_store::get_asset(std::string const& path)
+SDL_Surface* asset_store::get_asset(std::string const& path)
 {
     auto const full_path = _base_dir + "/" + path;
     if (_asset_map.find(full_path) == _asset_map.end()) {
         SDL_Log("Loading asset: %s", full_path.c_str());
-        _asset_map[full_path] = load_image(_renderer.get(), full_path);
+        _asset_map[full_path] = load_image(full_path);
     }
-    return _asset_map[full_path];
+
+    return _asset_map[full_path].get();
 }
 
 } // namespace raycaster

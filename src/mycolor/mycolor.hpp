@@ -17,6 +17,8 @@ constexpr color dark_gray{64, 64, 64};
 constexpr color gray{128, 128, 128};
 constexpr color light_gray{192, 192, 192};
 constexpr color white{255, 255, 255};
+
+constexpr color red{255, 0, 0};
 }
 
 constexpr color linear_interpolate(color const& a, color const& b, float t)

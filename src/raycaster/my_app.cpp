@@ -24,14 +24,40 @@ using namespace raycaster;
 constexpr auto step_size = 1.f / 64.f;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
-color const& get_wall_color(unsigned int i)
+color get_pixel(SDL_Surface* surf, point2f const& uv)
 {
-    static const std::vector<color> color_table{
-        constants::black, constants::white, color{0, 192, 0}};
-    if (i >= color_table.size()) {
-        i = 0;
+    if (surf->format->BytesPerPixel != 3) {
+        throw std::runtime_error{"Got BMP texture that is not 3 BPP!"};
     }
-    return color_table.at(i);
+
+    if (surf->pitch % 3 != 0) {
+        throw std::runtime_error{"Got tex where pitch is not divisible by 3"};
+    }
+
+    auto const total_pixels = surf->w * surf->h * 3;
+
+    auto const x_tex_coord = static_cast<int>(surf->w * uv.x);
+    auto const y_tex_coord = static_cast<int>(surf->h * uv.y);
+
+    auto const index = y_tex_coord * surf->h * 3 + x_tex_coord * 3;
+
+    if (index >= total_pixels) {
+        return constants::red;
+    }
+
+    auto const pixel = static_cast<Uint8*>(surf->pixels) + index;
+    return color{pixel[2], pixel[1], pixel[0]};
+}
+
+SDL_Surface* get_wall_texture(asset_store& assets, unsigned int i)
+{
+    static const std::vector<std::string> texture_table{
+        common_assets::wall_texture, common_assets::wall_texture,
+        common_assets::stone_texture};
+    if (i >= texture_table.size()) {
+        throw std::runtime_error{"Invalid wall-texutre index"};
+    }
+    return assets.get_asset(texture_table.at(i));
 }
 
 /// The result of a single ray casting operation
@@ -283,34 +309,29 @@ void my_app::render()
         auto const ray_v
             = v_x < tolerance || v_x > (1.f - tolerance) ? v_y : v_x;
 
-#if 0
         // Figure out which texture to use
-        SDL_Texture* tex = nullptr;
-        auto const index = point.y * _level.bounds.w + point.x;
-        if (_level.data[index] == 1) {
-            tex = _asset_store->get_asset(common_assets::wall_texture).get();
-        } else {
-            tex = _asset_store->get_asset(common_assets::stone_texture).get();
-        }
-
-        auto const texture_size = get_texture_size(tex);
-#endif
         auto const index
             = rounded_collision.y * _level.bounds.w + rounded_collision.x;
-        auto const wall_color = get_wall_color(_level.data[index]);
+        auto tex = get_wall_texture(*_asset_store, _level.data[index]);
 
         // Color the texture to apply the fog effect. The "fog scale factor" is
         // used to account for the draw cutoff being determined by euclidean
         // distance but the render color being determined by the proejcted
         // distance.
-        auto const fog_scale_factor = 0.75f;
-        auto const fog_distance = max_distance * fog_scale_factor;
-        auto const interp = linear_interpolate(
-            wall_color, fog_color, collision.distance / fog_distance);
+        // auto const fog_scale_factor = 0.75f;
+        // auto const fog_distance = max_distance * fog_scale_factor;
+        // auto const interp = linear_interpolate(
+        //   wall_color, fog_color, collision.distance / fog_distance);
 
-        SDL_CHECK(draw_line(renderer, {i, half_height - wall_size},
-            {i, half_height + wall_size},
-            [&interp](point2i const&) { return interp; }));
+        auto const line_start = point2i{i, half_height - wall_size};
+        auto const line_end = point2i{i, half_height + wall_size};
+        SDL_CHECK(draw_line(renderer, line_start, line_end,
+            [&line_start, &line_end, tex, &ray_v](point2i const& draw_pos) {
+                auto const y_percent = (draw_pos.y - line_start.y)
+                    / static_cast<float>(line_end.y - line_start.y);
+
+                return get_pixel(tex, {ray_v, y_percent});
+            }));
     }
 }
 
