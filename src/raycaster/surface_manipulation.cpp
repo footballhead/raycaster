@@ -1,5 +1,7 @@
 #include "surface_manipulation.hpp"
 
+#include <SDL.h>
+
 #include <stdexcept>
 
 using namespace mycolor;
@@ -7,14 +9,19 @@ using namespace mymath;
 
 namespace {
 
+constexpr auto desired_bpp = 3;
+
+bool is_surface_of_desired_format(
+    SDL_Surface* surf, int want_bpp)
+{
+    return surf->format->BytesPerPixel == want_bpp;
+}
+
 color get_surface_pixel(SDL_Surface* surf, point2i const& p)
 {
-    if (surf->format->BytesPerPixel != 3) {
-        throw std::runtime_error{"Got BMP texture that is not 3 BPP!"};
-    }
-
-    if (surf->pitch % 3 != 0) {
-        throw std::runtime_error{"Got tex where pitch is not divisible by 3"};
+    if (is_surface_of_desired_format(surf, desired_bpp)) {
+	SDL_Log("Invalid surface format: 0x%x", surf->format->format);
+        throw std::runtime_error{"Got invalid bitmap surface! See log"};
     }
 
     // Assuming BGR888
@@ -35,8 +42,7 @@ color get_surface_pixel(SDL_Surface* surf, point2f const& uv)
     auto const hi = surface_extents - point2f{1.f, 1.f};
     auto const tex_coord = clamp(surface_extents * uv, lo, hi);
 
-    return ::get_surface_pixel(
-        surf, make_point<int>(tex_coord.x, tex_coord.y));
+    return ::get_surface_pixel(surf, make_point<int>(tex_coord.x, tex_coord.y));
 }
 
 } // namespace raycaster
