@@ -147,6 +147,22 @@ bool operator==(point2<T> const& lhs, point2<T> const& rhs)
 // point generic operations
 //
 
+using point2f = point2<float>;
+using point2i = point2<int>;
+
+template <typename CastType, typename InputType>
+point2<CastType> make_point(InputType a, InputType b)
+{
+    return point2<CastType>{static_cast<CastType>(a), static_cast<CastType>(b)};
+}
+
+template <typename CastType, typename InputType>
+point2<CastType> point_cast(point2<InputType> a)
+{
+    return point2<CastType>{
+        static_cast<CastType>(a.x), static_cast<CastType>(a.y)};
+}
+
 template <typename T> point2<T> abs(point2<T> const& p)
 {
     return {std::abs(p.x), std::abs(p.y)};
@@ -164,13 +180,25 @@ point2<T> clamp(point2<T> const& val, point2<T> const& lo, point2<T> const& hi)
     return {clamp(val.x, lo.x, hi.x), clamp(val.y, lo.y, hi.y)};
 }
 
-using point2f = point2<float>;
-using point2i = point2<int>;
-
-template <typename CastType, typename InputType>
-point2<CastType> make_point(InputType a, InputType b)
+template <typename T> point2<T> floor(point2<T> const& p)
 {
-    return point2<CastType>{static_cast<CastType>(a), static_cast<CastType>(b)};
+    return {std::floor(p.x), std::floor(p.y)};
+}
+
+template <typename T> point2<T> ceil(point2<T> const& p)
+{
+    return {std::ceil(p.x), std::ceil(p.y)};
+}
+
+template <typename T> point2<T> remainder(point2<T> const& p)
+{
+    return point_cast<T>(p - floor(p));
+}
+
+template <typename T>
+point2<T> wrap(point2<T> const& p, point2<T> const& lo, point2<T> const& hi)
+{
+    return {wrap(p.x, lo.x, hi.x), wrap(p.y, lo.y, hi.y)};
 }
 
 //

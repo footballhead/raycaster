@@ -20,6 +20,8 @@ using namespace sdl_app;
 
 namespace {
 
+static auto s_use_fog = false;
+
 using namespace raycaster;
 
 constexpr auto step_size = 1.f / 64.f;
@@ -144,6 +146,10 @@ void raycaster_app::update()
             SDL_Log("saved screenshot to screenshot.bmp");
         }
     }
+
+    if (input_buffer.is_hit(SDL_SCANCODE_TAB)) {
+        s_use_fog = !s_use_fog;
+    }
 }
 
 void raycaster_app::render()
@@ -253,6 +259,10 @@ void raycaster_app::render()
                     / static_cast<float>(line_end.y - line_start.y);
 
                 auto const pixel = get_surface_pixel(tex, {ray_v, y_percent});
+
+                if (!s_use_fog) {
+                    return pixel;
+                }
 
                 auto const dither_steps = 4;
 

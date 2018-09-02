@@ -42,9 +42,35 @@ color get_surface_pixel(SDL_Surface* surf, point2f const& uv)
 
     auto const lo = point2f{0.f, 0.f};
     auto const hi = surface_extents - point2f{1.f, 1.f};
-    auto const tex_coord = clamp(surface_extents * uv, lo, hi);
 
-    return ::get_surface_pixel(surf, make_point<int>(tex_coord.x, tex_coord.y));
+    // Clamp to edges to avoid accessing OOB memory. Consider wrapping in the
+    // future for smooth tiling
+    auto const tex_coord = clamp(hi * uv, lo, hi);
+    auto const tex_coord_remainder = remainder(tex_coord);
+
+    // Nearest neighbor filtering
+    // return ::get_surface_pixel(surf, make_point<int>(tex_coord.x,
+    // tex_coord.y));
+
+    auto const top_left = point_cast<int>(floor(tex_coord));
+    auto const top_left_pixel = ::get_surface_pixel(surf, top_left);
+
+    auto const bottom_right = clamp(
+        top_left + point2i{1, 1}, point_cast<int>(lo), point_cast<int>(hi));
+    auto const bottom_right_pixel = ::get_surface_pixel(surf, bottom_right);
+
+    auto const top_right = point2i{bottom_right.x, top_left.y};
+    auto const top_right_pixel = ::get_surface_pixel(surf, top_right);
+
+    auto const bottom_left = point2i{top_left.x, bottom_right.y};
+    auto const bottom_left_pixel = ::get_surface_pixel(surf, bottom_left);
+
+    auto const color_lerp_col1 = linear_interpolate(
+        top_left_pixel, bottom_left_pixel, tex_coord_remainder.y);
+    auto const color_lerp_col2 = linear_interpolate(
+        top_right_pixel, bottom_right_pixel, tex_coord_remainder.y);
+    return linear_interpolate(
+        color_lerp_col1, color_lerp_col2, tex_coord_remainder.x);
 }
 
 } // namespace raycaster
