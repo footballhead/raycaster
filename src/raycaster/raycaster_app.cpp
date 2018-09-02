@@ -269,23 +269,25 @@ void raycaster_app::render()
 
                 auto const pixel = get_surface_pixel(tex, {ray_v, y_percent});
 
+		auto const dither_steps = 4;
+
                 auto const num_bands = 8;
                 auto const band_index = static_cast<int>(fog_t * num_bands);
+                auto const band_t
+                    = static_cast<int>((fog_t * num_bands - band_index) * dither_steps)
+                    + 1;
 
-                auto const num_gradations = num_bands / 2;
                 auto const color_grade
-                    = std::floor(fog_t * num_gradations) / num_gradations;
+                    = std::floor(fog_t * num_bands) / num_bands;
                 auto const alt_color_grade
-                    = std::max(0.f, color_grade - 1.f / num_gradations);
+                    = std::max(0.f, color_grade - 1.f / num_bands);
 
-                auto const even_pixel = ((draw_pos.x + draw_pos.y) % 2) == 0;
-                auto const even_band = band_index % 2 == 0;
+                auto const even_pixel
+                    = ((draw_pos.x + draw_pos.y) % band_t) != 0;
 
-                auto const t = (even_pixel
-                        ? color_grade
-                        : (even_band ? alt_color_grade : color_grade));
+                auto const t = (even_pixel ? color_grade : alt_color_grade);
 
-                    return linear_interpolate(pixel, fog_color, t);
+                return linear_interpolate(pixel, fog_color, t);
             }));
     }
 }
