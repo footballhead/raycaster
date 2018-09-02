@@ -19,7 +19,7 @@ bool is_surface_of_desired_format(
 
 color get_surface_pixel(SDL_Surface* surf, point2i const& p)
 {
-    if (is_surface_of_desired_format(surf, desired_bpp)) {
+    if (!is_surface_of_desired_format(surf, desired_bpp)) {
 	SDL_Log("Invalid surface format: 0x%x", surf->format->format);
         throw std::runtime_error{"Got invalid bitmap surface! See log"};
     }

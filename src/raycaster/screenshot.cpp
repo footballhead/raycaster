@@ -19,8 +19,8 @@ bool save_screenshot(SDL_Renderer* renderer, const char* filename)
     auto const b_mask = 0x00FF0000;
     auto const a_mask = 0;
 
-    auto temp_surface = SDL_CreateRGBSurface(
-        0, renderer_size.w, renderer_size.h, 32, r_mask, g_mask, b_mask, 0);
+    auto temp_surface = SDL_CreateRGBSurface(0, renderer_size.w,
+        renderer_size.h, 32, r_mask, g_mask, b_mask, a_mask);
     if (!temp_surface) {
         SDL_Log("save_screenshot: SDL_CreateRGBSurfaceWithFormat failed: %s",
             SDL_GetError());

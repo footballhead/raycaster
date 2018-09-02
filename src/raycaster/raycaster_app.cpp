@@ -25,21 +25,6 @@ using namespace raycaster;
 constexpr auto step_size = 1.f / 64.f;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
-std::vector<std::pair<color, color>> const& get_dither_table()
-{
-    static const std::vector<std::pair<color, color>> table
-        = {std::make_pair(constants::white, constants::white),
-            std::make_pair(constants::white, constants::light_gray),
-            std::make_pair(constants::light_gray, constants::light_gray),
-            std::make_pair(constants::light_gray, constants::gray),
-            std::make_pair(constants::gray, constants::gray),
-            std::make_pair(constants::gray, constants::dark_gray),
-            std::make_pair(constants::dark_gray, constants::dark_gray),
-            std::make_pair(constants::dark_gray, constants::black)};
-
-    return table;
-}
-
 SDL_Surface* get_wall_texture(asset_store& assets, unsigned int i)
 {
     static const std::vector<std::string> texture_table{
@@ -170,7 +155,6 @@ void raycaster_app::render()
     auto const projection_plane = _camera.get_projection_plane();
 
     auto const logical_size = get_renderer_logical_size(renderer);
-    auto const half_width = logical_size.w / 2;
     auto const half_height = logical_size.h / 2;
 
     // draw ceiling (top-down)
@@ -225,9 +209,9 @@ void raycaster_app::render()
     }
 
     // Draw the rays to the screen
-    for (int i = 0; i < collision_buffer.size(); ++i) {
-        auto const& collision = collision_buffer.at(i);
-
+    int column = -1;
+    for (auto const& collision : collision_buffer) {
+        ++column;
         // No collision means don't draw anything. The fog effect will be taken
         // care of by floor/ceiling gradient.
         if (collision.distance < 0) {
@@ -260,8 +244,8 @@ void raycaster_app::render()
         auto const fog_distance = max_distance * fog_scale_factor;
         auto const fog_t = collision.distance / fog_distance;
 
-        auto const line_start = point2i{i, half_height - wall_size};
-        auto const line_end = point2i{i, half_height + wall_size};
+        auto const line_start = point2i{column, half_height - wall_size};
+        auto const line_end = point2i{column, half_height + wall_size};
         SDL_CHECK(draw_line(renderer, line_start, line_end,
             [&line_start, &line_end, tex, &ray_v, fog_t, &fog_color](
                 point2i const& draw_pos) {
@@ -270,12 +254,13 @@ void raycaster_app::render()
 
                 auto const pixel = get_surface_pixel(tex, {ray_v, y_percent});
 
-		auto const dither_steps = 4;
+                auto const dither_steps = 4;
 
                 auto const num_bands = 8;
                 auto const band_index = static_cast<int>(fog_t * num_bands);
                 auto const band_t
-                    = static_cast<int>((fog_t * num_bands - band_index) * dither_steps)
+                    = static_cast<int>(
+                          (fog_t * num_bands - band_index) * dither_steps)
                     + 1;
 
                 auto const color_grade
