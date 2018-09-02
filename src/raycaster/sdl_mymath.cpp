@@ -72,7 +72,7 @@ bool draw_line(SDL_Renderer* ren, point2i const& src, point2i const& dst,
 
     // We can do all the math in absolutes then apply the sign later to get the
     // right result! This greatly simplfies the code
-    auto const abs_delta = abs(delta);
+    auto const abs_delta = mymath::abs(delta);
     auto const use_unit_x = abs_delta.y < abs_delta.x;
 
     auto const x_inc

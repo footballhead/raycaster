@@ -225,8 +225,8 @@ void raycaster_app::render()
 
         // Determine which part of the texture to use by looking at the
         // remainder then trying to figure out which axis is more accurate
-        auto const v_x = fabs(collision.position.x - rounded_collision.x);
-        auto const v_y = fabs(collision.position.y - rounded_collision.y);
+        auto const v_x = std::abs(collision.position.x - rounded_collision.x);
+        auto const v_y = std::abs(collision.position.y - rounded_collision.y);
         auto const tolerance = step_size;
         auto const ray_v
             = v_x < tolerance || v_x > (1.f - tolerance) ? v_y : v_x;

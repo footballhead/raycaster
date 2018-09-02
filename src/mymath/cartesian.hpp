@@ -152,6 +152,12 @@ template <typename T> point2<T> abs(point2<T> const& p)
     return {std::abs(p.x), std::abs(p.y)};
 }
 
+// To disambiguate when T is int
+constexpr point2<int> abs(point2<int> const& p)
+{
+    return {p.x < 0 ? -p.x : p.x, p.y < 0 ? -p.y : p.y};
+}
+
 template <typename T>
 point2<T> clamp(point2<T> const& val, point2<T> const& lo, point2<T> const& hi)
 {
