@@ -2,6 +2,7 @@
 
 #include "screenshot.hpp"
 #include "sdl_mymath.hpp"
+#include "surface_manipulation.hpp"
 
 #include <mycolor/mycolor.hpp>
 #include <mymath/mymath.hpp>

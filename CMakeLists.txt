@@ -90,6 +90,7 @@ set(SOURCES
 	src/raycaster/raycaster_app.cpp
 	src/raycaster/screenshot.cpp
 	src/raycaster/sdl_mymath.cpp
+	src/raycaster/surface_manipulation.cpp
 	src/raycaster/main.cpp
 	)
 
@@ -99,6 +100,7 @@ set(HEADERS
 	src/raycaster/raycaster_app.hpp
 	src/raycaster/screenshot.hpp
 	src/raycaster/sdl_mymath.hpp
+	src/raycaster/surface_manipulation.hpp
 	)
 
 add_executable(raycaster ${SOURCES} ${HEADERS})
