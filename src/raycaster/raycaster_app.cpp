@@ -24,6 +24,21 @@ using namespace raycaster;
 constexpr auto step_size = 1.f / 64.f;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
+std::vector<std::pair<color, color>> const& get_dither_table()
+{
+    static const std::vector<std::pair<color, color>> table
+        = {std::make_pair(constants::white, constants::white),
+            std::make_pair(constants::white, constants::light_gray),
+            std::make_pair(constants::light_gray, constants::light_gray),
+            std::make_pair(constants::light_gray, constants::gray),
+            std::make_pair(constants::gray, constants::gray),
+            std::make_pair(constants::gray, constants::dark_gray),
+            std::make_pair(constants::dark_gray, constants::dark_gray),
+            std::make_pair(constants::dark_gray, constants::black)};
+
+    return table;
+}
+
 SDL_Surface* get_wall_texture(asset_store& assets, unsigned int i)
 {
     static const std::vector<std::string> texture_table{
@@ -89,9 +104,10 @@ point2i floor(point2f const& p)
 
 namespace raycaster {
 
-raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
-    sdl::shared_renderer renderer, std::unique_ptr<input_buffer> input,
-    std::unique_ptr<asset_store> assets, level lvl, camera cam)
+raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
+    sdl::window window, sdl::shared_renderer renderer,
+    std::unique_ptr<input_buffer> input, std::unique_ptr<asset_store> assets,
+    level lvl, camera cam)
 : sdl_application(
       std::move(sdl), std::move(window), std::move(renderer), std::move(input))
 , _asset_store{std::move(assets)}
@@ -242,20 +258,34 @@ void raycaster_app::render()
         auto const fog_scale_factor = 0.75f;
         auto const fog_distance = max_distance * fog_scale_factor;
         auto const fog_t = collision.distance / fog_distance;
-        // auto const interp = linear_interpolate(
-        //   wall_color, fog_color, collision.distance / fog_distance);
 
         auto const line_start = point2i{i, half_height - wall_size};
         auto const line_end = point2i{i, half_height + wall_size};
         SDL_CHECK(draw_line(renderer, line_start, line_end,
-            [&line_start, &line_end, tex, &ray_v, &fog_color, &fog_t](
+            [&line_start, &line_end, tex, &ray_v, fog_t, &fog_color](
                 point2i const& draw_pos) {
                 auto const y_percent = (draw_pos.y - line_start.y)
                     / static_cast<float>(line_end.y - line_start.y);
 
                 auto const pixel = get_surface_pixel(tex, {ray_v, y_percent});
 
-                return linear_interpolate(pixel, fog_color, fog_t);
+                auto const num_bands = 8;
+                auto const band_index = static_cast<int>(fog_t * num_bands);
+
+                auto const num_gradations = num_bands / 2;
+                auto const color_grade
+                    = std::floor(fog_t * num_gradations) / num_gradations;
+                auto const alt_color_grade
+                    = std::max(0.f, color_grade - 1.f / num_gradations);
+
+                auto const even_pixel = ((draw_pos.x + draw_pos.y) % 2) == 0;
+                auto const even_band = band_index % 2 == 0;
+
+                auto const t = (even_pixel
+                        ? color_grade
+                        : (even_band ? alt_color_grade : color_grade));
+
+                    return linear_interpolate(pixel, fog_color, t);
             }));
     }
 }
