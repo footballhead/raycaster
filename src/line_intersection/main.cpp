@@ -38,19 +38,31 @@ protected:
     {
         auto renderer = get_renderer();
 
-        point2f cross_point{0.f, 0.f};
+        point2i cross_point{0, 0};
         auto const did_cross
-            = find_intersection(_line, _mouse_line, cross_point);
+            = find_intersection(_mouse_line, _line, cross_point);
 
+        // Draw the static line
         SDL_CHECK(draw_line(
             renderer, _line, [](point2i const&) { return constants::yellow; }));
+
+        // Draw the line that interacts with the mouse. It's blue if they cross,
+        // yellow otherwise.
         SDL_CHECK(
             draw_line(renderer, _mouse_line, [&did_cross](point2i const&) {
                 return did_cross ? constants::cyan : constants::yellow;
             }));
 
-        SDL_CHECK(set_renderer_draw_color(renderer, constants::red));
-        SDL_CHECK(draw_point(get_renderer(), point_cast<int>(cross_point)));
+        // Draw a red cross at the intersection point
+        if (did_cross) {
+            SDL_CHECK(set_renderer_draw_color(renderer, constants::red));
+            SDL_CHECK(draw_point(get_renderer(), cross_point));
+            SDL_CHECK(draw_point(get_renderer(), cross_point + point2i{1, 1}));
+            SDL_CHECK(
+                draw_point(get_renderer(), cross_point + point2i{-1, -1}));
+            SDL_CHECK(draw_point(get_renderer(), cross_point + point2i{1, -1}));
+            SDL_CHECK(draw_point(get_renderer(), cross_point + point2i{-1, 1}));
+        }
     }
 
 private:

@@ -202,6 +202,21 @@ point2<T> wrap(point2<T> const& p, point2<T> const& lo, point2<T> const& hi)
 }
 
 //
+// rectangle
+//
+
+template <typename T> struct rectangle2 {
+    point2<T> tl;
+    point2<T> br;
+
+    bool contains(point2<T> const& p) const
+    {
+        // This assumes tl is indeed top-left and br is indeed bottom-right
+        return p.x >= tl.x && p.x <= br.x && p.y >= tl.y && p.y <= br.y;
+    }
+};
+
+//
 // line
 //
 
@@ -219,6 +234,17 @@ template <typename T> struct line2 {
         // Since both start and end define the line, either can be used
         return end.y - slope() * end.x;
     }
+
+    rectangle2<T> get_bounding_box() const
+    {
+        // Point order for a line isn't guaranteed but we need a bounding box
+        // where our comparisons will always work
+        auto const bb_start_x = std::min(start.x, end.x);
+        auto const bb_start_y = std::min(start.y, end.y);
+        auto const bb_end_x = std::max(start.x, end.x);
+        auto const bb_end_y = std::max(start.y, end.y);
+        return {{bb_start_x, bb_start_y}, {bb_end_x, bb_end_y}};
+    }
 };
 
 template <typename T>
@@ -231,7 +257,7 @@ using line2f = line2<float>;
 using line2i = line2<int>;
 
 template <typename T>
-bool find_intersection(line2<T> const& a, line2<T> const& b, point2<float>& out)
+bool find_intersection(line2<T> const& a, line2<T> const& b, point2<T>& out)
 {
     if (close_enough(a.slope(), b.slope())) {
         // Either 0 or infinitely many
@@ -242,14 +268,16 @@ bool find_intersection(line2<T> const& a, line2<T> const& b, point2<float>& out)
         = (b.y_intercept() - a.y_intercept()) / (a.slope() - b.slope());
     auto const y = a.slope() * x + a.y_intercept();
 
-    // Use the bounding box of a line (either a or b) to ensure the point is on
-    // the line segment. We don't care about any theoretical intersection.
-    if (x < a.start.x || x > a.end.x || y < a.start.y || y > a.end.y) {
-        // The point is not on the line segment!
+    auto const candidate = make_point<T>(x, y);
+
+    // The point must lie within box bounding boxes to be on the line segment
+    auto const a_bb = a.get_bounding_box();
+    auto const b_bb = b.get_bounding_box();
+    if (!a_bb.contains(candidate) || !b_bb.contains(candidate)) {
         return false;
     }
 
-    out = point2f{x, y};
+    out = candidate;
     return true;
 }
 
