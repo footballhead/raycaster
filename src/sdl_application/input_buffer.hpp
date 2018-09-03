@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mymath/mymath.hpp>
+
 #include <SDL.h>
 
 #include <array>
@@ -17,6 +19,8 @@ public:
     bool is_hit(SDL_Scancode scancode);
 
     bool is_quit() const;
+
+    mymath::point2i get_mouse_position() const;
 
 private:
     std::array<bool, SDL_NUM_SCANCODES> _key_pressed{};

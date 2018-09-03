@@ -1,12 +1,14 @@
 #include <SDL.h>
 
+#include <mycolor/mycolor.hpp>
 #include <mymath/mymath.hpp>
-#include <sdl_application/asset_store.hpp>
 #include <sdl_application/sdl_application.hpp>
 #include <sdl_raii/sdl_raii.hpp>
 
 #include <memory>
 
+using namespace mycolor;
+using namespace mymath;
 using namespace sdl_app;
 
 class line_intersection_app : public sdl_application {
@@ -21,14 +23,39 @@ public:
 
 protected:
     void unhandled_event(SDL_Event const&) override {}
+
     void update() override
     {
         auto& input = get_input_buffer();
         if (input.is_quit() || input.is_hit(SDL_SCANCODE_ESCAPE)) {
             quit();
         }
+
+        _mouse_line.end = input.get_mouse_position();
     }
-    void render() override {}
+
+    void render() override
+    {
+        auto renderer = get_renderer();
+
+        point2f cross_point{0.f, 0.f};
+        auto const did_cross
+            = find_intersection(_line, _mouse_line, cross_point);
+
+        SDL_CHECK(draw_line(
+            renderer, _line, [](point2i const&) { return constants::yellow; }));
+        SDL_CHECK(
+            draw_line(renderer, _mouse_line, [&did_cross](point2i const&) {
+                return did_cross ? constants::cyan : constants::yellow;
+            }));
+
+        SDL_CHECK(set_renderer_draw_color(renderer, constants::red));
+        SDL_CHECK(draw_point(get_renderer(), point_cast<int>(cross_point)));
+    }
+
+private:
+    line2i _line{point2i{160, 160}, point2i{200, 320}};
+    line2i _mouse_line{point2i{100, 200}, point2i{400, 300}};
 };
 
 int main(int argc, char** argv)

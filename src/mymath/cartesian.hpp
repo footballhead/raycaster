@@ -208,6 +208,17 @@ point2<T> wrap(point2<T> const& p, point2<T> const& lo, point2<T> const& hi)
 template <typename T> struct line2 {
     point2<T> start;
     point2<T> end;
+
+    float slope() const
+    {
+        return (end.y - start.y) / static_cast<float>(end.x - start.x);
+    }
+
+    float y_intercept() const
+    {
+        // Since both start and end define the line, either can be used
+        return end.y - slope() * end.x;
+    }
 };
 
 template <typename T>
@@ -217,6 +228,30 @@ point2<T> linear_interpolate(line2<T> const& line, float t)
 }
 
 using line2f = line2<float>;
+using line2i = line2<int>;
+
+template <typename T>
+bool find_intersection(line2<T> const& a, line2<T> const& b, point2<float>& out)
+{
+    if (close_enough(a.slope(), b.slope())) {
+        // Either 0 or infinitely many
+        return false;
+    }
+
+    auto const x
+        = (b.y_intercept() - a.y_intercept()) / (a.slope() - b.slope());
+    auto const y = a.slope() * x + a.y_intercept();
+
+    // Use the bounding box of a line (either a or b) to ensure the point is on
+    // the line segment. We don't care about any theoretical intersection.
+    if (x < a.start.x || x > a.end.x || y < a.start.y || y > a.end.y) {
+        // The point is not on the line segment!
+        return false;
+    }
+
+    out = point2f{x, y};
+    return true;
+}
 
 //
 // extent
