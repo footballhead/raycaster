@@ -86,11 +86,6 @@ collision_result find_collision(level const& lvl, point2f const& origin,
     return no_result;
 }
 
-point2i floor(point2f const& p)
-{
-    return {static_cast<int>(p.x), static_cast<int>(p.y)};
-}
-
 } // namespace
 
 namespace raycaster {
@@ -236,7 +231,7 @@ void raycaster_app::render()
         auto const wall_size
             = static_cast<int>(half_height / collision.distance);
 
-        auto const rounded_collision = floor(collision.position);
+        auto const rounded_collision = point_cast<int>(collision.position);
 
         // Determine which part of the texture to use by looking at the
         // remainder then trying to figure out which axis is more accurate
