@@ -5,7 +5,7 @@
 
 #include <sdl_raii/sdl_raii.hpp>
 
-namespace raycaster {
+namespace sdl_app {
 
 /// Manages asset lifetime.
 class asset_store {

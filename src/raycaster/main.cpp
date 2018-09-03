@@ -1,9 +1,9 @@
-#include "asset_store.hpp"
 #include "camera.hpp"
 #include "raycaster_app.hpp"
-#include "sdl_mymath.hpp"
 
 #include <mymath/mymath.hpp>
+#include <sdl_application/asset_store.hpp>
+#include <sdl_application/sdl_mymath.hpp>
 #include <sdl_raii/sdl_raii.hpp>
 
 #include <SDL.h>
@@ -15,6 +15,7 @@
 
 using namespace mymath;
 using namespace raycaster;
+using namespace sdl_app;
 
 int main(int argc, char** argv)
 {

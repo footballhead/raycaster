@@ -4,7 +4,7 @@
 
 #include <string>
 
-namespace raycaster {
+namespace sdl_app {
 
 /// @brief Take a screenshot and save it to disk.
 /// @param renderer The SDL renderer to take a screenshot of.

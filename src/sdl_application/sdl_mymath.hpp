@@ -7,7 +7,7 @@
 
 #include <functional>
 
-namespace raycaster {
+namespace sdl_app {
 
 /// @returns {0, 0} if logical size is not set
 mymath::extent2i get_renderer_logical_size(SDL_Renderer* renderer);

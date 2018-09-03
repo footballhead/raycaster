@@ -1,11 +1,12 @@
 #include "raycaster_app.hpp"
 
-#include "screenshot.hpp"
-#include "sdl_mymath.hpp"
-#include "surface_manipulation.hpp"
+#include "camera.hpp"
 
 #include <mycolor/mycolor.hpp>
 #include <mymath/mymath.hpp>
+#include <sdl_application/screenshot.hpp>
+#include <sdl_application/sdl_mymath.hpp>
+#include <sdl_application/surface_manipulation.hpp>
 #include <sdl_raii/sdl_raii.hpp>
 
 #include <SDL.h>

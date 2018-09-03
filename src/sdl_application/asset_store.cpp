@@ -9,7 +9,7 @@ sdl::surface load_image(std::string const& path)
 
 } // namespace
 
-namespace raycaster {
+namespace sdl_app {
 
 asset_store::asset_store(sdl::shared_renderer renderer, std::string base_dir)
 : _renderer{std::move(renderer)}

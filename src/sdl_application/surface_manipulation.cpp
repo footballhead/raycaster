@@ -34,7 +34,7 @@ color get_surface_pixel(SDL_Surface* surf, point2i const& p)
 
 } // namespace
 
-namespace raycaster {
+namespace sdl_app {
 
 color get_surface_pixel(SDL_Surface* surf, point2f const& uv)
 {

@@ -4,7 +4,7 @@
 
 #include <sdl_raii/sdl_raii.hpp>
 
-namespace raycaster {
+namespace sdl_app {
 
 bool save_screenshot(SDL_Renderer* renderer, const char* filename)
 {

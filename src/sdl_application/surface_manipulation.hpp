@@ -5,7 +5,7 @@
 
 #include <SDL.h>
 
-namespace raycaster {
+namespace sdl_app {
 
 mycolor::color get_surface_pixel(SDL_Surface* surf, mymath::point2f const& uv);
 

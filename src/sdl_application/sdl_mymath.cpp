@@ -14,12 +14,12 @@ namespace {
 
 point2i round_to_point(float x, float y)
 {
-    return {static_cast<int>(std::round(x)), static_cast<int>(std::round(y))};
+    return make_point<int>(std::round(x), std::round(y));
 }
 
 } // namespace
 
-namespace raycaster {
+namespace sdl_app {
 
 extent2i get_renderer_logical_size(SDL_Renderer* renderer)
 {

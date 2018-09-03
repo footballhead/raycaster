@@ -65,13 +65,21 @@ target_include_directories(sdl_raii
 #
 
 set(SDL_APPLICATION_SOURCES
+	src/sdl_application/asset_store.cpp
 	src/sdl_application/input_buffer.cpp
+	src/sdl_application/screenshot.cpp
 	src/sdl_application/sdl_application.cpp
+	src/sdl_application/sdl_mymath.cpp
+	src/sdl_application/surface_manipulation.cpp
 	)
 
 set(SDL_APPLICATION_HEADERS
+	src/sdl_application/asset_store.hpp
 	src/sdl_application/input_buffer.hpp
+	src/sdl_application/screenshot.hpp
 	src/sdl_application/sdl_application.hpp
+	src/sdl_application/sdl_mymath.hpp
+	src/sdl_application/surface_manipulation.hpp
 	)
 
 add_library(sdl_application STATIC ${SDL_APPLICATION_SOURCES} ${SDL_APPLICATION_HEADERS})
@@ -79,6 +87,8 @@ target_include_directories(sdl_application
 	PUBLIC
 		${CMAKE_CURRENT_SOURCE_DIR}/src
 		${SDL2_INCLUDE_DIRS}
+		mycolor
+		mymath
 		sdl_raii
 	)
 
@@ -87,22 +97,14 @@ target_include_directories(sdl_application
 #
 
 set(SOURCES
-	src/raycaster/asset_store.cpp
 	src/raycaster/camera.cpp
 	src/raycaster/raycaster_app.cpp
-	src/raycaster/screenshot.cpp
-	src/raycaster/sdl_mymath.cpp
-	src/raycaster/surface_manipulation.cpp
 	src/raycaster/main.cpp
 	)
 
 set(HEADERS
-	src/raycaster/asset_store.hpp
 	src/raycaster/camera.hpp
 	src/raycaster/raycaster_app.hpp
-	src/raycaster/screenshot.hpp
-	src/raycaster/sdl_mymath.hpp
-	src/raycaster/surface_manipulation.hpp
 	)
 
 add_executable(raycaster ${SOURCES} ${HEADERS})
