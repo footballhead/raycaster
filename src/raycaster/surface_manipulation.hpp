@@ -9,5 +9,9 @@ namespace raycaster {
 
 mycolor::color get_surface_pixel(SDL_Surface* surf, mymath::point2f const& uv);
 
+/// Use nearest neighbour filtering
+mycolor::color get_surface_pixel_nn(
+    SDL_Surface* surf, mymath::point2f const& uv);
+
 } // namespace raycaster
 

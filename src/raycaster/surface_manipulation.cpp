@@ -48,10 +48,6 @@ color get_surface_pixel(SDL_Surface* surf, point2f const& uv)
     auto const tex_coord = clamp(hi * uv, lo, hi);
     auto const tex_coord_remainder = remainder(tex_coord);
 
-    // Nearest neighbor filtering
-    // return ::get_surface_pixel(surf, make_point<int>(tex_coord.x,
-    // tex_coord.y));
-
     auto const top_left = point_cast<int>(floor(tex_coord));
     auto const top_left_pixel = ::get_surface_pixel(surf, top_left);
 
@@ -71,6 +67,17 @@ color get_surface_pixel(SDL_Surface* surf, point2f const& uv)
         top_right_pixel, bottom_right_pixel, tex_coord_remainder.y);
     return linear_interpolate(
         color_lerp_col1, color_lerp_col2, tex_coord_remainder.x);
+}
+
+color get_surface_pixel_nn(SDL_Surface* surf, point2f const& uv)
+{
+    auto const surface_extents = make_point<float>(surf->w, surf->h);
+
+    auto const lo = point2f{0.f, 0.f};
+    auto const hi = surface_extents - point2f{1.f, 1.f};
+    auto const tex_coord = clamp(surface_extents * uv, lo, hi);
+
+    return ::get_surface_pixel(surf, make_point<int>(tex_coord.x, tex_coord.y));
 }
 
 } // namespace raycaster

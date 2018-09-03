@@ -20,7 +20,9 @@ using namespace sdl_app;
 
 namespace {
 
-static auto s_use_fog = false;
+static auto s_use_fog = true;
+static auto s_use_bilinear = true;
+static auto s_use_dither_fog = false;
 
 using namespace raycaster;
 
@@ -147,8 +149,14 @@ void raycaster_app::update()
         }
     }
 
-    if (input_buffer.is_hit(SDL_SCANCODE_TAB)) {
+    if (input_buffer.is_hit(SDL_SCANCODE_1)) {
         s_use_fog = !s_use_fog;
+    }
+    if (input_buffer.is_hit(SDL_SCANCODE_2)) {
+        s_use_bilinear = !s_use_bilinear;
+    }
+    if (input_buffer.is_hit(SDL_SCANCODE_3)) {
+        s_use_dither_fog = !s_use_dither_fog;
     }
 }
 
@@ -258,30 +266,38 @@ void raycaster_app::render()
                 auto const y_percent = (draw_pos.y - line_start.y)
                     / static_cast<float>(line_end.y - line_start.y);
 
-                auto const pixel = get_surface_pixel(tex, {ray_v, y_percent});
+                auto const uv = point2f{ray_v, y_percent};
+                auto const pixel = s_use_bilinear
+                    ? get_surface_pixel(tex, uv)
+                    : get_surface_pixel_nn(tex, uv);
 
                 if (!s_use_fog) {
                     return pixel;
                 }
 
-                auto const dither_steps = 4;
+                auto t = 0.f;
+                if (s_use_dither_fog) {
+                    auto const dither_steps = 4;
 
-                auto const num_bands = 8;
-                auto const band_index = static_cast<int>(fog_t * num_bands);
-                auto const band_t
-                    = static_cast<int>(
-                          (fog_t * num_bands - band_index) * dither_steps)
-                    + 1;
+                    auto const num_bands = 8;
+                    auto const band_index = static_cast<int>(fog_t * num_bands);
+                    auto const band_t
+                        = static_cast<int>(
+                              (fog_t * num_bands - band_index) * dither_steps)
+                        + 1;
 
-                auto const color_grade
-                    = std::floor(fog_t * num_bands) / num_bands;
-                auto const alt_color_grade
-                    = std::max(0.f, color_grade - 1.f / num_bands);
+                    auto const color_grade
+                        = std::floor(fog_t * num_bands) / num_bands;
+                    auto const alt_color_grade
+                        = std::max(0.f, color_grade - 1.f / num_bands);
 
-                auto const even_pixel
-                    = ((draw_pos.x + draw_pos.y) % band_t) != 0;
+                    auto const even_pixel
+                        = ((draw_pos.x + draw_pos.y) % band_t) != 0;
 
-                auto const t = (even_pixel ? color_grade : alt_color_grade);
+                    t = (even_pixel ? color_grade : alt_color_grade);
+                } else {
+                    t = fog_t;
+                }
 
                 return linear_interpolate(pixel, fog_color, t);
             }));
