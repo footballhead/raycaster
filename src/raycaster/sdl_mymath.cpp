@@ -28,6 +28,11 @@ extent2i get_renderer_logical_size(SDL_Renderer* renderer)
     return {width, height};
 }
 
+bool set_renderer_logical_size(SDL_Renderer* renderer, extent2i const& size)
+{
+    return SDL_RenderSetLogicalSize(renderer, size.w, size.h) == 0;
+}
+
 extent2i get_texture_size(SDL_Texture* texture)
 {
     int width = 0, height = 0;

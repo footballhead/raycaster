@@ -308,9 +308,7 @@ void raycaster_app::on_window_event(SDL_WindowEvent const& event)
 {
     switch (event.event) {
     case SDL_WINDOWEVENT_RESIZED:
-        SDL_CHECK(
-            SDL_RenderSetLogicalSize(get_renderer(), event.data1, event.data2)
-            == 0);
+        // Used to do something, now doesn't
         break;
     }
 }

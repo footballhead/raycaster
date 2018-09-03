@@ -1,6 +1,7 @@
 #include "asset_store.hpp"
 #include "camera.hpp"
 #include "raycaster_app.hpp"
+#include "sdl_mymath.hpp"
 
 #include <mymath/mymath.hpp>
 #include <sdl_raii/sdl_raii.hpp>
@@ -30,11 +31,8 @@ int main(int argc, char** argv)
     assets->get_asset(common_assets::wall_texture);
     assets->get_asset(common_assets::stone_texture);
 
-    auto const scaling_factor = 4;
-    SDL_CHECK(
-        SDL_RenderSetLogicalSize(renderer.get(),
-            window_bounds.x / scaling_factor, window_bounds.y / scaling_factor)
-        == 0);
+    auto const renderer_size = extent2i{320, 180};
+    SDL_CHECK(set_renderer_logical_size(renderer.get(), renderer_size));
 
     // clang-format off
     level test_level = {
