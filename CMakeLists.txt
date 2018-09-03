@@ -92,6 +92,12 @@ target_include_directories(sdl_application
 		sdl_raii
 	)
 
+target_link_libraries(sdl_application
+	${SDL2_LIBRARIES}
+	mymath
+	sdl_raii
+	)
+
 #
 # raycaster
 #
@@ -109,13 +115,20 @@ set(HEADERS
 
 add_executable(raycaster ${SOURCES} ${HEADERS})
 
-target_include_directories(raycaster
-	PRIVATE
-		${SDL2_INCLUDE_DIRS}
-	)
 target_link_libraries(raycaster
-	${SDL2_LIBRARIES}
-	mymath
 	sdl_application
-	sdl_raii
+	)
+
+#
+# line_intersection
+#
+
+set(LINE_INTERSECTION_SOURCES
+	src/line_intersection/main.cpp
+	)
+
+add_executable(line_intersection ${LINE_INTERSECTION_SOURCES})
+
+target_link_libraries(line_intersection
+	sdl_application
 	)
