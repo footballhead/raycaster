@@ -56,6 +56,9 @@ collision_result find_collision(level const& lvl, point2f const& origin,
 {
     auto const no_result = collision_result{-1.f, {-1.f, -1.f}};
 
+    // auto const march_vector = vector2f{direction, max_distance};
+    // auto const ray_line = line2f{origin, origin + march_vector};
+
     auto const unit_vector = vector2f{direction, step_size};
 
     // Convert vector into a point (to avoid trig)
@@ -166,6 +169,9 @@ void raycaster_app::update()
 
 void raycaster_app::render()
 {
+    static auto start_time = SDL_GetTicks();
+    static auto frame_number = 0;
+
     auto renderer = get_renderer();
 
     auto const fog_color = _camera.get_fog_color();
@@ -308,6 +314,15 @@ void raycaster_app::render()
 
                 return linear_interpolate(pixel, fog_color, t);
             }));
+    }
+
+    ++frame_number;
+
+    const auto end_time = SDL_GetTicks();
+    if (end_time >= start_time + 1000) {
+        start_time = end_time;
+        SDL_Log("FPS: %d", frame_number);
+        frame_number = 0;
     }
 }
 
