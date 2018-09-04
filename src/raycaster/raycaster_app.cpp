@@ -22,8 +22,10 @@ using namespace sdl_app;
 namespace {
 
 static auto s_use_fog = true;
-static auto s_use_bilinear = true;
-static auto s_use_dither_fog = false;
+static auto s_use_bilinear = false;
+static auto s_use_dither_fog = true;
+static auto s_use_textures = true;
+static auto s_draw_floor = true;
 
 using namespace raycaster;
 
@@ -154,6 +156,12 @@ void raycaster_app::update()
     if (input_buffer.is_hit(SDL_SCANCODE_3)) {
         s_use_dither_fog = !s_use_dither_fog;
     }
+    if (input_buffer.is_hit(SDL_SCANCODE_4)) {
+        s_use_textures = !s_use_textures;
+    }
+    if (input_buffer.is_hit(SDL_SCANCODE_5)) {
+        s_draw_floor = !s_draw_floor;
+    }
 }
 
 void raycaster_app::render()
@@ -167,27 +175,29 @@ void raycaster_app::render()
     auto const logical_size = get_renderer_logical_size(renderer);
     auto const half_height = logical_size.h / 2;
 
-    // draw ceiling (top-down)
-    color const ceiling_color{64, 0, 0};
-    for (int i = 0; i < half_height; ++i) {
-        auto const t_scale
-            = max_distance / static_cast<float>(max_distance - 1);
-        auto const interp = linear_interpolate(ceiling_color, fog_color,
-            i / static_cast<float>(half_height) * t_scale);
-        SDL_CHECK(draw_line(renderer, {0, i}, {logical_size.w, i},
-            [&interp](point2i const&) { return interp; }));
-    }
+    if (s_draw_floor) {
+        // draw ceiling (top-down)
+        color const ceiling_color{64, 0, 0};
+        for (int i = 0; i < half_height; ++i) {
+            auto const t_scale
+                = max_distance / static_cast<float>(max_distance - 1);
+            auto const interp = linear_interpolate(ceiling_color, fog_color,
+                i / static_cast<float>(half_height) * t_scale);
+            SDL_CHECK(draw_line(renderer, {0, i}, {logical_size.w, i},
+                [&interp](point2i const&) { return interp; }));
+        }
 
-    // draw floor (bottom-up)
-    color const floor_color{64, 128, 255};
-    for (int i = 0; i < half_height; ++i) {
-        auto const t_scale
-            = max_distance / static_cast<float>(max_distance - 1);
-        auto const interp = linear_interpolate(floor_color, fog_color,
-            (half_height - i) / static_cast<float>(half_height) * t_scale);
-        auto const draw_y = i + half_height;
-        SDL_CHECK(draw_line(renderer, {0, draw_y}, {logical_size.w, draw_y},
-            [&interp](point2i const&) { return interp; }));
+        // draw floor (bottom-up)
+        color const floor_color{64, 128, 255};
+        for (int i = 0; i < half_height; ++i) {
+            auto const t_scale
+                = max_distance / static_cast<float>(max_distance - 1);
+            auto const interp = linear_interpolate(floor_color, fog_color,
+                (half_height - i) / static_cast<float>(half_height) * t_scale);
+            auto const draw_y = i + half_height;
+            SDL_CHECK(draw_line(renderer, {0, draw_y}, {logical_size.w, draw_y},
+                [&interp](point2i const&) { return interp; }));
+        }
     }
 
     auto const num_rays = logical_size.w;
@@ -263,9 +273,10 @@ void raycaster_app::render()
                     / static_cast<float>(line_end.y - line_start.y);
 
                 auto const uv = point2f{ray_v, y_percent};
-                auto const pixel = s_use_bilinear
-                    ? get_surface_pixel(tex, uv)
-                    : get_surface_pixel_nn(tex, uv);
+                auto const pixel = s_use_textures
+                    ? (s_use_bilinear ? get_surface_pixel(tex, uv)
+                                      : get_surface_pixel_nn(tex, uv))
+                    : constants::white;
 
                 if (!s_use_fog) {
                     return pixel;
