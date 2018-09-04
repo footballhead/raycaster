@@ -3,6 +3,7 @@
 #include <mymath/linear_algebra.hpp>
 
 #include <cmath>
+#include <stdexcept>
 
 namespace mymath {
 
@@ -224,13 +225,40 @@ template <typename T> struct line2 {
     point2<T> start;
     point2<T> end;
 
+    bool is_vertical() const { return end.x == start.x; }
+
+    bool is_horizontal() const { return end.y == start.y; }
+
     float slope() const
     {
+        if (is_vertical()) {
+            throw std::runtime_error("Vertical line has no slope!");
+        }
         return (end.y - start.y) / static_cast<float>(end.x - start.x);
+    }
+
+    float slope_inverse() const
+    {
+        if (is_horizontal()) {
+            throw std::runtime_error("Horiontal line has no inverse slopte");
+        }
+        return (end.x - start.x) / static_cast<float>(end.y - start.y);
+    }
+
+    float x_intercept() const
+    {
+        if (is_horizontal()) {
+            throw std::runtime_error("Horiontal line has no x-intercept!");
+        }
+        // Since both start and end define the line, either can be used
+        return end.y - slope() * end.x;
     }
 
     float y_intercept() const
     {
+        if (is_vertical()) {
+            throw std::runtime_error("Vertical line has no y-intercept!");
+        }
         // Since both start and end define the line, either can be used
         return end.y - slope() * end.x;
     }
@@ -256,13 +284,54 @@ point2<T> linear_interpolate(line2<T> const& line, float t)
 using line2f = line2<float>;
 using line2i = line2<int>;
 
+namespace detail {
+
+template <typename T>
+bool find_intersection_vertical(line2<T> const& vertical, line2<T> const& b, point2<T>& out)
+{
+    auto const b_low_x = std::min(b.start.x, b.end.x);
+    auto const b_hi_x = std::max(b.start.x, b.end.x);
+    if (vertical.start.x < b_low_x || vertical.start.x > b_hi_x) {
+        return false;
+    }
+
+    auto const x = static_cast<float>(vertical.start.x);
+    auto const y = b.slope() * x + b.y_intercept();
+
+    auto const candidate = make_point<T>(x, y);
+
+    // The point must lie within box bounding boxes to be on the line segment
+    auto const a_bb = vertical.get_bounding_box();
+    auto const b_bb = b.get_bounding_box();
+    if (!a_bb.contains(candidate) || !b_bb.contains(candidate)) {
+        return false;
+    }
+
+    out = candidate;
+    return true;
+}
+
+}
+
 template <typename T>
 bool find_intersection(line2<T> const& a, line2<T> const& b, point2<T>& out)
 {
+    if (a.is_vertical() && b.is_vertical()) {
+        return false;
+    }
+
+    if (a.is_vertical()) {
+        return detail::find_intersection_vertical(a, b, out);
+    } else if (b.is_vertical()) {
+        return detail::find_intersection_vertical(b, a, out);
+    }
+
     if (close_enough(a.slope(), b.slope())) {
         // Either 0 or infinitely many
         return false;
     }
+
+    // ... else neither are vertical so proceed as usual
 
     auto const x
         = (b.y_intercept() - a.y_intercept()) / (a.slope() - b.slope());

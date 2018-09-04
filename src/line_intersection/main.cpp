@@ -66,7 +66,7 @@ protected:
     }
 
 private:
-    line2i _line{point2i{160, 160}, point2i{200, 320}};
+    line2i _line{point2i{160, 200}, point2i{160, 300}};
     line2i _mouse_line{point2i{100, 200}, point2i{400, 300}};
 };
 
