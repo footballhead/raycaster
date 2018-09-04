@@ -273,6 +273,13 @@ template <typename T> struct line2 {
         auto const bb_end_y = std::max(start.y, end.y);
         return {{bb_start_x, bb_start_y}, {bb_end_x, bb_end_y}};
     }
+
+    float length() const
+    {
+        auto const a = start.x - end.x;
+        auto const b = start.y - end.y;
+        return std::sqrt(a*a + b*b);
+    }
 };
 
 template <typename T>

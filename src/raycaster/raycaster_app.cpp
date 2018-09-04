@@ -56,36 +56,30 @@ collision_result find_collision(level const& lvl, point2f const& origin,
 {
     auto const no_result = collision_result{-1.f, {-1.f, -1.f}};
 
-    // auto const march_vector = vector2f{direction, max_distance};
-    // auto const ray_line = line2f{origin, origin + march_vector};
+    auto const march_vector = vector2f{direction, max_distance};
+    auto const ray_line = line2f{origin, origin + march_vector};
 
-    auto const unit_vector = vector2f{direction, step_size};
+    auto const temp_level_geom = std::vector<line2f>{
+        line2f{{0.f, 0.f}, {0.f, 4.f}},
+        line2f{{0.f, 4.f}, {1.f, 5.f}},
+        line2f{{1.f, 5.f}, {5.f, 5.f}},
+        line2f{{5.f, 5.f}, {5.f, 0.f}},
+        line2f{{5.f, 0.f}, {0.f, 0.f}},
+    };
 
-    // Convert vector into a point (to avoid trig)
-    auto const vector_as_point = point2f{0.f, 0.f} + unit_vector;
-    auto const& march = vector_as_point;
-    // auto const slope = vector_as_point.y / vector_as_point.x;
+    for (auto const& level_geom : temp_level_geom) {
+        point2f cross_point{0.f, 0.f};
+        if (find_intersection(ray_line, level_geom, cross_point)) {
+            auto const exact_line = line2f{origin, cross_point};
+            auto const res = collision_result{exact_line.length(), cross_point};
 
-    auto accum = origin + march;
+            // SDL_Log("collision_result: distance=%f position=(%f, %f)",
+            // res.distance,
+            //    cross_point.x, cross_point.y);
 
-    auto distance = step_size;
-    while (distance < max_distance) {
-        accum += march;
-
-        auto const int_x = static_cast<int>(accum.x);
-        auto const int_y = static_cast<int>(accum.y);
-
-        if (int_x < 0 || int_x > lvl.bounds.w - 1 || int_y < 0
-            || int_y > lvl.bounds.h - 1) {
-            return no_result;
+            // SDL_Delay(2000);
+            return res;
         }
-
-        auto const index = int_y * lvl.bounds.w + int_x;
-        if (lvl.data[index] > 0) {
-            return collision_result{distance, accum};
-        }
-
-        distance += step_size;
     }
 
     return no_result;
