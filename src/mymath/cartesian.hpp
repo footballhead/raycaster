@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <type_traits>
 
 namespace mymath {
 
@@ -12,6 +13,10 @@ namespace mymath {
 //
 
 template <typename T> struct vector2 {
+    static_assert(
+        std::is_integral<T>::value || std::is_floating_point<T>::value,
+        "vector2 requires int/fp type.");
+
     T dir;
     T mag;
 };
@@ -23,6 +28,10 @@ using vector2f = vector2<float>;
 //
 
 template <typename T> struct point2 {
+    static_assert(
+        std::is_integral<T>::value || std::is_floating_point<T>::value,
+        "point2 requires int/fp type.");
+
     T x;
     T y;
 
@@ -207,6 +216,10 @@ point2<T> wrap(point2<T> const& p, point2<T> const& lo, point2<T> const& hi)
 //
 
 template <typename T> struct rectangle2 {
+    static_assert(
+        std::is_integral<T>::value || std::is_floating_point<T>::value,
+        "rectangle2 requires int/fp type.");
+
     point2<T> tl;
     point2<T> br;
 
@@ -222,6 +235,10 @@ template <typename T> struct rectangle2 {
 //
 
 template <typename T> struct line2 {
+    static_assert(
+        std::is_integral<T>::value || std::is_floating_point<T>::value,
+        "line2 requires int/fp type.");
+
     point2<T> start;
     point2<T> end;
 
@@ -235,23 +252,6 @@ template <typename T> struct line2 {
             throw std::runtime_error("Vertical line has no slope!");
         }
         return (end.y - start.y) / static_cast<float>(end.x - start.x);
-    }
-
-    float slope_inverse() const
-    {
-        if (is_horizontal()) {
-            throw std::runtime_error("Horiontal line has no inverse slopte");
-        }
-        return (end.x - start.x) / static_cast<float>(end.y - start.y);
-    }
-
-    float x_intercept() const
-    {
-        if (is_horizontal()) {
-            throw std::runtime_error("Horiontal line has no x-intercept!");
-        }
-        // Since both start and end define the line, either can be used
-        return end.y - slope() * end.x;
     }
 
     float y_intercept() const
@@ -278,7 +278,7 @@ template <typename T> struct line2 {
     {
         auto const a = start.x - end.x;
         auto const b = start.y - end.y;
-        return std::sqrt(a*a + b*b);
+        return std::sqrt(a * a + b * b);
     }
 };
 
@@ -294,7 +294,8 @@ using line2i = line2<int>;
 namespace detail {
 
 template <typename T>
-bool find_intersection_vertical(line2<T> const& vertical, line2<T> const& b, point2<T>& out)
+bool find_intersection_vertical(
+    line2<T> const& vertical, line2<T> const& b, point2<T>& out)
 {
     auto const b_low_x = std::min(b.start.x, b.end.x);
     auto const b_hi_x = std::max(b.start.x, b.end.x);
@@ -318,7 +319,7 @@ bool find_intersection_vertical(line2<T> const& vertical, line2<T> const& b, poi
     return true;
 }
 
-}
+} // namespace detail
 
 template <typename T>
 bool find_intersection(line2<T> const& a, line2<T> const& b, point2<T>& out)
@@ -362,10 +363,18 @@ bool find_intersection(line2<T> const& a, line2<T> const& b, point2<T>& out)
 //
 
 template <typename T> struct extent2 {
+    static_assert(
+        std::is_integral<T>::value || std::is_floating_point<T>::value,
+        "extent2 requires int/fp type.");
+
     T w;
     T h;
 };
 
 using extent2i = extent2<int>;
+
+//
+// algorithms for template specializations
+//
 
 } // namespace mymath
