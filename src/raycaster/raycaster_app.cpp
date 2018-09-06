@@ -33,15 +33,16 @@ using namespace raycaster;
 constexpr auto step_size = 1.f / 64.f;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
-SDL_Surface* get_wall_texture(asset_store& assets, unsigned int i)
+char const* get_wall_texture(unsigned int i)
 {
-    static const std::vector<std::string> texture_table{
-        common_assets::wall_texture, common_assets::wall_texture,
-        common_assets::stone_texture};
-    if (i >= texture_table.size()) {
-        throw std::runtime_error{"Invalid wall-texutre index"};
+    switch (i) {
+    case 2:
+        return common_assets::stone_texture;
+    case 0:
+    case 1:
+    default:
+        return common_assets::wall_texture;
     }
-    return assets.get_asset(texture_table.at(i));
 }
 
 /// The result of a single ray casting operation
@@ -60,25 +61,11 @@ collision_result find_collision(level const& lvl, point2f const& origin,
     auto const march_vector = vector2f{direction, max_distance};
     auto const ray_line = line2f{origin, origin + march_vector};
 
-    auto const temp_level_geom = std::vector<line2f>{
-        line2f{{0.f, 0.f}, {0.f, 4.f}},
-        line2f{{0.f, 4.f}, {1.f, 5.f}},
-        line2f{{1.f, 5.f}, {5.f, 5.f}},
-        line2f{{5.f, 5.f}, {5.f, 0.f}},
-        line2f{{5.f, 0.f}, {0.f, 0.f}},
-    };
-
-    for (auto const& level_geom : temp_level_geom) {
+    for (auto const& wall : lvl.walls) {
         point2f cross_point{0.f, 0.f};
-        if (find_intersection(ray_line, level_geom, cross_point)) {
+        if (find_intersection(ray_line, wall, cross_point)) {
             auto const exact_line = line2f{origin, cross_point};
             auto const res = collision_result{exact_line.length(), cross_point};
-
-            // SDL_Log("collision_result: distance=%f position=(%f, %f)",
-            // res.distance,
-            //    cross_point.x, cross_point.y);
-
-            // SDL_Delay(2000);
             return res;
         }
     }
@@ -253,9 +240,7 @@ void raycaster_app::render()
             = v_x < tolerance || v_x > (1.f - tolerance) ? v_y : v_x;
 
         // Figure out which texture to use
-        auto const index
-            = rounded_collision.y * _level.bounds.w + rounded_collision.x;
-        auto tex = get_wall_texture(*_asset_store, _level.data[index]);
+        auto tex = _asset_store->get_asset(get_wall_texture(1u));
 
         // Color the texture to apply the fog effect. The "fog scale factor" is
         // used to account for the draw cutoff being determined by euclidean

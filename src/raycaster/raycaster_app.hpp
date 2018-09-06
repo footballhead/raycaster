@@ -13,8 +13,7 @@
 namespace raycaster {
 
 struct level {
-    mymath::extent2i bounds;
-    std::vector<uint8_t> data;
+    std::vector<mymath::line2f> walls;
 };
 
 class raycaster_app : public sdl_app::sdl_application {

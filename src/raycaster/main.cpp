@@ -35,22 +35,13 @@ int main(int argc, char** argv)
     auto const renderer_size = extent2i{320, 180};
     SDL_CHECK(set_renderer_logical_size(renderer.get(), renderer_size));
 
-    // clang-format off
-    level test_level = {
-        8, // width
-        8, // height
-        {  // data
-            1, 1, 1, 1, 1, 1, 1, 1,
-            1, 0, 2, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 2, 0, 1,
-            1, 0, 0, 0, 0, 2, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 2, 2, 2, 1,
-            1, 2, 0, 0, 0, 0, 0, 1,
-            1, 1, 1, 1, 1, 1, 1, 1,
-        },
-    };
-    // clang-format on
+    level test_level = {std::vector<line2f>{
+        line2f{{0.f, 0.f}, {0.f, 4.f}},
+        line2f{{0.f, 4.f}, {1.f, 5.f}},
+        line2f{{1.f, 5.f}, {5.f, 5.f}},
+        line2f{{5.f, 5.f}, {5.f, 0.f}},
+        line2f{{5.f, 0.f}, {0.f, 0.f}},
+    }};
 
     camera cam{
         point2f{
