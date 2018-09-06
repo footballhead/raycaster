@@ -41,6 +41,7 @@ int main(int argc, char** argv)
         wall{line2f{point2f{1.f, 5.f}, point2f{5.f, 5.f}}, 1},
         wall{line2f{point2f{5.f, 5.f}, point2f{5.f, 0.f}}, 1},
         wall{line2f{point2f{5.f, 0.f}, point2f{0.f, 0.f}}, 1},
+        wall{line2f{point2f{1.f, 4.f}, point2f{2.f, 5.f}}, 1},
     }};
 
     camera cam{

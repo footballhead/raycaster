@@ -51,17 +51,29 @@ collision_result find_collision(level const& lvl, point2f const& origin,
     auto const march_vector = vector2f{direction, max_distance};
     auto const ray_line = line2f{origin, origin + march_vector};
 
+    std::vector<collision_result> intersections;
+
     for (auto const& wall : lvl.walls) {
         point2f cross_point{0.f, 0.f};
         if (find_intersection(ray_line, wall.data, cross_point)) {
             auto const exact_line = line2f{origin, cross_point};
-            auto const res = collision_result{
-                exact_line.length(), cross_point, wall.texture};
-            return res;
+            intersections.push_back(collision_result{
+                exact_line.length(), cross_point, wall.texture});
         }
     }
 
-    return no_result;
+    if (intersections.empty()) {
+        return no_result;
+    }
+
+    collision_result const* closest = &intersections[0];
+    for (auto const collision : intersections) {
+        if (collision.distance < closest->distance) {
+            closest = &collision;
+        }
+    }
+
+    return *closest;
 }
 
 } // namespace
