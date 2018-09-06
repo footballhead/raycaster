@@ -29,6 +29,31 @@ bool find_intersection_vertical(
     return true;
 }
 
+bool find_intersection_horizontal(
+    line2f const& horizontal, line2f const& b, point2f& out)
+{
+    auto const b_low_y = std::min(b.start.y, b.end.y);
+    auto const b_hi_y = std::max(b.start.y, b.end.y);
+    if (horizontal.start.y < b_low_y || horizontal.start.y > b_hi_y) {
+        return false;
+    }
+
+    auto const y = static_cast<float>(horizontal.start.y);
+    auto const x = (y - b.y_intercept()) / b.slope();
+
+    auto const candidate = point2f{x, y};
+
+    // The point must lie within box bounding boxes to be on the line segment
+    auto const a_bb = horizontal.get_bounding_box();
+    auto const b_bb = b.get_bounding_box();
+    if (!a_bb.contains(candidate) || !b_bb.contains(candidate)) {
+        return false;
+    }
+
+    out = candidate;
+    return true;
+}
+
 } // namespace
 
 namespace raycaster {
@@ -43,6 +68,12 @@ bool find_intersection(line2f const& a, line2f const& b, point2f& out)
         return find_intersection_vertical(a, b, out);
     } else if (b.is_vertical()) {
         return find_intersection_vertical(b, a, out);
+    }
+
+    if (a.is_horizontal()) {
+        return find_intersection_horizontal(a, b, out);
+    } else if (b.is_horizontal()) {
+        return find_intersection_horizontal(b, a, out);
     }
 
     if (close_enough(a.slope(), b.slope())) {
