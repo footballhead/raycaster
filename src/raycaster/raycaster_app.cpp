@@ -1,6 +1,7 @@
 #include "raycaster_app.hpp"
 
 #include "camera.hpp"
+#include "intersection.hpp"
 
 #include <mycolor/mycolor.hpp>
 #include <mymath/mymath.hpp>

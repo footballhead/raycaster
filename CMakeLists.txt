@@ -104,31 +104,19 @@ target_link_libraries(sdl_application
 
 set(SOURCES
 	src/raycaster/camera.cpp
+	src/raycaster/intersection.cpp
 	src/raycaster/raycaster_app.cpp
 	src/raycaster/main.cpp
 	)
 
 set(HEADERS
 	src/raycaster/camera.hpp
+	src/raycaster/intersection.hpp
 	src/raycaster/raycaster_app.hpp
 	)
 
 add_executable(raycaster ${SOURCES} ${HEADERS})
 
 target_link_libraries(raycaster
-	sdl_application
-	)
-
-#
-# line_intersection
-#
-
-set(LINE_INTERSECTION_SOURCES
-	src/line_intersection/main.cpp
-	)
-
-add_executable(line_intersection ${LINE_INTERSECTION_SOURCES})
-
-target_link_libraries(line_intersection
 	sdl_application
 	)

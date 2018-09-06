@@ -291,72 +291,6 @@ point2<T> linear_interpolate(line2<T> const& line, float t)
 using line2f = line2<float>;
 using line2i = line2<int>;
 
-namespace detail {
-
-template <typename T>
-bool find_intersection_vertical(
-    line2<T> const& vertical, line2<T> const& b, point2<T>& out)
-{
-    auto const b_low_x = std::min(b.start.x, b.end.x);
-    auto const b_hi_x = std::max(b.start.x, b.end.x);
-    if (vertical.start.x < b_low_x || vertical.start.x > b_hi_x) {
-        return false;
-    }
-
-    auto const x = static_cast<float>(vertical.start.x);
-    auto const y = b.slope() * x + b.y_intercept();
-
-    auto const candidate = make_point<T>(x, y);
-
-    // The point must lie within box bounding boxes to be on the line segment
-    auto const a_bb = vertical.get_bounding_box();
-    auto const b_bb = b.get_bounding_box();
-    if (!a_bb.contains(candidate) || !b_bb.contains(candidate)) {
-        return false;
-    }
-
-    out = candidate;
-    return true;
-}
-
-} // namespace detail
-
-template <typename T>
-bool find_intersection(line2<T> const& a, line2<T> const& b, point2<T>& out)
-{
-    if (a.is_vertical() && b.is_vertical()) {
-        return false;
-    }
-
-    if (a.is_vertical()) {
-        return detail::find_intersection_vertical(a, b, out);
-    } else if (b.is_vertical()) {
-        return detail::find_intersection_vertical(b, a, out);
-    }
-
-    if (close_enough(a.slope(), b.slope())) {
-        // Either 0 or infinitely many
-        return false;
-    }
-
-    // ... else neither are vertical so proceed as usual
-
-    auto const x
-        = (b.y_intercept() - a.y_intercept()) / (a.slope() - b.slope());
-    auto const y = a.slope() * x + a.y_intercept();
-
-    auto const candidate = make_point<T>(x, y);
-
-    // The point must lie within box bounding boxes to be on the line segment
-    auto const a_bb = a.get_bounding_box();
-    auto const b_bb = b.get_bounding_box();
-    if (!a_bb.contains(candidate) || !b_bb.contains(candidate)) {
-        return false;
-    }
-
-    out = candidate;
-    return true;
-}
 
 //
 // extent
@@ -372,9 +306,5 @@ template <typename T> struct extent2 {
 };
 
 using extent2i = extent2<int>;
-
-//
-// algorithms for template specializations
-//
 
 } // namespace mymath
