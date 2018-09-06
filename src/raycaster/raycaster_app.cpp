@@ -33,39 +33,30 @@ using namespace raycaster;
 constexpr auto step_size = 1.f / 64.f;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
-char const* get_wall_texture(unsigned int i)
-{
-    switch (i) {
-    case 2:
-        return common_assets::stone_texture;
-    case 0:
-    case 1:
-    default:
-        return common_assets::wall_texture;
-    }
-}
-
 /// The result of a single ray casting operation
 struct collision_result {
     /// The distance to the point of collision. If < 0 then no collision
     float distance;
     /// The point of collision. If distance < 0 then this is not valid
     point2f position;
+    /// The ID of the texture to use
+    unsigned int texture;
 };
 
 collision_result find_collision(level const& lvl, point2f const& origin,
     float direction, float max_distance)
 {
-    auto const no_result = collision_result{-1.f, {-1.f, -1.f}};
+    auto const no_result = collision_result{-1.f, {-1.f, -1.f}, 0u};
 
     auto const march_vector = vector2f{direction, max_distance};
     auto const ray_line = line2f{origin, origin + march_vector};
 
     for (auto const& wall : lvl.walls) {
         point2f cross_point{0.f, 0.f};
-        if (find_intersection(ray_line, wall, cross_point)) {
+        if (find_intersection(ray_line, wall.data, cross_point)) {
             auto const exact_line = line2f{origin, cross_point};
-            auto const res = collision_result{exact_line.length(), cross_point};
+            auto const res = collision_result{
+                exact_line.length(), cross_point, wall.texture};
             return res;
         }
     }
@@ -240,7 +231,7 @@ void raycaster_app::render()
             = v_x < tolerance || v_x > (1.f - tolerance) ? v_y : v_x;
 
         // Figure out which texture to use
-        auto tex = _asset_store->get_asset(get_wall_texture(1u));
+        auto tex = _asset_store->get_asset(get_wall_texture(collision.texture));
 
         // Color the texture to apply the fog effect. The "fog scale factor" is
         // used to account for the draw cutoff being determined by euclidean

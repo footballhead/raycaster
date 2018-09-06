@@ -35,12 +35,12 @@ int main(int argc, char** argv)
     auto const renderer_size = extent2i{320, 180};
     SDL_CHECK(set_renderer_logical_size(renderer.get(), renderer_size));
 
-    level test_level = {std::vector<line2f>{
-        line2f{{0.f, 0.f}, {0.f, 4.f}},
-        line2f{{0.f, 4.f}, {1.f, 5.f}},
-        line2f{{1.f, 5.f}, {5.f, 5.f}},
-        line2f{{5.f, 5.f}, {5.f, 0.f}},
-        line2f{{5.f, 0.f}, {0.f, 0.f}},
+    level test_level = {std::vector<wall>{
+        wall{line2f{point2f{0.f, 0.f}, point2f{0.f, 4.f}}, 1},
+        wall{line2f{point2f{0.f, 4.f}, point2f{1.f, 5.f}}, 2},
+        wall{line2f{point2f{1.f, 5.f}, point2f{5.f, 5.f}}, 1},
+        wall{line2f{point2f{5.f, 5.f}, point2f{5.f, 0.f}}, 1},
+        wall{line2f{point2f{5.f, 0.f}, point2f{0.f, 0.f}}, 1},
     }};
 
     camera cam{
