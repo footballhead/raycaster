@@ -30,7 +30,6 @@ static auto s_draw_floor = true;
 
 using namespace raycaster;
 
-constexpr auto step_size = 1.f / 64.f;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
 /// The result of a single ray casting operation
@@ -66,14 +65,16 @@ collision_result find_collision(level const& lvl, point2f const& origin,
         return no_result;
     }
 
-    collision_result const* closest = &intersections[0];
-    for (auto const collision : intersections) {
-        if (collision.distance < closest->distance) {
-            closest = &collision;
+    auto closest_I = intersections.cbegin();
+    for (auto I = intersections.cbegin(); I < intersections.cend(); I++) {
+        auto const& collision = *I;
+        auto const& closest_so_far = *closest_I;
+        if (collision.distance < closest_so_far.distance) {
+            closest_I = I;
         }
     }
 
-    return *closest;
+    return *closest_I;
 }
 
 } // namespace
@@ -238,7 +239,7 @@ void raycaster_app::render()
         // remainder then trying to figure out which axis is more accurate
         auto const v_x = std::abs(collision.position.x - rounded_collision.x);
         auto const v_y = std::abs(collision.position.y - rounded_collision.y);
-        auto const tolerance = step_size;
+        auto const tolerance = 1.f / 64.f;
         auto const ray_v
             = v_x < tolerance || v_x > (1.f - tolerance) ? v_y : v_x;
 
