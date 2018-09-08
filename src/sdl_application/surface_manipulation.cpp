@@ -19,11 +19,23 @@ bool is_surface_of_desired_format(
         && surf->format->format == want_format;
 }
 
-color get_surface_pixel(SDL_Surface* surf, point2i const& p)
+color get_surface_pixel(SDL_Surface* surf, point2i p)
 {
     if (!is_surface_of_desired_format(surf, desired_bpp, desired_format)) {
         SDL_Log("Invalid surface format: 0x%x", surf->format->format);
         throw std::runtime_error{"Got invalid bitmap surface! See log"};
+    }
+
+    if (p.x < 0) {
+        p.x += surf->w;
+    } else if (p.x >= surf->w) {
+        p.x -= surf->w;
+    }
+
+    if (p.y < 0) {
+        p.y += surf->h;
+    } else if (p.y >= surf->h) {
+        p.y -= surf->h;
     }
 
     // Assuming BGR24
@@ -40,19 +52,13 @@ color get_surface_pixel(SDL_Surface* surf, point2f const& uv)
 {
     auto const surface_extents = make_point<float>(surf->w, surf->h);
 
-    auto const lo = point2f{0.f, 0.f};
-    auto const hi = surface_extents - point2f{1.f, 1.f};
-
-    // Clamp to edges to avoid accessing OOB memory. Consider wrapping in the
-    // future for smooth tiling
-    auto const tex_coord = clamp(hi * uv, lo, hi);
+    auto const tex_coord = surface_extents * uv - point2f{0.5f, 0.5f};
     auto const tex_coord_remainder = remainder(tex_coord);
 
     auto const top_left = point_cast<int>(floor(tex_coord));
     auto const top_left_pixel = ::get_surface_pixel(surf, top_left);
 
-    auto const bottom_right = clamp(
-        top_left + point2i{1, 1}, point_cast<int>(lo), point_cast<int>(hi));
+    auto const bottom_right = point_cast<int>(floor(tex_coord)) + point2i{1, 1};
     auto const bottom_right_pixel = ::get_surface_pixel(surf, bottom_right);
 
     auto const top_right = point2i{bottom_right.x, top_left.y};
@@ -80,5 +86,4 @@ color get_surface_pixel_nn(SDL_Surface* surf, point2f const& uv)
     return ::get_surface_pixel(surf, make_point<int>(tex_coord.x, tex_coord.y));
 }
 
-} // namespace raycaster
-
+} // namespace sdl_app

@@ -205,12 +205,6 @@ template <typename T> point2<T> remainder(point2<T> const& p)
     return point_cast<T>(p - floor(p));
 }
 
-template <typename T>
-point2<T> wrap(point2<T> const& p, point2<T> const& lo, point2<T> const& hi)
-{
-    return {wrap(p.x, lo.x, hi.x), wrap(p.y, lo.y, hi.y)};
-}
-
 //
 // rectangle
 //

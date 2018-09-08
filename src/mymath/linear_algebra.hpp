@@ -28,19 +28,6 @@ inline T linear_interpolate(const T& a, const T& b, float t)
 
 template <typename T> inline int sgn(T val) { return val >= 0 ? 1 : -1; }
 
-template <class T> constexpr T wrap(T v, const T& lo, const T& hi)
-{
-    while (v < lo) {
-        v += hi;
-    }
-
-    while (v > hi) {
-        v -= hi;
-    }
-
-    return v;
-}
-
 inline float close_enough(float a, float b)
 {
     auto const fudge_factor = 0.0001f;
