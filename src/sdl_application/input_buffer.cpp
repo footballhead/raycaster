@@ -1,6 +1,12 @@
 #include <sdl_application/input_buffer.hpp>
 
+#include <mymath/mymath.hpp>
+
 #include <SDL.h>
+
+#include <functional>
+
+using namespace mymath;
 
 namespace sdl_app {
 
@@ -41,5 +47,12 @@ bool input_buffer::is_hit(SDL_Scancode scancode)
 }
 
 bool input_buffer::is_quit() const { return _quit; }
+
+point2i input_buffer::get_mouse_position() const
+{
+    point2i p;
+    SDL_GetMouseState(&p.x, &p.y);
+    return p;
+}
 
 } // namespace sdl_app

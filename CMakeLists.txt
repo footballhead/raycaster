@@ -92,30 +92,31 @@ target_include_directories(sdl_application
 		sdl_raii
 	)
 
+target_link_libraries(sdl_application
+	${SDL2_LIBRARIES}
+	mymath
+	sdl_raii
+	)
+
 #
 # raycaster
 #
 
 set(SOURCES
 	src/raycaster/camera.cpp
+	src/raycaster/intersection.cpp
 	src/raycaster/raycaster_app.cpp
 	src/raycaster/main.cpp
 	)
 
 set(HEADERS
 	src/raycaster/camera.hpp
+	src/raycaster/intersection.hpp
 	src/raycaster/raycaster_app.hpp
 	)
 
 add_executable(raycaster ${SOURCES} ${HEADERS})
 
-target_include_directories(raycaster
-	PRIVATE
-		${SDL2_INCLUDE_DIRS}
-	)
 target_link_libraries(raycaster
-	${SDL2_LIBRARIES}
-	mymath
 	sdl_application
-	sdl_raii
 	)

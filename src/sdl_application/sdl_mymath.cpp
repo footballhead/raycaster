@@ -58,6 +58,11 @@ bool set_render_draw_color(SDL_Renderer* renderer, color const& c)
     return SDL_SetRenderDrawColor(renderer, c.r, c.g, c.b, 255) == 0;
 }
 
+bool set_renderer_draw_color(SDL_Renderer* renderer, color const& c)
+{
+    return set_render_draw_color(renderer, c);
+}
+
 bool draw_point(SDL_Renderer* ren, point2i const& p)
 {
     return SDL_RenderDrawPoint(ren, p.x, p.y) == 0;
@@ -84,12 +89,19 @@ bool draw_line(SDL_Renderer* ren, point2i const& src, point2i const& dst,
         = (use_unit_x ? 1.f : abs_delta.slope_inverse()) * sgn(delta.x);
     auto const y_inc = (use_unit_x ? abs_delta.slope() : 1.f) * sgn(delta.y);
 
+    auto const render_size = get_renderer_logical_size(ren);
+
     // Put an arbitrary limit in case this goes into infinite loop
     auto const debug_limit = 2048;
     for (int i = 0; i < debug_limit; ++i) {
         // The rounding is key to ensuring this algo halts!
         auto const iterated_step = round_to_point(x_inc * i, y_inc * i);
         auto const interp = src + iterated_step;
+
+        if (interp.x < 0 || interp.y < 0 || interp.x >= render_size.w
+            || interp.y >= render_size.h) {
+            continue;
+        }
 
         if (!set_render_draw_color(ren, get_color(interp))) {
             return false;
@@ -107,4 +119,10 @@ bool draw_line(SDL_Renderer* ren, point2i const& src, point2i const& dst,
     return true;
 }
 
-} // namespace raycaster
+bool draw_line(SDL_Renderer* ren, mymath::line2i const& l,
+    std::function<mycolor::color(mymath::point2i const&)> get_color)
+{
+    return draw_line(ren, l.start, l.end, get_color);
+}
+
+} // namespace sdl_app

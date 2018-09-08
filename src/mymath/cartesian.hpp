@@ -3,6 +3,8 @@
 #include <mymath/linear_algebra.hpp>
 
 #include <cmath>
+#include <stdexcept>
+#include <type_traits>
 
 namespace mymath {
 
@@ -11,6 +13,10 @@ namespace mymath {
 //
 
 template <typename T> struct vector2 {
+    static_assert(
+        std::is_integral<T>::value || std::is_floating_point<T>::value,
+        "vector2 requires int/fp type.");
+
     T dir;
     T mag;
 };
@@ -22,6 +28,10 @@ using vector2f = vector2<float>;
 //
 
 template <typename T> struct point2 {
+    static_assert(
+        std::is_integral<T>::value || std::is_floating_point<T>::value,
+        "point2 requires int/fp type.");
+
     T x;
     T y;
 
@@ -202,12 +212,74 @@ point2<T> wrap(point2<T> const& p, point2<T> const& lo, point2<T> const& hi)
 }
 
 //
+// rectangle
+//
+
+template <typename T> struct rectangle2 {
+    static_assert(
+        std::is_integral<T>::value || std::is_floating_point<T>::value,
+        "rectangle2 requires int/fp type.");
+
+    point2<T> tl;
+    point2<T> br;
+
+    bool contains(point2<T> const& p) const
+    {
+        // This assumes tl is indeed top-left and br is indeed bottom-right
+        return p.x >= tl.x && p.x <= br.x && p.y >= tl.y && p.y <= br.y;
+    }
+};
+
+//
 // line
 //
 
 template <typename T> struct line2 {
+    static_assert(
+        std::is_integral<T>::value || std::is_floating_point<T>::value,
+        "line2 requires int/fp type.");
+
     point2<T> start;
     point2<T> end;
+
+    bool is_vertical() const { return end.x == start.x; }
+
+    bool is_horizontal() const { return end.y == start.y; }
+
+    float slope() const
+    {
+        if (is_vertical()) {
+            throw std::runtime_error("Vertical line has no slope!");
+        }
+        return (end.y - start.y) / static_cast<float>(end.x - start.x);
+    }
+
+    float y_intercept() const
+    {
+        if (is_vertical()) {
+            throw std::runtime_error("Vertical line has no y-intercept!");
+        }
+        // Since both start and end define the line, either can be used
+        return end.y - slope() * end.x;
+    }
+
+    rectangle2<T> get_bounding_box() const
+    {
+        // Point order for a line isn't guaranteed but we need a bounding box
+        // where our comparisons will always work
+        auto const bb_start_x = std::min(start.x, end.x);
+        auto const bb_start_y = std::min(start.y, end.y);
+        auto const bb_end_x = std::max(start.x, end.x);
+        auto const bb_end_y = std::max(start.y, end.y);
+        return {{bb_start_x, bb_start_y}, {bb_end_x, bb_end_y}};
+    }
+
+    float length() const
+    {
+        auto const a = start.x - end.x;
+        auto const b = start.y - end.y;
+        return std::sqrt(a * a + b * b);
+    }
 };
 
 template <typename T>
@@ -217,12 +289,18 @@ point2<T> linear_interpolate(line2<T> const& line, float t)
 }
 
 using line2f = line2<float>;
+using line2i = line2<int>;
+
 
 //
 // extent
 //
 
 template <typename T> struct extent2 {
+    static_assert(
+        std::is_integral<T>::value || std::is_floating_point<T>::value,
+        "extent2 requires int/fp type.");
+
     T w;
     T h;
 };

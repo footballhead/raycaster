@@ -22,9 +22,4 @@ private:
     asset_map _asset_map;
 };
 
-namespace common_assets {
-constexpr auto wall_texture = "wall.bmp";
-constexpr auto stone_texture = "stone.bmp";
-} // namespace common_assets
-
 } // namespace raycaster

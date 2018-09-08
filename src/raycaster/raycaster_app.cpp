@@ -1,6 +1,7 @@
 #include "raycaster_app.hpp"
 
 #include "camera.hpp"
+#include "intersection.hpp"
 
 #include <mycolor/mycolor.hpp>
 #include <mymath/mymath.hpp>
@@ -22,24 +23,14 @@ using namespace sdl_app;
 namespace {
 
 static auto s_use_fog = true;
-static auto s_use_bilinear = true;
-static auto s_use_dither_fog = false;
+static auto s_use_bilinear = false;
+static auto s_use_dither_fog = true;
+static auto s_use_textures = true;
+static auto s_draw_floor = true;
 
 using namespace raycaster;
 
-constexpr auto step_size = 1.f / 64.f;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
-
-SDL_Surface* get_wall_texture(asset_store& assets, unsigned int i)
-{
-    static const std::vector<std::string> texture_table{
-        common_assets::wall_texture, common_assets::wall_texture,
-        common_assets::stone_texture};
-    if (i >= texture_table.size()) {
-        throw std::runtime_error{"Invalid wall-texutre index"};
-    }
-    return assets.get_asset(texture_table.at(i));
-}
 
 /// The result of a single ray casting operation
 struct collision_result {
@@ -47,43 +38,43 @@ struct collision_result {
     float distance;
     /// The point of collision. If distance < 0 then this is not valid
     point2f position;
+    /// The ID of the texture to use
+    unsigned int texture;
 };
 
 collision_result find_collision(level const& lvl, point2f const& origin,
     float direction, float max_distance)
 {
-    auto const no_result = collision_result{-1.f, {-1.f, -1.f}};
+    auto const no_result = collision_result{-1.f, {-1.f, -1.f}, 0u};
 
-    auto const unit_vector = vector2f{direction, step_size};
+    auto const march_vector = vector2f{direction, max_distance};
+    auto const ray_line = line2f{origin, origin + march_vector};
 
-    // Convert vector into a point (to avoid trig)
-    auto const vector_as_point = point2f{0.f, 0.f} + unit_vector;
-    auto const& march = vector_as_point;
-    // auto const slope = vector_as_point.y / vector_as_point.x;
+    std::vector<collision_result> intersections;
 
-    auto accum = origin + march;
-
-    auto distance = step_size;
-    while (distance < max_distance) {
-        accum += march;
-
-        auto const int_x = static_cast<int>(accum.x);
-        auto const int_y = static_cast<int>(accum.y);
-
-        if (int_x < 0 || int_x > lvl.bounds.w - 1 || int_y < 0
-            || int_y > lvl.bounds.h - 1) {
-            return no_result;
+    for (auto const& wall : lvl.walls) {
+        point2f cross_point{0.f, 0.f};
+        if (find_intersection(ray_line, wall.data, cross_point)) {
+            auto const exact_line = line2f{origin, cross_point};
+            intersections.push_back(collision_result{
+                exact_line.length(), cross_point, wall.texture});
         }
-
-        auto const index = int_y * lvl.bounds.w + int_x;
-        if (lvl.data[index] > 0) {
-            return collision_result{distance, accum};
-        }
-
-        distance += step_size;
     }
 
-    return no_result;
+    if (intersections.empty()) {
+        return no_result;
+    }
+
+    auto closest_I = intersections.cbegin();
+    for (auto I = intersections.cbegin(); I < intersections.cend(); I++) {
+        auto const& collision = *I;
+        auto const& closest_so_far = *closest_I;
+        if (collision.distance < closest_so_far.distance) {
+            closest_I = I;
+        }
+    }
+
+    return *closest_I;
 }
 
 } // namespace
@@ -154,10 +145,19 @@ void raycaster_app::update()
     if (input_buffer.is_hit(SDL_SCANCODE_3)) {
         s_use_dither_fog = !s_use_dither_fog;
     }
+    if (input_buffer.is_hit(SDL_SCANCODE_4)) {
+        s_use_textures = !s_use_textures;
+    }
+    if (input_buffer.is_hit(SDL_SCANCODE_5)) {
+        s_draw_floor = !s_draw_floor;
+    }
 }
 
 void raycaster_app::render()
 {
+    static auto start_time = SDL_GetTicks();
+    static auto frame_number = 0;
+
     auto renderer = get_renderer();
 
     auto const fog_color = _camera.get_fog_color();
@@ -167,27 +167,29 @@ void raycaster_app::render()
     auto const logical_size = get_renderer_logical_size(renderer);
     auto const half_height = logical_size.h / 2;
 
-    // draw ceiling (top-down)
-    color const ceiling_color{64, 0, 0};
-    for (int i = 0; i < half_height; ++i) {
-        auto const t_scale
-            = max_distance / static_cast<float>(max_distance - 1);
-        auto const interp = linear_interpolate(ceiling_color, fog_color,
-            i / static_cast<float>(half_height) * t_scale);
-        SDL_CHECK(draw_line(renderer, {0, i}, {logical_size.w, i},
-            [&interp](point2i const&) { return interp; }));
-    }
+    if (s_draw_floor) {
+        // draw ceiling (top-down)
+        color const ceiling_color{64, 0, 0};
+        for (int i = 0; i < half_height; ++i) {
+            auto const t_scale
+                = max_distance / static_cast<float>(max_distance - 1);
+            auto const interp = linear_interpolate(ceiling_color, fog_color,
+                i / static_cast<float>(half_height) * t_scale);
+            SDL_CHECK(draw_line(renderer, {0, i}, {logical_size.w, i},
+                [&interp](point2i const&) { return interp; }));
+        }
 
-    // draw floor (bottom-up)
-    color const floor_color{64, 128, 255};
-    for (int i = 0; i < half_height; ++i) {
-        auto const t_scale
-            = max_distance / static_cast<float>(max_distance - 1);
-        auto const interp = linear_interpolate(floor_color, fog_color,
-            (half_height - i) / static_cast<float>(half_height) * t_scale);
-        auto const draw_y = i + half_height;
-        SDL_CHECK(draw_line(renderer, {0, draw_y}, {logical_size.w, draw_y},
-            [&interp](point2i const&) { return interp; }));
+        // draw floor (bottom-up)
+        color const floor_color{64, 128, 255};
+        for (int i = 0; i < half_height; ++i) {
+            auto const t_scale
+                = max_distance / static_cast<float>(max_distance - 1);
+            auto const interp = linear_interpolate(floor_color, fog_color,
+                (half_height - i) / static_cast<float>(half_height) * t_scale);
+            auto const draw_y = i + half_height;
+            SDL_CHECK(draw_line(renderer, {0, draw_y}, {logical_size.w, draw_y},
+                [&interp](point2i const&) { return interp; }));
+        }
     }
 
     auto const num_rays = logical_size.w;
@@ -237,14 +239,12 @@ void raycaster_app::render()
         // remainder then trying to figure out which axis is more accurate
         auto const v_x = std::abs(collision.position.x - rounded_collision.x);
         auto const v_y = std::abs(collision.position.y - rounded_collision.y);
-        auto const tolerance = step_size;
+        auto const tolerance = 1.f / 64.f;
         auto const ray_v
             = v_x < tolerance || v_x > (1.f - tolerance) ? v_y : v_x;
 
         // Figure out which texture to use
-        auto const index
-            = rounded_collision.y * _level.bounds.w + rounded_collision.x;
-        auto tex = get_wall_texture(*_asset_store, _level.data[index]);
+        auto tex = _asset_store->get_asset(get_wall_texture(collision.texture));
 
         // Color the texture to apply the fog effect. The "fog scale factor" is
         // used to account for the draw cutoff being determined by euclidean
@@ -263,9 +263,10 @@ void raycaster_app::render()
                     / static_cast<float>(line_end.y - line_start.y);
 
                 auto const uv = point2f{ray_v, y_percent};
-                auto const pixel = s_use_bilinear
-                    ? get_surface_pixel(tex, uv)
-                    : get_surface_pixel_nn(tex, uv);
+                auto const pixel = s_use_textures
+                    ? (s_use_bilinear ? get_surface_pixel(tex, uv)
+                                      : get_surface_pixel_nn(tex, uv))
+                    : constants::white;
 
                 if (!s_use_fog) {
                     return pixel;
@@ -297,6 +298,15 @@ void raycaster_app::render()
 
                 return linear_interpolate(pixel, fog_color, t);
             }));
+    }
+
+    ++frame_number;
+
+    const auto end_time = SDL_GetTicks();
+    if (end_time >= start_time + 1000) {
+        start_time = end_time;
+        SDL_Log("FPS: %d", frame_number);
+        frame_number = 0;
     }
 }
 

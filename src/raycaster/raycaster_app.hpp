@@ -12,10 +12,31 @@
 
 namespace raycaster {
 
-struct level {
-    mymath::extent2i bounds;
-    std::vector<uint8_t> data;
+struct wall {
+    mymath::line2f data;
+    unsigned int texture;
 };
+
+struct level {
+    std::vector<wall> walls;
+};
+
+namespace common_assets {
+constexpr auto wall_texture = "wall.bmp";
+constexpr auto stone_texture = "stone.bmp";
+} // namespace common_assets
+
+inline char const* get_wall_texture(unsigned int i)
+{
+    switch (i) {
+    case 2:
+        return common_assets::stone_texture;
+    case 0:
+    case 1:
+    default:
+        return common_assets::wall_texture;
+    }
+}
 
 class raycaster_app : public sdl_app::sdl_application {
 public:

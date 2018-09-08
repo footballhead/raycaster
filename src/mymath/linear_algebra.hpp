@@ -41,4 +41,10 @@ template <class T> constexpr T wrap(T v, const T& lo, const T& hi)
     return v;
 }
 
+inline float close_enough(float a, float b)
+{
+    auto const fudge_factor = 0.0001f;
+    return a <= b + fudge_factor && a >= b - fudge_factor;
+}
+
 } // namespace mymath

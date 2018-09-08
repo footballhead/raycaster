@@ -35,22 +35,28 @@ int main(int argc, char** argv)
     auto const renderer_size = extent2i{320, 180};
     SDL_CHECK(set_renderer_logical_size(renderer.get(), renderer_size));
 
-    // clang-format off
-    level test_level = {
-        8, // width
-        8, // height
-        {  // data
-            1, 1, 1, 1, 1, 1, 1, 1,
-            1, 0, 2, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 0, 2, 0, 1,
-            1, 0, 0, 0, 0, 2, 0, 1,
-            1, 0, 0, 0, 0, 0, 0, 1,
-            1, 0, 0, 0, 2, 2, 2, 1,
-            1, 2, 0, 0, 0, 0, 0, 1,
-            1, 1, 1, 1, 1, 1, 1, 1,
-        },
-    };
-    // clang-format on
+    level test_level = {std::vector<wall>{
+        // walls
+        wall{line2f{point2f{1.f, 1.f}, point2f{2.f, 1.f}}, 1},
+        wall{line2f{point2f{2.f, 1.f}, point2f{2.f, 2.f}}, 2},
+        wall{line2f{point2f{2.f, 2.f}, point2f{3.f, 2.f}}, 2},
+        wall{line2f{point2f{3.f, 2.f}, point2f{3.f, 1.f}}, 2},
+        wall{line2f{point2f{3.f, 1.f}, point2f{7.f, 1.f}}, 1},
+        wall{line2f{point2f{7.f, 1.f}, point2f{7.f, 5.f}}, 1},
+        wall{line2f{point2f{7.f, 5.f}, point2f{4.f, 5.f}}, 2},
+        wall{line2f{point2f{4.f, 5.f}, point2f{4.f, 6.f}}, 2},
+        wall{line2f{point2f{4.f, 6.f}, point2f{7.f, 6.f}}, 2},
+        wall{line2f{point2f{7.f, 6.f}, point2f{7.f, 7.f}}, 1},
+        wall{line2f{point2f{7.f, 7.f}, point2f{2.f, 7.f}}, 1},
+        wall{line2f{point2f{2.f, 7.f}, point2f{2.f, 6.f}}, 2},
+        wall{line2f{point2f{2.f, 6.f}, point2f{1.f, 6.f}}, 2},
+        wall{line2f{point2f{1.f, 6.f}, point2f{1.f, 1.f}}, 1},
+        // island
+        wall{line2f{point2f{5.f, 2.f}, point2f{6.f, 2.f}}, 2},
+        wall{line2f{point2f{6.f, 2.f}, point2f{6.f, 4.f}}, 2},
+        wall{line2f{point2f{6.f, 4.f}, point2f{5.f, 4.f}}, 2},
+        wall{line2f{point2f{5.f, 4.f}, point2f{5.f, 2.f}}, 2},
+    }};
 
     camera cam{
         point2f{
@@ -59,7 +65,7 @@ int main(int argc, char** argv)
         },
         0.f, // rotation
         0.01f, // near
-        4.f, // far
+        8.f, // far
         0.01f, // right
     };
 
