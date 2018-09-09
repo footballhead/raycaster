@@ -1,11 +1,13 @@
 #include "intersection.hpp"
 
+#include <SDL.h>
+
 using namespace mymath;
 
 namespace {
 
 bool find_intersection_vertical(
-    line2f const& vertical, line2f const& b, point2f& out)
+    line2f const& vertical, line2f const& b, point2f& out, float& t)
 {
     auto const b_low_x = std::min(b.start.x, b.end.x);
     auto const b_hi_x = std::max(b.start.x, b.end.x);
@@ -26,11 +28,12 @@ bool find_intersection_vertical(
     }
 
     out = candidate;
+    t = candidate.y - std::floor(candidate.y);
     return true;
 }
 
 bool find_intersection_horizontal(
-    line2f const& horizontal, line2f const& b, point2f& out)
+    line2f const& horizontal, line2f const& b, point2f& out, float& t)
 {
     auto const b_low_y = std::min(b.start.y, b.end.y);
     auto const b_hi_y = std::max(b.start.y, b.end.y);
@@ -51,6 +54,7 @@ bool find_intersection_horizontal(
     }
 
     out = candidate;
+    t = candidate.x - std::floor(candidate.x);
     return true;
 }
 
@@ -58,22 +62,22 @@ bool find_intersection_horizontal(
 
 namespace raycaster {
 
-bool find_intersection(line2f const& a, line2f const& b, point2f& out)
+bool find_intersection(line2f const& a, line2f const& b, point2f& out, float& t)
 {
     if (a.is_vertical() && b.is_vertical()) {
         return false;
     }
 
     if (a.is_vertical()) {
-        return find_intersection_vertical(a, b, out);
+        return find_intersection_vertical(a, b, out, t);
     } else if (b.is_vertical()) {
-        return find_intersection_vertical(b, a, out);
+        return find_intersection_vertical(b, a, out, t);
     }
 
     if (a.is_horizontal()) {
-        return find_intersection_horizontal(a, b, out);
+        return find_intersection_horizontal(a, b, out, t);
     } else if (b.is_horizontal()) {
-        return find_intersection_horizontal(b, a, out);
+        return find_intersection_horizontal(b, a, out, t);
     }
 
     if (close_enough(a.slope(), b.slope())) {
@@ -97,6 +101,8 @@ bool find_intersection(line2f const& a, line2f const& b, point2f& out)
     }
 
     out = candidate;
+    t = 0.f; // TODO
+    SDL_Log("Lol might want to fix this case of t generation");
     return true;
 }
 

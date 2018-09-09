@@ -40,12 +40,14 @@ struct collision_result {
     point2f position;
     /// The ID of the texture to use
     unsigned int texture;
+    /// Texture V coordinate
+    float v;
 };
 
 collision_result find_collision(level const& lvl, point2f const& origin,
     float direction, float max_distance)
 {
-    auto const no_result = collision_result{-1.f, {-1.f, -1.f}, 0u};
+    auto const no_result = collision_result{-1.f, {-1.f, -1.f}, 0u, 0.f};
 
     auto const march_vector = vector2f{direction, max_distance};
     auto const ray_line = line2f{origin, origin + march_vector};
@@ -54,10 +56,11 @@ collision_result find_collision(level const& lvl, point2f const& origin,
 
     for (auto const& wall : lvl.walls) {
         point2f cross_point{0.f, 0.f};
-        if (find_intersection(ray_line, wall.data, cross_point)) {
+        float t = 0.f;
+        if (find_intersection(ray_line, wall.data, cross_point, t)) {
             auto const exact_line = line2f{origin, cross_point};
             intersections.push_back(collision_result{
-                exact_line.length(), cross_point, wall.texture});
+                exact_line.length(), cross_point, wall.texture, t});
         }
     }
 
@@ -233,15 +236,7 @@ void raycaster_app::render()
         auto const wall_size
             = static_cast<int>(half_height / collision.distance);
 
-        auto const rounded_collision = point_cast<int>(collision.position);
-
-        // Determine which part of the texture to use by looking at the
-        // remainder then trying to figure out which axis is more accurate
-        auto const v_x = std::abs(collision.position.x - rounded_collision.x);
-        auto const v_y = std::abs(collision.position.y - rounded_collision.y);
-        auto const tolerance = 1.f / 64.f;
-        auto const ray_v
-            = v_x < tolerance || v_x > (1.f - tolerance) ? v_y : v_x;
+        auto const ray_v = collision.v;
 
         // Figure out which texture to use
         auto tex = _asset_store->get_asset(get_wall_texture(collision.texture));
