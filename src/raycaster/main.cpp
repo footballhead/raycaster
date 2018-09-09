@@ -28,16 +28,18 @@ int main(int argc, char** argv)
 
     auto renderer = sdl::shared_renderer{sdl::make_renderer(window.get())};
 
+    // Create asset manager and preload assets
     auto assets = std::make_unique<asset_store>(renderer, "../assets");
     assets->get_asset(common_assets::wall_texture);
     assets->get_asset(common_assets::stone_texture);
+    assets->get_asset(common_assets::floor);
 
     auto const renderer_size = extent2i{320, 180};
     SDL_CHECK(set_renderer_logical_size(renderer.get(), renderer_size));
 
     level test_level = {std::vector<wall>{
         // walls
-        wall{line2f{point2f{1.f, 1.f}, point2f{2.f, 1.f}}, 1},
+        wall{line2f{point2f{1.f, 1.f}, point2f{2.f, 1.f}}, 3},
         wall{line2f{point2f{2.f, 1.f}, point2f{2.f, 2.f}}, 2},
         wall{line2f{point2f{2.f, 2.f}, point2f{3.f, 2.f}}, 2},
         wall{line2f{point2f{3.f, 2.f}, point2f{3.f, 1.f}}, 2},

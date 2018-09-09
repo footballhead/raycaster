@@ -24,6 +24,7 @@ struct level {
 namespace common_assets {
 constexpr auto wall_texture = "wall.bmp";
 constexpr auto stone_texture = "stone.bmp";
+constexpr auto floor = "floor.bmp";
 } // namespace common_assets
 
 inline char const* get_wall_texture(unsigned int i)
@@ -31,6 +32,8 @@ inline char const* get_wall_texture(unsigned int i)
     switch (i) {
     case 2:
         return common_assets::stone_texture;
+    case 3:
+        return common_assets::floor;
     case 0:
     case 1:
     default:
