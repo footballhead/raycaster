@@ -34,4 +34,6 @@ inline float close_enough(float a, float b)
     return a <= b + fudge_factor && a >= b - fudge_factor;
 }
 
+template <typename T> inline T abs(T val) { return val < 0 ? -val : val; }
+
 } // namespace mymath

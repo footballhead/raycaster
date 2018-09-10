@@ -113,12 +113,15 @@ struct collision_result {
     unsigned int texture;
     /// Texture U coordinate (V is generated on-the-fly)
     float u;
+    /// Ray anfle in camera space
+    float angle;
 };
 
 collision_result find_collision(level const& lvl, point2f const& origin,
     float direction, float max_distance)
 {
-    auto const no_result = collision_result{-1.f, {-1.f, -1.f}, 0u, 0.f};
+    auto const no_result
+        = collision_result{-1.f, {-1.f, -1.f}, 0u, 0.f, direction};
 
     auto const march_vector = vector2f{direction, max_distance};
     auto const ray_line = line2f{origin, origin + march_vector};
@@ -131,7 +134,7 @@ collision_result find_collision(level const& lvl, point2f const& origin,
         if (find_intersection(ray_line, wall.data, cross_point, t)) {
             auto const exact_line = line2f{origin, cross_point};
             intersections.push_back(collision_result{
-                exact_line.length(), cross_point, wall.texture, t});
+                exact_line.length(), cross_point, wall.texture, t, direction});
         }
     }
 
@@ -246,7 +249,6 @@ void raycaster_app::update()
     }
     if (input_buffer.is_hit(SDL_SCANCODE_5)) {
         s_draw_floor = !s_draw_floor;
-        SDL_Log("ceiling/floor are borked atm");
     }
 }
 
@@ -318,7 +320,24 @@ void raycaster_app::render()
         for (auto row = 0; row < framebuffer->h; ++row) {
             // Draw wall/ceiling
             if (row < wall_start || row >= wall_end) {
-                set_surface_pixel(framebuffer, column, row, fog_color);
+                if (!s_draw_floor) {
+                    set_surface_pixel(framebuffer, column, row, fog_color);
+                    continue;
+                }
+
+                auto const local_ray_radians
+                    = _camera.get_rotation() - collision.angle;
+                auto const floor_distance = static_cast<float>(half_height)
+                    / mymath::abs(half_height - row)
+                    / std::sin(PI_OVER_2 - std::abs(local_ray_radians));
+                auto const floor_local_coord = point2f{0.f, 0.f}
+                    + vector2f{static_cast<float>(M_PI) - collision.angle,
+                          floor_distance};
+                auto const floor_coord = point_cast<int>(_camera.get_position()
+                    + point2f{-floor_local_coord.x, floor_local_coord.y});
+                auto const is_even = (floor_coord.x + floor_coord.y) % 2 == 0;
+                set_surface_pixel(framebuffer, column, row,
+                    (is_even) ? constants::white : constants::black);
                 continue;
             }
 
