@@ -279,14 +279,9 @@ void raycaster_app::render()
     for (auto const& collision : collision_buffer) {
         ++column;
 
-        // No collision means don't draw anything. The fog effect will be taken
-        // care of by floor/ceiling gradient.
-        if (collision.distance < 0) {
-            continue;
-        }
-
-        auto const wall_size
-            = static_cast<int>(half_height / collision.distance);
+        auto const wall_size = collision.distance <= 0.f
+            ? 0
+            : static_cast<int>(half_height / collision.distance);
 
         auto tex
             = get_asset_store().get_asset(get_wall_texture(collision.texture));
@@ -299,12 +294,18 @@ void raycaster_app::render()
         auto const fog_distance = max_distance * fog_scale_factor;
         auto const fog_t = collision.distance / fog_distance;
 
-        auto const row_start = std::max(0, half_height - wall_size);
-        auto const row_end = std::min(framebuffer->h, half_height + wall_size);
+        auto const wall_start = half_height - wall_size;
+        auto const wall_end = half_height + wall_size;
 
-        for (auto row = row_start; row < row_end; ++row) {
-            auto const v
-                = (row - row_start) / static_cast<float>(row_end - row_start);
+        for (auto row = 0; row < framebuffer->h; ++row) {
+            // Draw wall/ceiling
+            if (row < wall_start || row >= wall_end) {
+                set_surface_pixel(framebuffer, column, row, fog_color);
+                continue;
+            }
+
+            auto const v = (row - wall_start)
+                / static_cast<float>(wall_end - wall_start);
 
             auto const uv = point2f{collision.u, v};
             auto const texel = s_use_textures
@@ -333,8 +334,7 @@ void raycaster_app::render()
                 auto const alt_color_grade
                     = std::max(0.f, color_grade - 1.f / num_bands);
 
-                auto const even_pixel
-                    = ((row + column) % band_t) != 0;
+                auto const even_pixel = ((row + column) % band_t) != 0;
 
                 t = (even_pixel ? color_grade : alt_color_grade);
             } else {
