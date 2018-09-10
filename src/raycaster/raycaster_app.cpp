@@ -23,7 +23,6 @@ namespace {
 
 static auto s_use_fog = true;
 static auto s_use_bilinear = false;
-static auto s_use_dither_fog = true;
 static auto s_use_textures = true;
 static auto s_draw_floor = true;
 
@@ -241,9 +240,6 @@ void raycaster_app::update()
     if (input_buffer.is_hit(SDL_SCANCODE_2)) {
         s_use_bilinear = !s_use_bilinear;
     }
-    if (input_buffer.is_hit(SDL_SCANCODE_3)) {
-        s_use_dither_fog = !s_use_dither_fog;
-    }
     if (input_buffer.is_hit(SDL_SCANCODE_4)) {
         s_use_textures = !s_use_textures;
     }
@@ -358,31 +354,8 @@ void raycaster_app::render()
                 continue;
             }
 
-            auto t = 0.f;
-            if (s_use_dither_fog) {
-                auto const dither_steps = 4;
-
-                auto const num_bands = 8;
-                auto const band_index = static_cast<int>(fog_t * num_bands);
-                auto const band_t
-                    = static_cast<int>(
-                          (fog_t * num_bands - band_index) * dither_steps)
-                    + 1;
-
-                auto const color_grade
-                    = std::floor(fog_t * num_bands) / num_bands;
-                auto const alt_color_grade
-                    = std::max(0.f, color_grade - 1.f / num_bands);
-
-                auto const even_pixel = ((row + column) % band_t) != 0;
-
-                t = (even_pixel ? color_grade : alt_color_grade);
-            } else {
-                t = fog_t;
-            }
-
             auto const texel_after_fog
-                = linear_interpolate(texel, fog_color, t);
+                = linear_interpolate(texel, fog_color, fog_t);
             set_surface_pixel(framebuffer, column, row, texel_after_fog);
         }
     }
