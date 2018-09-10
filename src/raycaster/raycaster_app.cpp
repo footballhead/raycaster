@@ -336,8 +336,11 @@ void raycaster_app::render()
                 auto const floor_coord = point_cast<int>(_camera.get_position()
                     + point2f{-floor_local_coord.x, floor_local_coord.y});
                 auto const is_even = (floor_coord.x + floor_coord.y) % 2 == 0;
-                set_surface_pixel(framebuffer, column, row,
-                    (is_even) ? constants::white : constants::black);
+                auto const tile_color
+                    = (is_even) ? constants::white : constants::black;
+                auto const foggy_color
+                    = linear_interpolate(tile_color, fog_color, floor_distance / fog_distance);
+                set_surface_pixel(framebuffer, column, row, foggy_color);
                 continue;
             }
 
