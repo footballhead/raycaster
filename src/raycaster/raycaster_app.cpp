@@ -251,11 +251,16 @@ void raycaster_app::render()
 
     auto framebuffer = get_framebuffer();
 
-    auto const ceiling_color = color{64, 0, 0};
-    auto const ceiling_color_darker = color{32, 0, 0};
+    // auto const ceiling_color = color{64, 0, 0};
+    // auto const ceiling_color_darker = color{32, 0, 0};
 
-    auto const floor_color = color{64, 128, 255};
-    auto const floor_color_darker = color{32, 64, 128};
+    // auto const floor_color = color{64, 128, 255};
+    // auto const floor_color_darker = color{32, 64, 128};
+
+    auto const floor_texture
+        = get_asset_store().get_asset(common_assets::floor);
+    auto const ceiling_texture
+        = get_asset_store().get_asset(common_assets::ceiling);
 
     auto const fog_color = _camera.get_fog_color();
     auto const max_distance = _camera.get_far();
@@ -323,6 +328,7 @@ void raycaster_app::render()
                     continue;
                 }
 
+                // Reverse project each pixel into a world coordinate
                 auto const local_ray_radians
                     = _camera.get_rotation() - collision.angle;
                 auto const floor_distance = static_cast<float>(half_height)
@@ -331,19 +337,38 @@ void raycaster_app::render()
                 auto const floor_local_coord = point2f{0.f, 0.f}
                     + vector2f{static_cast<float>(M_PI) - collision.angle,
                           floor_distance};
-                auto const floor_coord = point_cast<int>(_camera.get_position()
-                    + point2f{-floor_local_coord.x, floor_local_coord.y});
-                auto const is_even = (floor_coord.x + floor_coord.y) % 2 == 0;
-                auto const is_ceiling
-                    = half_height - row >= 0;
-                auto const tile_color = is_even
-                    ? (is_ceiling ? ceiling_color : floor_color)
-                    : (is_ceiling ? ceiling_color_darker : floor_color_darker);
-                auto const foggy_color = s_use_fog
-                    ? linear_interpolate(
-                          tile_color, fog_color, floor_distance / fog_distance)
+                auto floor_coord = _camera.get_position()
+                    + point2f{-floor_local_coord.x, floor_local_coord.y};
+
+                while (floor_coord.x < 0.f) {
+                    floor_coord.x += 1.f;
+                }
+                while (floor_coord.x > 1.f) {
+                    floor_coord.x -= 1.f;
+                }
+                while (floor_coord.y < 0.f) {
+                    floor_coord.y += 1.f;
+                }
+                while (floor_coord.y > 1.f) {
+                    floor_coord.y -= 1.f;
+                }
+
+                auto const floor_fog_t = floor_distance / fog_distance;
+
+                if (floor_fog_t >= 1.f) {
+                    set_surface_pixel(framebuffer, column, row, fog_color);
+                    continue;
+                }
+
+                auto is_ceiling = row < half_height;
+
+                auto const tile_color = get_surface_pixel(
+                    is_ceiling ? ceiling_texture : floor_texture, floor_coord);
+                auto const foggy_tile_color = s_use_fog
+                    ? linear_interpolate(tile_color, fog_color, floor_fog_t)
                     : tile_color;
-                set_surface_pixel(framebuffer, column, row, foggy_color);
+
+                set_surface_pixel(framebuffer, column, row, foggy_tile_color);
                 continue;
             }
 

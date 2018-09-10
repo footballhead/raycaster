@@ -31,10 +31,11 @@ int main(int argc, char** argv)
     assets->get_asset(common_assets::wall_texture);
     assets->get_asset(common_assets::stone_texture);
     assets->get_asset(common_assets::floor);
+    assets->get_asset(common_assets::ceiling);
 
     level test_level = {std::vector<wall>{
         // walls
-        wall{line2f{point2f{1.f, 1.f}, point2f{2.f, 1.f}}, 3},
+        wall{line2f{point2f{1.f, 1.f}, point2f{2.f, 1.f}}, 1},
         wall{line2f{point2f{2.f, 1.f}, point2f{2.f, 2.f}}, 2},
         wall{line2f{point2f{2.f, 2.f}, point2f{3.f, 2.f}}, 2},
         wall{line2f{point2f{3.f, 2.f}, point2f{3.f, 1.f}}, 2},

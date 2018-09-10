@@ -25,6 +25,7 @@ namespace common_assets {
 constexpr auto wall_texture = "wall.bmp";
 constexpr auto stone_texture = "stone.bmp";
 constexpr auto floor = "floor.bmp";
+constexpr auto ceiling = "ceil.bmp";
 } // namespace common_assets
 
 inline char const* get_wall_texture(unsigned int i)
