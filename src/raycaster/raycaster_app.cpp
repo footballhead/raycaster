@@ -36,6 +36,18 @@ constexpr auto PI_OVER_2 = M_PI / 2.0;
 constexpr auto desired_framebuffer_bpp = 4;
 constexpr auto desired_framebuffer_format = SDL_PIXELFORMAT_RGB888;
 
+bool save_screenshot(SDL_Surface* framebuffer, const char* filename)
+{
+    // Try a straight dump
+    auto const err = SDL_SaveBMP(framebuffer, filename);
+    if (err != 0) {
+        SDL_Log("save_screenshot: SDL_SaveBitmap failed: %s", SDL_GetError());
+        return false;
+    }
+
+    return true;
+}
+
 char const* pixel_type_to_string(Uint32 val)
 {
     switch (val) {
@@ -260,12 +272,11 @@ void raycaster_app::update()
     }
 
     if (input_buffer.is_hit(SDL_SCANCODE_SPACE)) {
-        // if (!save_screenshot(get_renderer(), "screenshot.bmp")) {
-        //     SDL_Log("save_screenshot failed!");
-        // } else {
-        //     SDL_Log("saved screenshot to screenshot.bmp");
-        // }
-        SDL_Log("Sorry, screenshotting is borked atm");
+        if (!save_screenshot(get_framebuffer(), "screenshot.bmp")) {
+            SDL_Log("save_screenshot failed!");
+        } else {
+            SDL_Log("saved screenshot to screenshot.bmp");
+        }
     }
 
     if (input_buffer.is_hit(SDL_SCANCODE_1)) {
