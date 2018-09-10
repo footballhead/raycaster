@@ -32,7 +32,6 @@ using namespace raycaster;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
 // This is what works in my VBox setup
-constexpr auto desired_framebuffer_bpp = 4;
 constexpr auto desired_framebuffer_format = SDL_PIXELFORMAT_RGB888;
 
 bool save_screenshot(SDL_Surface* framebuffer, const char* filename)
@@ -90,29 +89,14 @@ void print_pixel_format(Uint32 fmt)
     SDL_Log("is fourcc? %x", SDL_ISPIXELFORMAT_FOURCC(fmt));
 }
 
-point2i round_to_point(float x, float y)
-{
-    return make_point<int>(std::round(x), std::round(y));
-}
-
-bool is_surface_of_desired_format(
-    SDL_Surface* surf, int want_bpp, Uint32 want_format)
-{
-    return surf->format->BytesPerPixel == want_bpp
-        && surf->format->format == want_format;
-}
-
 void set_surface_pixel(SDL_Surface* surf, point2i const& p, color const& c)
 {
-    if (!is_surface_of_desired_format(
-            surf, desired_framebuffer_bpp, desired_framebuffer_format)) {
-        auto fmt = surf->format;
+    if (surf->format->format != desired_framebuffer_format) {
         SDL_Log("Invalid surface format!");
-        SDL_Log("  WANTED: %d BPP, format=0x%x", desired_framebuffer_bpp,
-            desired_framebuffer_format);
-        SDL_Log("  GOT:");
-        SDL_Log("    bpp=%d", fmt->BytesPerPixel);
-        print_pixel_format(fmt->format);
+        SDL_Log("WANTED:");
+        SDL_Log("format=0x%x", desired_framebuffer_format);
+        SDL_Log("GOT:");
+        print_pixel_format(surf->format->format);
         throw std::runtime_error{
             "set_surface_pixel: invalid surface format! See log"};
     }
@@ -130,46 +114,16 @@ void set_surface_pixel(SDL_Surface* surf, point2i const& p, color const& c)
     pixel[0] = c.b;
 }
 
-void draw_line(SDL_Surface* surf, line2i const& l,
+// draw a column, on increasing y, doesn't handle malformed/off-screen lines
+void draw_column(SDL_Surface* surf, line2i const& l,
     std::function<color(point2i const&)> get_color)
 {
-    auto const delta = l.end - l.start;
+    auto const start_y = std::max(0, l.start.y);
+    auto const end_y = std::min(surf->h, l.end.y);
 
-    // Anticipate division by 0 and short circuit
-    auto const zero_vector = point2i{0, 0};
-    if (delta == zero_vector) {
-        set_surface_pixel(surf, l.end, get_color(l.end));
-        return;
-    }
-
-    // We can do all the math in absolutes then apply the sign later to get the
-    // right result! This greatly simplfies the code
-    auto const abs_delta = mymath::abs(delta);
-    auto const use_unit_x = abs_delta.y < abs_delta.x;
-
-    auto const x_inc
-        = (use_unit_x ? 1.f : abs_delta.slope_inverse()) * sgn(delta.x);
-    auto const y_inc = (use_unit_x ? abs_delta.slope() : 1.f) * sgn(delta.y);
-
-    auto const fb_size = get_surface_size(surf);
-
-    // Put an arbitrary limit in case this goes into infinite loop
-    auto const debug_limit = 2048;
-    for (int i = 0; i < debug_limit; ++i) {
-        // The rounding is key to ensuring this algo halts!
-        auto const iterated_step = round_to_point(x_inc * i, y_inc * i);
-        auto const interp = l.start + iterated_step;
-
-        if (interp.x < 0 || interp.y < 0 || interp.x >= fb_size.w
-            || interp.y >= fb_size.h) {
-            continue;
-        }
-
-        set_surface_pixel(surf, interp, get_color(interp));
-
-        if (interp == l.end) {
-            break;
-        }
+    auto draw_point = point2i{l.start.x, start_y};
+    for (; draw_point.y < end_y; ++draw_point.y) {
+        set_surface_pixel(surf, draw_point, get_color(draw_point));
     }
 }
 
@@ -368,7 +322,7 @@ void raycaster_app::render()
         auto const line_start = point2i{column, half_height - wall_size};
         auto const line_end = point2i{column, half_height + wall_size};
         auto const line_to_draw = line2i{line_start, line_end};
-        draw_line(framebuffer, line_to_draw,
+        draw_column(framebuffer, line_to_draw,
             [&line_start, &line_end, tex, &ray_v, fog_t, &fog_color](
                 point2i const& draw_pos) {
                 auto const y_percent = (draw_pos.y - line_start.y)
