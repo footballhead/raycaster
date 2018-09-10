@@ -5,7 +5,6 @@
 
 #include <mycolor/mycolor.hpp>
 #include <mymath/mymath.hpp>
-#include <sdl_application/screenshot.hpp>
 #include <sdl_application/sdl_mymath.hpp>
 #include <sdl_application/surface_manipulation.hpp>
 #include <sdl_raii/sdl_raii.hpp>

@@ -67,7 +67,6 @@ target_include_directories(sdl_raii
 set(SDL_APPLICATION_SOURCES
 	src/sdl_application/asset_store.cpp
 	src/sdl_application/input_buffer.cpp
-	src/sdl_application/screenshot.cpp
 	src/sdl_application/sdl_application.cpp
 	src/sdl_application/sdl_mymath.cpp
 	src/sdl_application/surface_manipulation.cpp
@@ -76,7 +75,6 @@ set(SDL_APPLICATION_SOURCES
 set(SDL_APPLICATION_HEADERS
 	src/sdl_application/asset_store.hpp
 	src/sdl_application/input_buffer.hpp
-	src/sdl_application/screenshot.hpp
 	src/sdl_application/sdl_application.hpp
 	src/sdl_application/sdl_mymath.hpp
 	src/sdl_application/surface_manipulation.hpp
