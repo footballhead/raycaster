@@ -29,7 +29,7 @@ static auto s_draw_floor = true;
 
 using namespace raycaster;
 
-constexpr auto PI_OVER_2 = M_PI / 2.0;
+constexpr float PI_OVER_2 = M_PI / 2.f;
 
 // This is what works in my VBox setup
 constexpr Uint32 desired_framebuffer_formats[]
@@ -209,11 +209,19 @@ void raycaster_app::update()
     if (input_buffer.is_pressed(SDL_SCANCODE_S)) {
         _camera.move({_camera.get_rotation(), -move_step});
     }
+
     if (input_buffer.is_pressed(SDL_SCANCODE_A)) {
         _camera.rotate(yaw_step);
     }
     if (input_buffer.is_pressed(SDL_SCANCODE_D)) {
         _camera.rotate(-yaw_step);
+    }
+
+    if (input_buffer.is_pressed(SDL_SCANCODE_Q)) {
+        _camera.move({_camera.get_rotation() + PI_OVER_2, move_step});
+    }
+    if (input_buffer.is_pressed(SDL_SCANCODE_E)) {
+        _camera.move({_camera.get_rotation() + PI_OVER_2, -move_step});
     }
 
     if (input_buffer.is_hit(SDL_SCANCODE_SPACE)) {
