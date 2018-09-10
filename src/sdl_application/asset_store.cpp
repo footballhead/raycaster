@@ -11,9 +11,8 @@ sdl::surface load_image(std::string const& path)
 
 namespace sdl_app {
 
-asset_store::asset_store(sdl::shared_renderer renderer, std::string base_dir)
-: _renderer{std::move(renderer)}
-, _base_dir{std::move(base_dir)}
+asset_store::asset_store(std::string base_dir)
+: _base_dir{std::move(base_dir)}
 {
 }
 

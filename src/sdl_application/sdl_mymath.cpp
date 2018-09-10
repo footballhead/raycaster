@@ -17,6 +17,11 @@ point2i round_to_point(float x, float y)
     return make_point<int>(std::round(x), std::round(y));
 }
 
+bool draw_point(SDL_Renderer* ren, point2i const& p)
+{
+    return SDL_RenderDrawPoint(ren, p.x, p.y) == 0;
+}
+
 } // namespace
 
 namespace sdl_app {
@@ -43,6 +48,11 @@ extent2i get_texture_size(SDL_Texture* texture)
     return {width, height};
 }
 
+extent2i get_surface_size(SDL_Surface* surface)
+{
+    return {surface->w, surface->h};
+}
+
 extent2i get_renderer_output_size(SDL_Renderer* renderer)
 {
     int width = -1, height = -1;
@@ -61,11 +71,6 @@ bool set_render_draw_color(SDL_Renderer* renderer, color const& c)
 bool set_renderer_draw_color(SDL_Renderer* renderer, color const& c)
 {
     return set_render_draw_color(renderer, c);
-}
-
-bool draw_point(SDL_Renderer* ren, point2i const& p)
-{
-    return SDL_RenderDrawPoint(ren, p.x, p.y) == 0;
 }
 
 bool draw_line(SDL_Renderer* ren, point2i const& src, point2i const& dst,

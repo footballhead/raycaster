@@ -32,6 +32,136 @@ using namespace raycaster;
 
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
+// This is what works in my VBox setup
+constexpr auto desired_framebuffer_bpp = 4;
+constexpr auto desired_framebuffer_format = SDL_PIXELFORMAT_RGB888;
+
+char const* pixel_type_to_string(Uint32 val)
+{
+    switch (val) {
+    case SDL_PIXELTYPE_PACKED32:
+        return "SDL_PIXELTYPE_PACKED32";
+    default:
+        return "???";
+    }
+}
+
+char const* packed_order_to_string(Uint32 val)
+{
+    switch (val) {
+    case SDL_PACKEDORDER_XRGB:
+        return "SDL_PACKEDORDER_XRGB";
+    default:
+        return "???";
+    }
+}
+
+char const* packed_layout_to_string(Uint32 val)
+{
+    switch (val) {
+    case SDL_PACKEDLAYOUT_8888:
+        return "SDL_PACKEDLAYOUT_8888";
+    default:
+        return "???";
+    }
+}
+
+void print_pixel_format(Uint32 fmt)
+{
+    SDL_Log("format=0x%x", fmt);
+    SDL_Log("pixel type=%s", pixel_type_to_string(SDL_PIXELTYPE(fmt)));
+    SDL_Log("pixel order=%s", packed_order_to_string(SDL_PIXELORDER(fmt)));
+    SDL_Log("pixel layout=%s", packed_layout_to_string(SDL_PIXELLAYOUT(fmt)));
+    SDL_Log("BITS per pixel=%u", SDL_BITSPERPIXEL(fmt));
+    SDL_Log("BYTES per pixel=%u", SDL_BYTESPERPIXEL(fmt));
+    SDL_Log("is indexed? %x", SDL_ISPIXELFORMAT_INDEXED(fmt));
+    SDL_Log("is alpha? %x", SDL_ISPIXELFORMAT_ALPHA(fmt));
+    SDL_Log("is fourcc? %x", SDL_ISPIXELFORMAT_FOURCC(fmt));
+}
+
+point2i round_to_point(float x, float y)
+{
+    return make_point<int>(std::round(x), std::round(y));
+}
+
+bool is_surface_of_desired_format(
+    SDL_Surface* surf, int want_bpp, Uint32 want_format)
+{
+    return surf->format->BytesPerPixel == want_bpp
+        && surf->format->format == want_format;
+}
+
+void set_surface_pixel(SDL_Surface* surf, point2i const& p, color const& c)
+{
+    if (!is_surface_of_desired_format(
+            surf, desired_framebuffer_bpp, desired_framebuffer_format)) {
+        auto fmt = surf->format;
+        SDL_Log("Invalid surface format!");
+        SDL_Log("  WANTED: %d BPP, format=0x%x", desired_framebuffer_bpp,
+            desired_framebuffer_format);
+        SDL_Log("  GOT:");
+        SDL_Log("    bpp=%d", fmt->BytesPerPixel);
+        print_pixel_format(fmt->format);
+        throw std::runtime_error{
+            "set_surface_pixel: invalid surface format! See log"};
+    }
+
+    if (p.x < 0 || p.y < 0 || p.x >= surf->w || p.y >= surf->h) {
+        SDL_Log("Invalid coordinate: (%d,%d)", p.x, p.y);
+        throw std::runtime_error{"Got invalid coordinates! See log"};
+    }
+
+    // Assuming BGR24
+    auto const index = p.y * surf->pitch + p.x * surf->format->BytesPerPixel;
+    auto const pixel = static_cast<Uint8*>(surf->pixels) + index;
+    pixel[2] = c.r;
+    pixel[1] = c.g;
+    pixel[0] = c.b;
+}
+
+void draw_line(SDL_Surface* surf, line2i const& l,
+    std::function<color(point2i const&)> get_color)
+{
+    auto const delta = l.end - l.start;
+
+    // Anticipate division by 0 and short circuit
+    auto const zero_vector = point2i{0, 0};
+    if (delta == zero_vector) {
+        set_surface_pixel(surf, l.end, get_color(l.end));
+        return;
+    }
+
+    // We can do all the math in absolutes then apply the sign later to get the
+    // right result! This greatly simplfies the code
+    auto const abs_delta = mymath::abs(delta);
+    auto const use_unit_x = abs_delta.y < abs_delta.x;
+
+    auto const x_inc
+        = (use_unit_x ? 1.f : abs_delta.slope_inverse()) * sgn(delta.x);
+    auto const y_inc = (use_unit_x ? abs_delta.slope() : 1.f) * sgn(delta.y);
+
+    auto const fb_size = get_surface_size(surf);
+
+    // Put an arbitrary limit in case this goes into infinite loop
+    auto const debug_limit = 2048;
+    for (int i = 0; i < debug_limit; ++i) {
+        // The rounding is key to ensuring this algo halts!
+        auto const iterated_step = round_to_point(x_inc * i, y_inc * i);
+        auto const interp = l.start + iterated_step;
+
+        if (interp.x < 0 || interp.y < 0 || interp.x >= fb_size.w
+            || interp.y >= fb_size.h) {
+            continue;
+        }
+
+        set_surface_pixel(surf, interp, get_color(interp));
+
+        if (interp == l.end) {
+            break;
+        }
+    }
+}
+
 /// The result of a single ray casting operation
 struct collision_result {
     /// The distance to the point of collision. If < 0 then no collision
@@ -85,12 +215,10 @@ collision_result find_collision(level const& lvl, point2f const& origin,
 namespace raycaster {
 
 raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
-    sdl::window window, sdl::shared_renderer renderer,
-    std::unique_ptr<input_buffer> input, std::unique_ptr<asset_store> assets,
-    level lvl, camera cam)
+    sdl::window window, std::unique_ptr<input_buffer> input,
+    std::unique_ptr<asset_store> assets, level lvl, camera cam)
 : sdl_application(
-      std::move(sdl), std::move(window), std::move(renderer), std::move(input))
-, _asset_store{std::move(assets)}
+      std::move(sdl), std::move(window), std::move(input), std::move(assets))
 , _level{lvl}
 , _camera{cam}
 {
@@ -132,11 +260,12 @@ void raycaster_app::update()
     }
 
     if (input_buffer.is_hit(SDL_SCANCODE_SPACE)) {
-        if (!save_screenshot(get_renderer(), "screenshot.bmp")) {
-            SDL_Log("save_screenshot failed!");
-        } else {
-            SDL_Log("saved screenshot to screenshot.bmp");
-        }
+        // if (!save_screenshot(get_renderer(), "screenshot.bmp")) {
+        //     SDL_Log("save_screenshot failed!");
+        // } else {
+        //     SDL_Log("saved screenshot to screenshot.bmp");
+        // }
+        SDL_Log("Sorry, screenshotting is borked atm");
     }
 
     if (input_buffer.is_hit(SDL_SCANCODE_1)) {
@@ -153,6 +282,7 @@ void raycaster_app::update()
     }
     if (input_buffer.is_hit(SDL_SCANCODE_5)) {
         s_draw_floor = !s_draw_floor;
+        SDL_Log("ceiling/floor are borked atm");
     }
 }
 
@@ -161,39 +291,14 @@ void raycaster_app::render()
     static auto start_time = SDL_GetTicks();
     static auto frame_number = 0;
 
-    auto renderer = get_renderer();
+    auto framebuffer = get_framebuffer();
 
     auto const fog_color = _camera.get_fog_color();
     auto const max_distance = _camera.get_far();
     auto const projection_plane = _camera.get_projection_plane();
 
-    auto const logical_size = get_renderer_logical_size(renderer);
+    auto const logical_size = get_surface_size(framebuffer);
     auto const half_height = logical_size.h / 2;
-
-    if (s_draw_floor) {
-        // draw ceiling (top-down)
-        color const ceiling_color{64, 0, 0};
-        for (int i = 0; i < half_height; ++i) {
-            auto const t_scale
-                = max_distance / static_cast<float>(max_distance - 1);
-            auto const interp = linear_interpolate(ceiling_color, fog_color,
-                i / static_cast<float>(half_height) * t_scale);
-            SDL_CHECK(draw_line(renderer, {0, i}, {logical_size.w, i},
-                [&interp](point2i const&) { return interp; }));
-        }
-
-        // draw floor (bottom-up)
-        color const floor_color{64, 128, 255};
-        for (int i = 0; i < half_height; ++i) {
-            auto const t_scale
-                = max_distance / static_cast<float>(max_distance - 1);
-            auto const interp = linear_interpolate(floor_color, fog_color,
-                (half_height - i) / static_cast<float>(half_height) * t_scale);
-            auto const draw_y = i + half_height;
-            SDL_CHECK(draw_line(renderer, {0, draw_y}, {logical_size.w, draw_y},
-                [&interp](point2i const&) { return interp; }));
-        }
-    }
 
     auto const num_rays = logical_size.w;
     std::vector<collision_result> collision_buffer;
@@ -239,7 +344,8 @@ void raycaster_app::render()
         auto const ray_v = collision.v;
 
         // Figure out which texture to use
-        auto tex = _asset_store->get_asset(get_wall_texture(collision.texture));
+        auto tex
+            = get_asset_store().get_asset(get_wall_texture(collision.texture));
 
         // Color the texture to apply the fog effect. The "fog scale factor" is
         // used to account for the draw cutoff being determined by euclidean
@@ -251,7 +357,8 @@ void raycaster_app::render()
 
         auto const line_start = point2i{column, half_height - wall_size};
         auto const line_end = point2i{column, half_height + wall_size};
-        SDL_CHECK(draw_line(renderer, line_start, line_end,
+        auto const line_to_draw = line2i{line_start, line_end};
+        draw_line(framebuffer, line_to_draw,
             [&line_start, &line_end, tex, &ray_v, fog_t, &fog_color](
                 point2i const& draw_pos) {
                 auto const y_percent = (draw_pos.y - line_start.y)
@@ -292,7 +399,7 @@ void raycaster_app::render()
                 }
 
                 return linear_interpolate(pixel, fog_color, t);
-            }));
+            });
     }
 
     ++frame_number;

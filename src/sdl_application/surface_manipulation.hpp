@@ -13,5 +13,4 @@ mycolor::color get_surface_pixel(SDL_Surface* surf, mymath::point2f const& uv);
 mycolor::color get_surface_pixel_nn(
     SDL_Surface* surf, mymath::point2f const& uv);
 
-} // namespace raycaster
-
+} // namespace sdl_app

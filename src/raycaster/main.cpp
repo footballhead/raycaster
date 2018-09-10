@@ -19,23 +19,18 @@ using namespace sdl_app;
 
 int main(int argc, char** argv)
 {
+    SDL_Log("Starting application main...");
     auto sdl = std::make_shared<sdl::sdl_init>();
 
     auto const window_title = "Raycaster";
-    SDL_Point const window_bounds{1280, 720};
-    auto window
-        = sdl::make_window(window_title, window_bounds, SDL_WINDOW_RESIZABLE);
-
-    auto renderer = sdl::shared_renderer{sdl::make_renderer(window.get())};
+    SDL_Point const window_bounds{640, 360};
+    auto window = sdl::make_window(window_title, window_bounds);
 
     // Create asset manager and preload assets
-    auto assets = std::make_unique<asset_store>(renderer, "../assets");
+    auto assets = std::make_unique<asset_store>("../assets");
     assets->get_asset(common_assets::wall_texture);
     assets->get_asset(common_assets::stone_texture);
     assets->get_asset(common_assets::floor);
-
-    auto const renderer_size = extent2i{320, 180};
-    SDL_CHECK(set_renderer_logical_size(renderer.get(), renderer_size));
 
     level test_level = {std::vector<wall>{
         // walls
@@ -73,8 +68,10 @@ int main(int argc, char** argv)
 
     auto input = std::make_unique<sdl_app::input_buffer>();
 
-    raycaster_app app{std::move(sdl), std::move(window), std::move(renderer),
-        std::move(input), std::move(assets), test_level, cam};
+    SDL_Log("Creating raycaster_app...");
+    raycaster_app app{std::move(sdl), std::move(window), std::move(input),
+        std::move(assets), test_level, cam};
+    SDL_Log("Running app...");
     try {
         app.exec();
     } catch (const std::exception& e) {

@@ -97,6 +97,7 @@ inline texture make_texture(SDL_Texture* tex)
 /// Wrap an existing SDL_Surface
 inline surface make_surface(SDL_Surface* surf)
 {
+    SDL_CHECK(surf);
     return surface{surf, detail::surface_deleter{}};
 }
 

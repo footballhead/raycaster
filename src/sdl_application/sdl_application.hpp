@@ -15,8 +15,8 @@ namespace sdl_app {
 class sdl_application {
 public:
     explicit sdl_application(std::shared_ptr<sdl::sdl_init> sdl,
-        sdl::window window, sdl::shared_renderer renderer,
-        std::unique_ptr<input_buffer> input_buffer);
+        sdl::window window, std::unique_ptr<input_buffer> input_buffer,
+        std::unique_ptr<asset_store> assets);
 
     sdl_application(sdl_application const& other) = delete;
     sdl_application(sdl_application&& other) = delete;
@@ -32,14 +32,17 @@ protected:
     virtual void update() = 0;
     virtual void render() = 0;
 
-    SDL_Renderer* get_renderer();
+    SDL_Window* get_window();
+    SDL_Surface* get_framebuffer();
     input_buffer& get_input_buffer();
+    asset_store& get_asset_store();
 
 private:
     std::shared_ptr<sdl::sdl_init> _sdl;
     sdl::window _window;
-    sdl::shared_renderer _renderer;
+    sdl::surface _framebuffer;
     std::unique_ptr<input_buffer> _input_buffer;
+    std::unique_ptr<asset_store> _asset_store;
 
     bool _running = false;
 };

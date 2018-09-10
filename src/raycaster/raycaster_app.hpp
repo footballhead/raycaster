@@ -44,8 +44,7 @@ inline char const* get_wall_texture(unsigned int i)
 class raycaster_app : public sdl_app::sdl_application {
 public:
     explicit raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
-        sdl::window window, sdl::shared_renderer renderer,
-        std::unique_ptr<sdl_app::input_buffer> input,
+        sdl::window window, std::unique_ptr<sdl_app::input_buffer> input,
         std::unique_ptr<sdl_app::asset_store> assets, level lvl, camera cam);
 
 protected:
@@ -55,8 +54,6 @@ protected:
 
 private:
     void on_window_event(SDL_WindowEvent const& event);
-
-    std::unique_ptr<sdl_app::asset_store> _asset_store = nullptr;
 
     level _level;
     camera _camera;
