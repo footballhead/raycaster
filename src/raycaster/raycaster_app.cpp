@@ -251,6 +251,12 @@ void raycaster_app::render()
 
     auto framebuffer = get_framebuffer();
 
+    auto const ceiling_color = color{64, 0, 0};
+    auto const ceiling_color_darker = color{32, 0, 0};
+
+    auto const floor_color = color{64, 128, 255};
+    auto const floor_color_darker = color{32, 64, 128};
+
     auto const fog_color = _camera.get_fog_color();
     auto const max_distance = _camera.get_far();
     auto const projection_plane = _camera.get_projection_plane();
@@ -328,10 +334,15 @@ void raycaster_app::render()
                 auto const floor_coord = point_cast<int>(_camera.get_position()
                     + point2f{-floor_local_coord.x, floor_local_coord.y});
                 auto const is_even = (floor_coord.x + floor_coord.y) % 2 == 0;
-                auto const tile_color
-                    = (is_even) ? constants::white : constants::black;
-                auto const foggy_color = linear_interpolate(
-                    tile_color, fog_color, floor_distance / fog_distance);
+                auto const is_ceiling
+                    = half_height - row >= 0;
+                auto const tile_color = is_even
+                    ? (is_ceiling ? ceiling_color : floor_color)
+                    : (is_ceiling ? ceiling_color_darker : floor_color_darker);
+                auto const foggy_color = s_use_fog
+                    ? linear_interpolate(
+                          tile_color, fog_color, floor_distance / fog_distance)
+                    : tile_color;
                 set_surface_pixel(framebuffer, column, row, foggy_color);
                 continue;
             }
@@ -343,8 +354,9 @@ void raycaster_app::render()
             auto const texel = s_use_textures ? get_surface_pixel(tex, uv)
                                               : constants::white;
 
-            auto const texel_after_fog
-                = s_use_fog ? linear_interpolate(texel, fog_color, fog_t) : texel;
+            auto const texel_after_fog = s_use_fog
+                ? linear_interpolate(texel, fog_color, fog_t)
+                : texel;
             set_surface_pixel(framebuffer, column, row, texel_after_fog);
         }
     }
