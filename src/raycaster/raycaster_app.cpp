@@ -32,7 +32,8 @@ using namespace raycaster;
 constexpr auto PI_OVER_2 = M_PI / 2.0;
 
 // This is what works in my VBox setup
-constexpr auto desired_framebuffer_format = SDL_PIXELFORMAT_RGB888;
+constexpr Uint32 desired_framebuffer_formats[]
+    = {SDL_PIXELFORMAT_ARGB8888, SDL_PIXELFORMAT_RGB888};
 
 bool save_screenshot(SDL_Surface* framebuffer, const char* filename)
 {
@@ -61,6 +62,8 @@ char const* packed_order_to_string(Uint32 val)
     switch (val) {
     case SDL_PACKEDORDER_XRGB:
         return "SDL_PACKEDORDER_XRGB";
+    case SDL_PACKEDORDER_ARGB:
+        return "SDL_PACKEDORDER_ARGB";
     default:
         return "???";
     }
@@ -80,7 +83,8 @@ void print_pixel_format(Uint32 fmt)
 {
     SDL_Log("format=0x%x", fmt);
     SDL_Log("pixel type=%s", pixel_type_to_string(SDL_PIXELTYPE(fmt)));
-    SDL_Log("pixel order=%s", packed_order_to_string(SDL_PIXELORDER(fmt)));
+    SDL_Log("pixel order=%s (%u)", packed_order_to_string(SDL_PIXELORDER(fmt)),
+        SDL_PIXELORDER(fmt));
     SDL_Log("pixel layout=%s", packed_layout_to_string(SDL_PIXELLAYOUT(fmt)));
     SDL_Log("BITS per pixel=%u", SDL_BITSPERPIXEL(fmt));
     SDL_Log("BYTES per pixel=%u", SDL_BYTESPERPIXEL(fmt));
@@ -160,16 +164,22 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
 , _camera{cam}
 {
     auto framebuffer = get_framebuffer();
-    if (framebuffer->format->format != desired_framebuffer_format) {
+    auto found_format = false;
+    for (auto const& want_format : desired_framebuffer_formats) {
+        if (framebuffer->format->format == want_format) {
+            found_format = true;
+            break;
+        }
+    }
+
+    if (!found_format) {
         SDL_Log("Invalid surface format!");
-        SDL_Log("WANTED:");
-        SDL_Log("format=0x%x", desired_framebuffer_format);
         SDL_Log("GOT:");
         print_pixel_format(framebuffer->format->format);
         throw std::runtime_error{
             "set_surface_pixel: invalid surface format! See log"};
     }
-}
+} // namespace raycaster
 
 void raycaster_app::unhandled_event(SDL_Event const& event)
 {
