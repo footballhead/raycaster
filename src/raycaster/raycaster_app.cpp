@@ -22,7 +22,6 @@ using namespace sdl_app;
 namespace {
 
 static auto s_use_fog = true;
-static auto s_use_bilinear = false;
 static auto s_use_textures = true;
 static auto s_draw_floor = true;
 
@@ -237,9 +236,6 @@ void raycaster_app::update()
     if (input_buffer.is_hit(SDL_SCANCODE_1)) {
         s_use_fog = !s_use_fog;
     }
-    if (input_buffer.is_hit(SDL_SCANCODE_2)) {
-        s_use_bilinear = !s_use_bilinear;
-    }
     if (input_buffer.is_hit(SDL_SCANCODE_4)) {
         s_use_textures = !s_use_textures;
     }
@@ -334,8 +330,8 @@ void raycaster_app::render()
                 auto const is_even = (floor_coord.x + floor_coord.y) % 2 == 0;
                 auto const tile_color
                     = (is_even) ? constants::white : constants::black;
-                auto const foggy_color
-                    = linear_interpolate(tile_color, fog_color, floor_distance / fog_distance);
+                auto const foggy_color = linear_interpolate(
+                    tile_color, fog_color, floor_distance / fog_distance);
                 set_surface_pixel(framebuffer, column, row, foggy_color);
                 continue;
             }
@@ -344,18 +340,11 @@ void raycaster_app::render()
                 / static_cast<float>(wall_end - wall_start);
 
             auto const uv = point2f{collision.u, v};
-            auto const texel = s_use_textures
-                ? (s_use_bilinear ? get_surface_pixel(tex, uv)
-                                  : get_surface_pixel_nn(tex, uv))
-                : constants::white;
-
-            if (!s_use_fog) {
-                set_surface_pixel(framebuffer, column, row, texel);
-                continue;
-            }
+            auto const texel = s_use_textures ? get_surface_pixel(tex, uv)
+                                              : constants::white;
 
             auto const texel_after_fog
-                = linear_interpolate(texel, fog_color, fog_t);
+                = s_use_fog ? linear_interpolate(texel, fog_color, fog_t) : texel;
             set_surface_pixel(framebuffer, column, row, texel_after_fog);
         }
     }
