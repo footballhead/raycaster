@@ -89,42 +89,14 @@ void print_pixel_format(Uint32 fmt)
     SDL_Log("is fourcc? %x", SDL_ISPIXELFORMAT_FOURCC(fmt));
 }
 
-void set_surface_pixel(SDL_Surface* surf, point2i const& p, color const& c)
+void set_surface_pixel(SDL_Surface* surf, int x, int y, color const& c)
 {
-    if (surf->format->format != desired_framebuffer_format) {
-        SDL_Log("Invalid surface format!");
-        SDL_Log("WANTED:");
-        SDL_Log("format=0x%x", desired_framebuffer_format);
-        SDL_Log("GOT:");
-        print_pixel_format(surf->format->format);
-        throw std::runtime_error{
-            "set_surface_pixel: invalid surface format! See log"};
-    }
-
-    if (p.x < 0 || p.y < 0 || p.x >= surf->w || p.y >= surf->h) {
-        SDL_Log("Invalid coordinate: (%d,%d)", p.x, p.y);
-        throw std::runtime_error{"Got invalid coordinates! See log"};
-    }
-
     // Assuming BGR24
-    auto const index = p.y * surf->pitch + p.x * surf->format->BytesPerPixel;
+    auto const index = y * surf->pitch + x * surf->format->BytesPerPixel;
     auto const pixel = static_cast<Uint8*>(surf->pixels) + index;
     pixel[2] = c.r;
     pixel[1] = c.g;
     pixel[0] = c.b;
-}
-
-// draw a column, on increasing y, doesn't handle malformed/off-screen lines
-void draw_column(SDL_Surface* surf, line2i const& l,
-    std::function<color(point2i const&)> get_color)
-{
-    auto const start_y = std::max(0, l.start.y);
-    auto const end_y = std::min(surf->h, l.end.y);
-
-    auto draw_point = point2i{l.start.x, start_y};
-    for (; draw_point.y < end_y; ++draw_point.y) {
-        set_surface_pixel(surf, draw_point, get_color(draw_point));
-    }
 }
 
 /// The result of a single ray casting operation
@@ -135,8 +107,8 @@ struct collision_result {
     point2f position;
     /// The ID of the texture to use
     unsigned int texture;
-    /// Texture V coordinate
-    float v;
+    /// Texture U coordinate (V is generated on-the-fly)
+    float u;
 };
 
 collision_result find_collision(level const& lvl, point2f const& origin,
@@ -187,6 +159,16 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
 , _level{lvl}
 , _camera{cam}
 {
+    auto framebuffer = get_framebuffer();
+    if (framebuffer->format->format != desired_framebuffer_format) {
+        SDL_Log("Invalid surface format!");
+        SDL_Log("WANTED:");
+        SDL_Log("format=0x%x", desired_framebuffer_format);
+        SDL_Log("GOT:");
+        print_pixel_format(framebuffer->format->format);
+        throw std::runtime_error{
+            "set_surface_pixel: invalid surface format! See log"};
+    }
 }
 
 void raycaster_app::unhandled_event(SDL_Event const& event)
@@ -296,6 +278,7 @@ void raycaster_app::render()
     int column = -1;
     for (auto const& collision : collision_buffer) {
         ++column;
+
         // No collision means don't draw anything. The fog effect will be taken
         // care of by floor/ceiling gradient.
         if (collision.distance < 0) {
@@ -305,65 +288,63 @@ void raycaster_app::render()
         auto const wall_size
             = static_cast<int>(half_height / collision.distance);
 
-        auto const ray_v = collision.v;
-
-        // Figure out which texture to use
         auto tex
             = get_asset_store().get_asset(get_wall_texture(collision.texture));
 
         // Color the texture to apply the fog effect. The "fog scale factor" is
         // used to account for the draw cutoff being determined by euclidean
-        // distance but the render color being determined by the proejcted
+        // distance but the render color being determined by the projected
         // distance.
         auto const fog_scale_factor = 0.75f;
         auto const fog_distance = max_distance * fog_scale_factor;
         auto const fog_t = collision.distance / fog_distance;
 
-        auto const line_start = point2i{column, half_height - wall_size};
-        auto const line_end = point2i{column, half_height + wall_size};
-        auto const line_to_draw = line2i{line_start, line_end};
-        draw_column(framebuffer, line_to_draw,
-            [&line_start, &line_end, tex, &ray_v, fog_t, &fog_color](
-                point2i const& draw_pos) {
-                auto const y_percent = (draw_pos.y - line_start.y)
-                    / static_cast<float>(line_end.y - line_start.y);
+        auto const row_start = std::max(0, half_height - wall_size);
+        auto const row_end = std::min(framebuffer->h, half_height + wall_size);
 
-                auto const uv = point2f{ray_v, y_percent};
-                auto const pixel = s_use_textures
-                    ? (s_use_bilinear ? get_surface_pixel(tex, uv)
-                                      : get_surface_pixel_nn(tex, uv))
-                    : constants::white;
+        for (auto row = row_start; row < row_end; ++row) {
+            auto const v
+                = (row - row_start) / static_cast<float>(row_end - row_start);
 
-                if (!s_use_fog) {
-                    return pixel;
-                }
+            auto const uv = point2f{collision.u, v};
+            auto const texel = s_use_textures
+                ? (s_use_bilinear ? get_surface_pixel(tex, uv)
+                                  : get_surface_pixel_nn(tex, uv))
+                : constants::white;
 
-                auto t = 0.f;
-                if (s_use_dither_fog) {
-                    auto const dither_steps = 4;
+            if (!s_use_fog) {
+                set_surface_pixel(framebuffer, column, row, texel);
+                continue;
+            }
 
-                    auto const num_bands = 8;
-                    auto const band_index = static_cast<int>(fog_t * num_bands);
-                    auto const band_t
-                        = static_cast<int>(
-                              (fog_t * num_bands - band_index) * dither_steps)
-                        + 1;
+            auto t = 0.f;
+            if (s_use_dither_fog) {
+                auto const dither_steps = 4;
 
-                    auto const color_grade
-                        = std::floor(fog_t * num_bands) / num_bands;
-                    auto const alt_color_grade
-                        = std::max(0.f, color_grade - 1.f / num_bands);
+                auto const num_bands = 8;
+                auto const band_index = static_cast<int>(fog_t * num_bands);
+                auto const band_t
+                    = static_cast<int>(
+                          (fog_t * num_bands - band_index) * dither_steps)
+                    + 1;
 
-                    auto const even_pixel
-                        = ((draw_pos.x + draw_pos.y) % band_t) != 0;
+                auto const color_grade
+                    = std::floor(fog_t * num_bands) / num_bands;
+                auto const alt_color_grade
+                    = std::max(0.f, color_grade - 1.f / num_bands);
 
-                    t = (even_pixel ? color_grade : alt_color_grade);
-                } else {
-                    t = fog_t;
-                }
+                auto const even_pixel
+                    = ((row + column) % band_t) != 0;
 
-                return linear_interpolate(pixel, fog_color, t);
-            });
+                t = (even_pixel ? color_grade : alt_color_grade);
+            } else {
+                t = fog_t;
+            }
+
+            auto const texel_after_fog
+                = linear_interpolate(texel, fog_color, t);
+            set_surface_pixel(framebuffer, column, row, texel_after_fog);
+        }
     }
 
     ++frame_number;
