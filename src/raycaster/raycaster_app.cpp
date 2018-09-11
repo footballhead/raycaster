@@ -340,6 +340,16 @@ void raycaster_app::render()
                 auto floor_coord = _camera.get_position()
                     + point2f{-floor_local_coord.x, floor_local_coord.y};
 
+                auto const floor_fog_t = floor_distance / fog_distance;
+
+                if (floor_fog_t >= 1.f) {
+                    set_surface_pixel(framebuffer, column, row, fog_color);
+                    continue;
+                }
+
+                auto is_ceiling = row < half_height;
+
+                // wrap the coordinate between [0,1] before querying the texture
                 while (floor_coord.x < 0.f) {
                     floor_coord.x += 1.f;
                 }
@@ -352,15 +362,6 @@ void raycaster_app::render()
                 while (floor_coord.y > 1.f) {
                     floor_coord.y -= 1.f;
                 }
-
-                auto const floor_fog_t = floor_distance / fog_distance;
-
-                if (floor_fog_t >= 1.f) {
-                    set_surface_pixel(framebuffer, column, row, fog_color);
-                    continue;
-                }
-
-                auto is_ceiling = row < half_height;
 
                 auto const tile_color = get_surface_pixel(
                     is_ceiling ? ceiling_texture : floor_texture, floor_coord);
