@@ -17,8 +17,14 @@ struct wall {
     unsigned int texture;
 };
 
+struct sprite {
+    mymath::point2f data;
+    unsigned int texture;
+};
+
 struct level {
     std::vector<wall> walls;
+    std::vector<sprite> sprites;
 };
 
 namespace common_assets {

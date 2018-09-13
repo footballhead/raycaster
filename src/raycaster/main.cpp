@@ -34,28 +34,34 @@ int main(int argc, char** argv)
     assets->get_asset(common_assets::ceiling);
     assets->get_asset(common_assets::column);
 
-    level test_level = {std::vector<wall>{
-        // walls
-        wall{line2f{point2f{1.f, 1.f}, point2f{2.f, 1.f}}, 4},
-        wall{line2f{point2f{2.f, 1.f}, point2f{2.f, 2.f}}, 2},
-        wall{line2f{point2f{2.f, 2.f}, point2f{3.f, 2.f}}, 2},
-        wall{line2f{point2f{3.f, 2.f}, point2f{3.f, 1.f}}, 2},
-        wall{line2f{point2f{3.f, 1.f}, point2f{7.f, 1.f}}, 1},
-        wall{line2f{point2f{7.f, 1.f}, point2f{7.f, 5.f}}, 1},
-        wall{line2f{point2f{7.f, 5.f}, point2f{4.f, 5.f}}, 2},
-        wall{line2f{point2f{4.f, 5.f}, point2f{4.f, 6.f}}, 2},
-        wall{line2f{point2f{4.f, 6.f}, point2f{7.f, 6.f}}, 2},
-        wall{line2f{point2f{7.f, 6.f}, point2f{7.f, 7.f}}, 1},
-        wall{line2f{point2f{7.f, 7.f}, point2f{2.f, 7.f}}, 1},
-        wall{line2f{point2f{2.f, 7.f}, point2f{2.f, 6.f}}, 2},
-        wall{line2f{point2f{2.f, 6.f}, point2f{1.f, 6.f}}, 2},
-        wall{line2f{point2f{1.f, 6.f}, point2f{1.f, 1.f}}, 1},
-        // island
-        wall{line2f{point2f{5.f, 2.f}, point2f{6.f, 2.f}}, 2},
-        wall{line2f{point2f{6.f, 2.f}, point2f{6.f, 4.f}}, 2},
-        wall{line2f{point2f{6.f, 4.f}, point2f{5.f, 4.f}}, 2},
-        wall{line2f{point2f{5.f, 4.f}, point2f{5.f, 2.f}}, 2},
-    }};
+    level test_level = {
+        std::vector<wall>{
+            // walls
+            wall{line2f{point2f{1.f, 1.f}, point2f{2.f, 1.f}}, 1},
+            wall{line2f{point2f{2.f, 1.f}, point2f{2.f, 2.f}}, 2},
+            wall{line2f{point2f{2.f, 2.f}, point2f{3.f, 2.f}}, 2},
+            wall{line2f{point2f{3.f, 2.f}, point2f{3.f, 1.f}}, 2},
+            wall{line2f{point2f{3.f, 1.f}, point2f{7.f, 1.f}}, 1},
+            wall{line2f{point2f{7.f, 1.f}, point2f{7.f, 5.f}}, 1},
+            wall{line2f{point2f{7.f, 5.f}, point2f{4.f, 5.f}}, 2},
+            wall{line2f{point2f{4.f, 5.f}, point2f{4.f, 6.f}}, 2},
+            wall{line2f{point2f{4.f, 6.f}, point2f{7.f, 6.f}}, 2},
+            wall{line2f{point2f{7.f, 6.f}, point2f{7.f, 7.f}}, 1},
+            wall{line2f{point2f{7.f, 7.f}, point2f{2.f, 7.f}}, 1},
+            wall{line2f{point2f{2.f, 7.f}, point2f{2.f, 6.f}}, 2},
+            wall{line2f{point2f{2.f, 6.f}, point2f{1.f, 6.f}}, 2},
+            wall{line2f{point2f{1.f, 6.f}, point2f{1.f, 1.f}}, 1},
+            // island
+            wall{line2f{point2f{5.f, 2.f}, point2f{6.f, 2.f}}, 2},
+            wall{line2f{point2f{6.f, 2.f}, point2f{6.f, 4.f}}, 2},
+            wall{line2f{point2f{6.f, 4.f}, point2f{5.f, 4.f}}, 2},
+            wall{line2f{point2f{5.f, 4.f}, point2f{5.f, 2.f}}, 2},
+        },
+        std::vector<sprite>{
+            sprite{point2f{3.5f, 3.5f}, 4},
+            sprite{point2f{1.5f, 1.5f}, 4},
+        },
+    };
 
     camera cam{
         point2f{
