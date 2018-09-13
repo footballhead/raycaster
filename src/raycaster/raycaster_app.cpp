@@ -116,8 +116,13 @@ struct collision_result {
 };
 
 collision_result find_collision(level const& lvl, point2f const& origin,
-    float direction, float max_distance)
+    float direction, float reference_direction, float max_distance)
 {
+    auto const test_point = point2f{3.5f, 3.5f};
+    auto const left_point = test_point + vector2f{reference_direction+PI_OVER_2, 0.5f};
+    auto const right_point = test_point + vector2f{reference_direction-PI_OVER_2, 0.5f};
+    auto const test_line = line2f{left_point, right_point};
+
     auto const no_result
         = collision_result{-1.f, {-1.f, -1.f}, 0u, 0.f, direction};
 
@@ -134,6 +139,14 @@ collision_result find_collision(level const& lvl, point2f const& origin,
             intersections.push_back(collision_result{
                 exact_line.length(), cross_point, wall.texture, t, direction});
         }
+    }
+
+    point2f cross_point{0.f, 0.f};
+    float t = 0.f;
+    if (find_intersection(ray_line, test_line, cross_point, t)) {
+        auto const exact_line = line2f{origin, cross_point};
+        intersections.push_back(collision_result{
+            exact_line.length(), cross_point, 4, t, direction});
     }
 
     if (intersections.empty()) {
@@ -251,12 +264,6 @@ void raycaster_app::render()
 
     auto framebuffer = get_framebuffer();
 
-    // auto const ceiling_color = color{64, 0, 0};
-    // auto const ceiling_color_darker = color{32, 0, 0};
-
-    // auto const floor_color = color{64, 128, 255};
-    // auto const floor_color_darker = color{32, 64, 128};
-
     auto const floor_texture
         = get_asset_store().get_asset(common_assets::floor);
     auto const ceiling_texture
@@ -283,7 +290,7 @@ void raycaster_app::render()
         auto const camera_ray_radians = atan2(diff.y, diff.x);
 
         collision_buffer.push_back(find_collision(
-            _level, proj_point_interp, camera_ray_radians, max_distance));
+            _level, proj_point_interp, camera_ray_radians, _camera.get_rotation(), max_distance));
 
         auto& last_result = collision_buffer.back();
         if (last_result.distance < 0) {

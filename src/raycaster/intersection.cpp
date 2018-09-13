@@ -101,8 +101,7 @@ bool find_intersection(line2f const& a, line2f const& b, point2f& out, float& t)
     }
 
     out = candidate;
-    t = 0.f; // TODO
-    SDL_Log("Lol might want to fix this case of t generation");
+    t = line2f{b.start, candidate}.length() / b.length();
     return true;
 }
 
