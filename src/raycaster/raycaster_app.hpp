@@ -20,6 +20,7 @@ constexpr auto floor = "floor.bmp";
 constexpr auto floor2 = "floor2.bmp";
 constexpr auto ceiling = "ceil.bmp";
 constexpr auto column = "column.bmp";
+constexpr auto font = "6x8-terminal-mspaint.bmp";
 } // namespace common_assets
 
 inline char const* get_wall_texture(unsigned int i)

@@ -63,6 +63,28 @@ void set_surface_pixel(SDL_Surface* surf, int x, int y, color const& c)
     pixel[0] = c.b;
 }
 
+bool draw_string(
+    std::string const& str, point2i pos, SDL_Surface* font, SDL_Surface* dest)
+{
+    auto const font_size = extent2i{6, 8};
+
+    for (auto const& c : str) {
+        if (c == '\0') {
+            break;
+        }
+
+        auto src_rect = SDL_Rect{c * font_size.w, 0, font_size.w, font_size.h};
+        auto dst_rect = SDL_Rect{pos.x, pos.y, font_size.w, font_size.h};
+        if (SDL_BlitSurface(font, &src_rect, dest, &dst_rect) != 0) {
+            return false;
+        }
+
+        pos.x += font_size.w;
+    }
+
+    return true;
+}
+
 } // namespace
 
 namespace raycaster {
@@ -160,14 +182,12 @@ void raycaster_app::render()
     static auto start_time = SDL_GetTicks();
     static auto frame_number = 0;
 
-    auto framebuffer = get_framebuffer();
+    auto& asset_store = get_asset_store();
+    auto* framebuffer = get_framebuffer();
 
-    auto const floor_texture
-        = get_asset_store().get_asset(common_assets::floor);
-    auto const floor_texture2
-        = get_asset_store().get_asset(common_assets::floor2);
-    auto const ceiling_texture
-        = get_asset_store().get_asset(common_assets::ceiling);
+    auto const floor_texture = asset_store.get_asset(common_assets::floor);
+    auto const floor_texture2 = asset_store.get_asset(common_assets::floor2);
+    auto const ceiling_texture = asset_store.get_asset(common_assets::ceiling);
 
     auto const fog_color = _camera.get_fog_color();
     auto const max_distance = _camera.get_far();
@@ -213,8 +233,7 @@ void raycaster_app::render()
             ? 0
             : static_cast<int>(half_height / collision.distance);
 
-        auto tex
-            = get_asset_store().get_asset(get_wall_texture(collision.texture));
+        auto tex = asset_store.get_asset(get_wall_texture(collision.texture));
 
         // Color the texture to apply the fog effect. The "fog scale factor" is
         // used to account for the draw cutoff being determined by euclidean
@@ -299,6 +318,9 @@ void raycaster_app::render()
             set_surface_pixel(framebuffer, column, row, texel_after_fog);
         }
     }
+
+    SDL_CHECK(draw_string("Hello World!", point2i{0, 0},
+        asset_store.get_asset(common_assets::font), framebuffer));
 
     ++frame_number;
 
