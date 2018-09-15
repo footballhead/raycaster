@@ -164,6 +164,8 @@ void raycaster_app::render()
 
     auto const floor_texture
         = get_asset_store().get_asset(common_assets::floor);
+    auto const floor_texture2
+        = get_asset_store().get_asset(common_assets::floor2);
     auto const ceiling_texture
         = get_asset_store().get_asset(common_assets::ceiling);
 
@@ -254,6 +256,10 @@ void raycaster_app::render()
 
                 auto is_ceiling = row < half_height;
 
+                auto const floored_coord = point_cast<int>(floor_coord);
+                auto const is_even
+                    = ((floored_coord.x + floored_coord.y) % 2) == 0;
+
                 // wrap the coordinate between [0,1] before querying the texture
                 while (floor_coord.x < 0.f) {
                     floor_coord.x += 1.f;
@@ -268,8 +274,10 @@ void raycaster_app::render()
                     floor_coord.y -= 1.f;
                 }
 
-                auto const tile_color = get_surface_pixel(
-                    is_ceiling ? ceiling_texture : floor_texture, floor_coord);
+                auto const tile_color = get_surface_pixel(is_ceiling
+                        ? ceiling_texture
+                        : (is_even ? floor_texture : floor_texture2),
+                    floor_coord);
                 auto const foggy_tile_color = s_use_fog
                     ? linear_interpolate(tile_color, fog_color, floor_fog_t)
                     : tile_color;

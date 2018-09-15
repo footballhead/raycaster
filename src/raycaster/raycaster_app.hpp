@@ -17,6 +17,7 @@ namespace common_assets {
 constexpr auto wall_texture = "wall.bmp";
 constexpr auto stone_texture = "stone.bmp";
 constexpr auto floor = "floor.bmp";
+constexpr auto floor2 = "floor2.bmp";
 constexpr auto ceiling = "ceil.bmp";
 constexpr auto column = "column.bmp";
 } // namespace common_assets
@@ -26,8 +27,6 @@ inline char const* get_wall_texture(unsigned int i)
     switch (i) {
     case 2:
         return common_assets::stone_texture;
-    case 3:
-        return common_assets::floor;
     case 4:
         return common_assets::column;
     case 0:

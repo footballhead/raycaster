@@ -32,6 +32,7 @@ int main(int argc, char** argv)
     assets->get_asset(common_assets::wall_texture);
     assets->get_asset(common_assets::stone_texture);
     assets->get_asset(common_assets::floor);
+    assets->get_asset(common_assets::floor2);
     assets->get_asset(common_assets::ceiling);
     assets->get_asset(common_assets::column);
 
