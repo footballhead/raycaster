@@ -15,11 +15,14 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <string>
 #include <utility>
 
 using namespace mycolor;
 using namespace mymath;
 using namespace sdl_app;
+
+using namespace std::string_literals;
 
 namespace {
 
@@ -179,9 +182,6 @@ void raycaster_app::update()
 
 void raycaster_app::render()
 {
-    static auto start_time = SDL_GetTicks();
-    static auto frame_number = 0;
-
     auto& asset_store = get_asset_store();
     auto* framebuffer = get_framebuffer();
 
@@ -319,16 +319,16 @@ void raycaster_app::render()
         }
     }
 
-    SDL_CHECK(draw_string("Hello World!", point2i{0, 0},
+    SDL_CHECK(draw_string("FPS: "s + std::to_string(_fps), point2i{0, 0},
         asset_store.get_asset(common_assets::font), framebuffer));
 
-    ++frame_number;
+    ++_fps_interval_frames;
 
     const auto end_time = SDL_GetTicks();
-    if (end_time >= start_time + 1000) {
-        start_time = end_time;
-        SDL_Log("FPS: %d", frame_number);
-        frame_number = 0;
+    if (end_time >= _fps_interval_start + 1000) {
+        _fps_interval_start = end_time;
+        _fps = _fps_interval_frames;
+        _fps_interval_frames = 0;
     }
 }
 

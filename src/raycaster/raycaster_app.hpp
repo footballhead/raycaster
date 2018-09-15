@@ -8,6 +8,8 @@
 #include <sdl_application/sdl_application.hpp>
 #include <sdl_raii/sdl_raii.hpp>
 
+#include <SDL.h>
+
 #include <cstdint>
 #include <vector>
 
@@ -53,6 +55,10 @@ private:
 
     level _level;
     camera _camera;
+
+    Uint32 _fps_interval_start = 0u;
+    Uint32 _fps_interval_frames = 0u;
+    Uint32 _fps = 0u;
 };
 
 } // namespace raycaster
