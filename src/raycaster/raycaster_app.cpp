@@ -26,10 +26,6 @@ using namespace std::string_literals;
 
 namespace {
 
-static auto s_use_fog = true;
-static auto s_use_textures = true;
-static auto s_draw_floor = true;
-
 using namespace raycaster;
 
 constexpr float PI_OVER_2 = M_PI / 2.f;
@@ -170,13 +166,13 @@ void raycaster_app::update()
     }
 
     if (input_buffer.is_hit(SDL_SCANCODE_1)) {
-        s_use_fog = !s_use_fog;
+        _debug_no_fog = !_debug_no_fog;
     }
-    if (input_buffer.is_hit(SDL_SCANCODE_4)) {
-        s_use_textures = !s_use_textures;
+    if (input_buffer.is_hit(SDL_SCANCODE_2)) {
+        _debug_no_textures = !_debug_no_textures;
     }
-    if (input_buffer.is_hit(SDL_SCANCODE_5)) {
-        s_draw_floor = !s_draw_floor;
+    if (input_buffer.is_hit(SDL_SCANCODE_3)) {
+        _debug_no_floor = !_debug_no_floor;
     }
 }
 
@@ -249,7 +245,7 @@ void raycaster_app::render()
         for (auto row = 0; row < framebuffer->h; ++row) {
             // Draw wall/ceiling
             if (row < wall_start || row >= wall_end) {
-                if (!s_draw_floor) {
+                if (_debug_no_floor) {
                     set_surface_pixel(framebuffer, column, row, fog_color);
                     continue;
                 }
@@ -297,9 +293,9 @@ void raycaster_app::render()
                         ? ceiling_texture
                         : (is_even ? floor_texture : floor_texture2),
                     floor_coord);
-                auto const foggy_tile_color = s_use_fog
-                    ? linear_interpolate(tile_color, fog_color, floor_fog_t)
-                    : tile_color;
+                auto const foggy_tile_color = _debug_no_fog
+                    ? tile_color
+                    : linear_interpolate(tile_color, fog_color, floor_fog_t);
 
                 set_surface_pixel(framebuffer, column, row, foggy_tile_color);
                 continue;
@@ -309,12 +305,12 @@ void raycaster_app::render()
                 / static_cast<float>(wall_end - wall_start);
 
             auto const uv = point2f{collision.u, v};
-            auto const texel = s_use_textures ? get_surface_pixel(tex, uv)
-                                              : constants::white;
+            auto const texel = _debug_no_textures ? constants::white
+                                                  : get_surface_pixel(tex, uv);
 
-            auto const texel_after_fog = s_use_fog
-                ? linear_interpolate(texel, fog_color, fog_t)
-                : texel;
+            auto const texel_after_fog = _debug_no_fog
+                ? texel
+                : linear_interpolate(texel, fog_color, fog_t);
             set_surface_pixel(framebuffer, column, row, texel_after_fog);
         }
     }

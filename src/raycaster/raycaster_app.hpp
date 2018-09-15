@@ -59,6 +59,10 @@ private:
     Uint32 _fps_interval_start = 0u;
     Uint32 _fps_interval_frames = 0u;
     Uint32 _fps = 0u;
+
+    bool _debug_no_fog = false;
+    bool _debug_no_textures = false;
+    bool _debug_no_floor = false;
 };
 
 } // namespace raycaster
