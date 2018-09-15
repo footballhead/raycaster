@@ -1,4 +1,5 @@
 #include "camera.hpp"
+#include "level.hpp"
 #include "raycaster_app.hpp"
 
 #include <mymath/mymath.hpp>

@@ -1,7 +1,9 @@
 #include "raycaster_app.hpp"
 
 #include "camera.hpp"
+#include "collision.hpp"
 #include "intersection.hpp"
+#include "pixel_format_debug.hpp"
 
 #include <mycolor/mycolor.hpp>
 #include <mymath/mymath.hpp>
@@ -29,13 +31,18 @@ using namespace raycaster;
 
 constexpr float PI_OVER_2 = M_PI / 2.f;
 
-// This is what works in my VBox setup
-constexpr Uint32 desired_framebuffer_formats[]
-    = {SDL_PIXELFORMAT_ARGB8888, SDL_PIXELFORMAT_RGB888};
+// My framebuffer set pixel operation has only been tested on the following
+constexpr Uint32 desired_framebuffer_formats[] = {
+    // macOS 10.12
+    SDL_PIXELFORMAT_ARGB8888,
+    // Xubuntu 18.04 VBox guest in Windows 10 host
+    SDL_PIXELFORMAT_RGB888,
+};
 
 bool save_screenshot(SDL_Surface* framebuffer, const char* filename)
 {
-    // Try a straight dump
+    // Try a straight dump (note: gives undesired results if format includes
+    // alpha)
     auto const err = SDL_SaveBMP(framebuffer, filename);
     if (err != 0) {
         SDL_Log("save_screenshot: SDL_SaveBitmap failed: %s", SDL_GetError());
@@ -45,124 +52,15 @@ bool save_screenshot(SDL_Surface* framebuffer, const char* filename)
     return true;
 }
 
-char const* pixel_type_to_string(Uint32 val)
-{
-    switch (val) {
-    case SDL_PIXELTYPE_PACKED32:
-        return "SDL_PIXELTYPE_PACKED32";
-    default:
-        return "???";
-    }
-}
-
-char const* packed_order_to_string(Uint32 val)
-{
-    switch (val) {
-    case SDL_PACKEDORDER_XRGB:
-        return "SDL_PACKEDORDER_XRGB";
-    case SDL_PACKEDORDER_ARGB:
-        return "SDL_PACKEDORDER_ARGB";
-    default:
-        return "???";
-    }
-}
-
-char const* packed_layout_to_string(Uint32 val)
-{
-    switch (val) {
-    case SDL_PACKEDLAYOUT_8888:
-        return "SDL_PACKEDLAYOUT_8888";
-    default:
-        return "???";
-    }
-}
-
-void print_pixel_format(Uint32 fmt)
-{
-    SDL_Log("format=0x%x", fmt);
-    SDL_Log("pixel type=%s", pixel_type_to_string(SDL_PIXELTYPE(fmt)));
-    SDL_Log("pixel order=%s (%u)", packed_order_to_string(SDL_PIXELORDER(fmt)),
-        SDL_PIXELORDER(fmt));
-    SDL_Log("pixel layout=%s", packed_layout_to_string(SDL_PIXELLAYOUT(fmt)));
-    SDL_Log("BITS per pixel=%u", SDL_BITSPERPIXEL(fmt));
-    SDL_Log("BYTES per pixel=%u", SDL_BYTESPERPIXEL(fmt));
-    SDL_Log("is indexed? %x", SDL_ISPIXELFORMAT_INDEXED(fmt));
-    SDL_Log("is alpha? %x", SDL_ISPIXELFORMAT_ALPHA(fmt));
-    SDL_Log("is fourcc? %x", SDL_ISPIXELFORMAT_FOURCC(fmt));
-}
-
+// This function is only confirmed to work if the surface has a pixel format
+// that is in desired_framebuffer_formats.
 void set_surface_pixel(SDL_Surface* surf, int x, int y, color const& c)
 {
-    // Assuming BGR24
     auto const index = y * surf->pitch + x * surf->format->BytesPerPixel;
     auto const pixel = static_cast<Uint8*>(surf->pixels) + index;
     pixel[2] = c.r;
     pixel[1] = c.g;
     pixel[0] = c.b;
-}
-
-/// The result of a single ray casting operation
-struct collision_result {
-    /// The distance to the point of collision. If < 0 then no collision
-    float distance;
-    /// The point of collision. If distance < 0 then this is not valid
-    point2f position;
-    /// The ID of the texture to use
-    unsigned int texture;
-    /// Texture U coordinate (V is generated on-the-fly)
-    float u;
-    /// Ray anfle in camera space
-    float angle;
-};
-
-collision_result find_collision(level const& lvl, point2f const& origin,
-    float direction, float reference_direction, float max_distance)
-{
-    auto const no_result
-        = collision_result{-1.f, {-1.f, -1.f}, 0u, 0.f, direction};
-
-    auto const march_vector = vector2f{direction, max_distance};
-    auto const ray_line = line2f{origin, origin + march_vector};
-
-    std::vector<collision_result> intersections;
-
-    for (auto const& wall : lvl.walls) {
-        point2f cross_point{0.f, 0.f};
-        float t = 0.f;
-        if (find_intersection(ray_line, wall.data, cross_point, t)) {
-            auto const exact_line = line2f{origin, cross_point};
-            intersections.push_back(collision_result{
-                exact_line.length(), cross_point, wall.texture, t, direction});
-        }
-    }
-
-    for (auto const& sprite : lvl.sprites) {
-        auto const sprite_plane = line2f{
-            sprite.data + vector2f{reference_direction + PI_OVER_2, 0.5f},
-            sprite.data + vector2f{reference_direction - PI_OVER_2, 0.5f}};
-        point2f cross_point{0.f, 0.f};
-        float t = 0.f;
-        if (find_intersection(ray_line, sprite_plane, cross_point, t)) {
-            auto const exact_line = line2f{origin, cross_point};
-            intersections.push_back(collision_result{exact_line.length(),
-                cross_point, sprite.texture, t, direction});
-        }
-    }
-
-    if (intersections.empty()) {
-        return no_result;
-    }
-
-    auto closest_I = intersections.cbegin();
-    for (auto I = intersections.cbegin(); I < intersections.cend(); I++) {
-        auto const& collision = *I;
-        auto const& closest_so_far = *closest_I;
-        if (collision.distance < closest_so_far.distance) {
-            closest_I = I;
-        }
-    }
-
-    return *closest_I;
 }
 
 } // namespace

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "camera.hpp"
+#include "level.hpp"
 
 #include <mymath/mymath.hpp>
 #include <sdl_application/asset_store.hpp>
@@ -11,21 +12,6 @@
 #include <vector>
 
 namespace raycaster {
-
-struct wall {
-    mymath::line2f data;
-    unsigned int texture;
-};
-
-struct sprite {
-    mymath::point2f data;
-    unsigned int texture;
-};
-
-struct level {
-    std::vector<wall> walls;
-    std::vector<sprite> sprites;
-};
 
 namespace common_assets {
 constexpr auto wall_texture = "wall.bmp";
