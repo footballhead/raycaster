@@ -158,11 +158,7 @@ void raycaster_app::update()
     }
 
     if (input_buffer.is_hit(SDL_SCANCODE_SPACE)) {
-        if (!save_screenshot(get_framebuffer(), "screenshot.bmp")) {
-            SDL_Log("save_screenshot failed!");
-        } else {
-            SDL_Log("saved screenshot to screenshot.bmp");
-        }
+        _screenshot_queued = true;
     }
 
     if (input_buffer.is_hit(SDL_SCANCODE_1)) {
@@ -315,8 +311,16 @@ void raycaster_app::render()
         }
     }
 
-    SDL_CHECK(draw_string("FPS: "s + std::to_string(_fps), point2i{0, 0},
-        asset_store.get_asset(common_assets::font), framebuffer));
+    if (_screenshot_queued) {
+        if (!save_screenshot(get_framebuffer(), "screenshot.bmp")) {
+            SDL_Log("save_screenshot failed!");
+        } else {
+            SDL_Log("saved screenshot to screenshot.bmp");
+        }
+        _screenshot_queued = false;
+    } else {
+        draw_hud();
+    }
 
     ++_fps_interval_frames;
 
@@ -326,6 +330,17 @@ void raycaster_app::render()
         _fps = _fps_interval_frames;
         _fps_interval_frames = 0;
     }
+} // namespace raycaster
+
+void raycaster_app::draw_hud()
+{
+    auto* framebuffer = get_framebuffer();
+
+    auto& asset_store = get_asset_store();
+    auto* font = asset_store.get_asset(common_assets::font);
+
+    SDL_CHECK(draw_string(
+        "FPS: "s + std::to_string(_fps), point2i{0, 0}, font, framebuffer));
 }
 
 void raycaster_app::on_window_event(SDL_WindowEvent const& event)

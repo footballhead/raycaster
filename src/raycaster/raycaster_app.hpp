@@ -51,6 +51,7 @@ protected:
     void render() override;
 
 private:
+    void draw_hud();
     void on_window_event(SDL_WindowEvent const& event);
 
     level _level;
@@ -63,6 +64,8 @@ private:
     bool _debug_no_fog = false;
     bool _debug_no_textures = false;
     bool _debug_no_floor = false;
+
+    bool _screenshot_queued = false;
 };
 
 } // namespace raycaster
