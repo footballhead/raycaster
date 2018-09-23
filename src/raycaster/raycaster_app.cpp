@@ -212,12 +212,12 @@ void raycaster_app::rasterize(candidate_buffer const& buffer)
     for (auto const& candidates : buffer) {
         ++column;
         // TODO intersections may be empty in the future!
-        auto const& closest_hit = candidates.at(0);
-        draw_column(column, closest_hit);
+        auto const& closest_hit = candidates.hits.at(0);
+        draw_column(column, candidates.angle, closest_hit);
     }
 }
 
-void raycaster_app::draw_column(int column, ray_hit const& hit)
+void raycaster_app::draw_column(int column, float angle, ray_hit const& hit)
 {
     auto* framebuffer = get_framebuffer();
     auto& asset_store = get_asset_store();
@@ -255,12 +255,12 @@ void raycaster_app::draw_column(int column, ray_hit const& hit)
 
             // Reverse project each pixel into a world coordinate
             auto const local_ray_radians
-                = _camera.get_rotation() - hit.angle;
+                = _camera.get_rotation() - angle;
             auto const floor_distance = static_cast<float>(half_height)
                 / mymath::abs(half_height - row)
                 / std::sin(PI_OVER_2 - std::abs(local_ray_radians));
             auto const floor_local_coord = point2f{0.f, 0.f}
-                + vector2f{static_cast<float>(M_PI) - hit.angle,
+                + vector2f{static_cast<float>(M_PI) - angle,
                       floor_distance};
             auto floor_coord = _camera.get_position()
                 + point2f{-floor_local_coord.x, floor_local_coord.y};

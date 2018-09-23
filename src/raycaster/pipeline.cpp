@@ -31,7 +31,7 @@ candidate_buffer cast_rays(int num_rays, level const& lvl, camera const& cam)
         // Fix fish eye distortion by changing distance from euclidean to
         // projected on the projection plane using basic trig.
         auto& candidates = buffer.back();
-        for (auto& hit : candidates) {
+        for (auto& hit : candidates.hits) {
             // Ignore invalid entries
             // TODO find_collision should not return invalid entries!
             if (hit.distance < 0) {

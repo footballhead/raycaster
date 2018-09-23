@@ -20,20 +20,21 @@ render_candidates find_collision(level const& lvl,
     float max_distance)
 {
     auto const no_hit
-        = ray_hit{-1.f, {-1.f, -1.f}, 0u, 0.f, direction};
+        = ray_hit{-1.f, {-1.f, -1.f}, 0u, 0.f};
 
     auto const march_vector = vector2f{direction, max_distance};
     auto const ray_line = line2f{origin, origin + march_vector};
 
     render_candidates candidates;
+    auto& hits = candidates.hits;
 
     for (auto const& wall : lvl.walls) {
         point2f cross_point{0.f, 0.f};
         float t = 0.f;
         if (find_intersection(ray_line, wall.data, cross_point, t)) {
             auto const exact_line = line2f{origin, cross_point};
-            candidates.push_back(ray_hit{
-                exact_line.length(), cross_point, wall.texture, t, direction});
+            hits.push_back(ray_hit{
+                exact_line.length(), cross_point, wall.texture, t});
         }
     }
 
@@ -45,17 +46,17 @@ render_candidates find_collision(level const& lvl,
         float t = 0.f;
         if (find_intersection(ray_line, sprite_plane, cross_point, t)) {
             auto const exact_line = line2f{origin, cross_point};
-            candidates.push_back(ray_hit{exact_line.length(),
-                cross_point, sprite.texture, t, direction});
+            hits.push_back(ray_hit{exact_line.length(),
+                cross_point, sprite.texture, t});
         }
     }
 
-    if (candidates.empty()) {
-        return render_candidates{no_hit};
+    if (hits.empty()) {
+        return render_candidates{direction, {no_hit}};
     }
 
-    std::sort(candidates.begin(), candidates.end());
-    return render_candidates{candidates.at(0)};
+    std::sort(hits.begin(), hits.end());
+    return render_candidates{direction, {hits.at(0)}};
 }
 
 } // namespace raycaster

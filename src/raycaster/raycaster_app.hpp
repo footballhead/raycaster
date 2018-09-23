@@ -55,7 +55,7 @@ protected:
 
 private:
     void rasterize(candidate_buffer const& buffer);
-    void draw_column(int column, ray_hit const& hit);
+    void draw_column(int column, float angle, ray_hit const& hit);
     void draw_hud();
     void on_window_event(SDL_WindowEvent const& event);
 
