@@ -224,9 +224,9 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
 
     auto const fog_color = _camera.get_fog_color();
 
-    // auto const floor_texture = asset_store.get_asset(common_assets::floor);
-    // auto const floor_texture2 = asset_store.get_asset(common_assets::floor2);
-    // auto const ceiling_texture = asset_store.get_asset(common_assets::ceiling);
+    auto const floor_texture = asset_store.get_asset(common_assets::floor);
+    auto const floor_texture2 = asset_store.get_asset(common_assets::floor2);
+    auto const ceiling_texture = asset_store.get_asset(common_assets::ceiling);
 
     auto const half_height = framebuffer->h / 2;
 
@@ -238,77 +238,21 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
     auto const fog_distance = _camera.get_far() * fog_scale_factor;
 
     for (auto row = 0; row < framebuffer->h; ++row) {
-        // for (auto const& hit : hits)
-        // Draw wall/ceiling
-        // if (row < wall_start || row >= wall_end) {
-        //     if (_debug_no_floor) {
-        //         set_surface_pixel(framebuffer, column, row, fog_color);
-        //         continue;
-        //     }
-        //
-        //     // Reverse project each pixel into a world coordinate
-        //     auto const local_ray_radians
-        //         = _camera.get_rotation() - candidates.angle;
-        //     auto const floor_distance = static_cast<float>(half_height)
-        //         / mymath::abs(half_height - row)
-        //         / std::sin(PI_OVER_2 - std::abs(local_ray_radians));
-        //     auto const floor_local_coord = point2f{0.f, 0.f}
-        //         + vector2f{static_cast<float>(M_PI) - candidates.angle,
-        //               floor_distance};
-        //     auto floor_coord = _camera.get_position()
-        //         + point2f{-floor_local_coord.x, floor_local_coord.y};
-        //
-        //     auto const floor_fog_t = floor_distance / fog_distance;
-        //
-        //     if (floor_fog_t >= 1.f) {
-        //         set_surface_pixel(framebuffer, column, row, fog_color);
-        //         continue;
-        //     }
-        //
-        //     auto is_ceiling = row < half_height;
-        //
-        //     auto const floored_coord = point_cast<int>(floor_coord);
-        //     auto const is_even = ((floored_coord.x + floored_coord.y) % 2) == 0;
-        //
-        //     // wrap the coordinate between [0,1] before querying the texture
-        //     while (floor_coord.x < 0.f) {
-        //         floor_coord.x += 1.f;
-        //     }
-        //     while (floor_coord.x > 1.f) {
-        //         floor_coord.x -= 1.f;
-        //     }
-        //     while (floor_coord.y < 0.f) {
-        //         floor_coord.y += 1.f;
-        //     }
-        //     while (floor_coord.y > 1.f) {
-        //         floor_coord.y -= 1.f;
-        //     }
-        //
-        //     auto const tile_color = get_surface_pixel(is_ceiling
-        //             ? ceiling_texture
-        //             : (is_even ? floor_texture : floor_texture2),
-        //         floor_coord);
-        //     auto const foggy_tile_color = _debug_no_fog
-        //         ? tile_color
-        //         : linear_interpolate(tile_color, fog_color, floor_fog_t);
-        //
-        //     set_surface_pixel(framebuffer, column, row, foggy_tile_color);
-        //     continue;
-        // }
-        if (hits.empty()) {
-            set_surface_pixel(framebuffer, column, row, fog_color);
-            continue;
-        }
+        auto drew_a_hit = false;
 
         for (auto const hit : hits) {
             auto const wall_size = half_height / hit.distance;
             auto const wall_start = half_height - wall_size;
             auto const wall_end = half_height + wall_size;
-            auto const v
-                = (row - wall_start) / static_cast<float>(wall_end - wall_start);
+            auto const v = (row - wall_start)
+                / static_cast<float>(wall_end - wall_start);
+
+            // Since everything is the same height, wall_size of farher away
+            // objects should never be bigger than closer ones. We can safely
+            // stop here.
             if (v < 0.f || v > 1.f) {
-                set_surface_pixel(framebuffer, column, row, fog_color);
-                continue;
+                drew_a_hit = false;
+                break;
             }
 
             auto const wall_tex
@@ -316,8 +260,9 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
             auto const fog_t = hit.distance / fog_distance;
 
             auto const uv = point2f{hit.u, v};
-            auto const texel = _debug_no_textures ? constants::white
-                                                  : get_surface_pixel(wall_tex, uv);
+            auto const texel = _debug_no_textures
+                ? constants::white
+                : get_surface_pixel(wall_tex, uv);
 
             if (texel.r == 255 && texel.g == 0 && texel.b == 255) {
                 // for transparent pixels, differ to other walls to blend with
@@ -328,8 +273,67 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
                 ? texel
                 : linear_interpolate(texel, fog_color, fog_t);
             set_surface_pixel(framebuffer, column, row, texel_after_fog);
+            drew_a_hit = true;
 
             break;
+        }
+
+        // If we didn't draw a hit (e.g. a wall) then it must be a floor or
+        // ceiling
+        if (!drew_a_hit) {
+            if (_debug_no_floor) {
+                set_surface_pixel(framebuffer, column, row, fog_color);
+                continue;
+            }
+
+            // Reverse project each pixel into a world coordinate
+            auto const local_ray_radians
+                = _camera.get_rotation() - candidates.angle;
+            auto const floor_distance = static_cast<float>(half_height)
+                / mymath::abs(half_height - row)
+                / std::sin(PI_OVER_2 - std::abs(local_ray_radians));
+            auto const floor_local_coord = point2f{0.f, 0.f}
+                + vector2f{static_cast<float>(M_PI) - candidates.angle,
+                      floor_distance};
+            auto floor_coord = _camera.get_position()
+                + point2f{-floor_local_coord.x, floor_local_coord.y};
+
+            auto const floor_fog_t = floor_distance / fog_distance;
+
+            if (floor_fog_t >= 1.f) {
+                set_surface_pixel(framebuffer, column, row, fog_color);
+                continue;
+            }
+
+            auto is_ceiling = row < half_height;
+
+            auto const floored_coord = point_cast<int>(floor_coord);
+            auto const is_even = ((floored_coord.x + floored_coord.y) % 2) == 0;
+
+            // wrap the coordinate between [0,1] before querying the texture
+            while (floor_coord.x < 0.f) {
+                floor_coord.x += 1.f;
+            }
+            while (floor_coord.x > 1.f) {
+                floor_coord.x -= 1.f;
+            }
+            while (floor_coord.y < 0.f) {
+                floor_coord.y += 1.f;
+            }
+            while (floor_coord.y > 1.f) {
+                floor_coord.y -= 1.f;
+            }
+
+            auto const tile_color = get_surface_pixel(is_ceiling
+                    ? ceiling_texture
+                    : (is_even ? floor_texture : floor_texture2),
+                floor_coord);
+            auto const foggy_tile_color = _debug_no_fog
+                ? tile_color
+                : linear_interpolate(tile_color, fog_color, floor_fog_t);
+
+            set_surface_pixel(framebuffer, column, row, foggy_tile_color);
+            continue;
         }
     }
 }
