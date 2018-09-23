@@ -6,28 +6,33 @@
 
 namespace raycaster {
 
-/// The result of a single ray casting operation
-struct collision_result {
-    /// The distance to the point of collision. If < 0 then no collision
+/// The result of a ray intersecting with world geometry at a specific location.
+struct ray_hit {
+    /// The distance to the point of collision. Starts out in euclidean distance
+    /// but, by the time you can access it, it's already in distance from the
+    /// camera's projection plane. Should never be < 0.
     float distance;
-    /// The point of collision. If distance < 0 then this is not valid
+    /// The point of collision in the world.
     mymath::point2f position;
-    /// The ID of the texture to use
+    /// The ID of the texture to use when drawing the hit.
     unsigned int texture;
-    /// Texture U coordinate (V is generated on-the-fly)
+    /// Texture U coordinate (V is generated on-the-fly).
     float u;
-    /// Ray anfle in camera space
+    /// The angle of the ray, in camera_space
     float angle;
 };
 
-inline bool operator<(collision_result const& a, collision_result const& b)
+inline bool operator<(ray_hit const& a, ray_hit const& b)
 {
     return a.distance < b.distance;
 }
 
+/// A group of ray_hits for a given ray, depth-sorted from nearest to farthest.
+using render_candidates = std::vector<ray_hit>;
+
 /// @returns a depth-sorted (nearest to farthest) list of places the ray
-/// intersected and what it intersected with
-std::vector<collision_result> find_collision(level const& lvl,
+/// intersected and associated rendering information
+render_candidates find_collision(level const& lvl,
     mymath::point2f const& origin, float direction, float reference_direction,
     float max_distance);
 

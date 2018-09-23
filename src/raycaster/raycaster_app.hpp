@@ -2,6 +2,7 @@
 
 #include "camera.hpp"
 #include "level.hpp"
+#include "pipeline.hpp"
 
 #include <mymath/mymath.hpp>
 #include <sdl_application/asset_store.hpp>
@@ -43,8 +44,8 @@ inline char const* get_wall_texture(unsigned int i)
 
 class raycaster_app : public sdl_app::sdl_application {
 public:
-    explicit raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
-        sdl::window window, std::unique_ptr<sdl_app::input_buffer> input,
+    raycaster_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
+        std::unique_ptr<sdl_app::input_buffer> input,
         std::unique_ptr<sdl_app::asset_store> assets, level lvl, camera cam);
 
 protected:
@@ -53,9 +54,8 @@ protected:
     void render() override;
 
 private:
-    void rasterize(
-        std::vector<std::vector<collision_result>> const& ray_collisions);
-    void draw_column(int column, collision_result const& collision);
+    void rasterize(candidate_buffer const& buffer);
+    void draw_column(int column, ray_hit const& hit);
     void draw_hud();
     void on_window_event(SDL_WindowEvent const& event);
 
