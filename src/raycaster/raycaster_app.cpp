@@ -224,9 +224,6 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
 
     auto const fog_color = _camera.get_fog_color();
 
-    auto const wall_tex = hits.empty()
-        ? nullptr
-        : asset_store.get_asset(get_wall_texture(hits.at(0).texture));
     auto const floor_texture = asset_store.get_asset(common_assets::floor);
     auto const floor_texture2 = asset_store.get_asset(common_assets::floor2);
     auto const ceiling_texture = asset_store.get_asset(common_assets::ceiling);
@@ -244,7 +241,6 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
     // distance.
     auto const fog_scale_factor = 0.75f;
     auto const fog_distance = _camera.get_far() * fog_scale_factor;
-    auto const fog_t = hits.empty() ? 1.f : hits.at(0).distance / fog_distance;
 
     for (auto row = 0; row < framebuffer->h; ++row) {
         // Draw wall/ceiling
@@ -303,6 +299,12 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
             set_surface_pixel(framebuffer, column, row, foggy_tile_color);
             continue;
         }
+
+        auto const& closest_hit = hits.at(0);
+
+        auto const wall_tex
+            = asset_store.get_asset(get_wall_texture(closest_hit.texture));
+        auto const fog_t = closest_hit.distance / fog_distance;
 
         auto const v
             = (row - wall_start) / static_cast<float>(wall_end - wall_start);
