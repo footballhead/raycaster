@@ -224,16 +224,11 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
 
     auto const fog_color = _camera.get_fog_color();
 
-    auto const floor_texture = asset_store.get_asset(common_assets::floor);
-    auto const floor_texture2 = asset_store.get_asset(common_assets::floor2);
-    auto const ceiling_texture = asset_store.get_asset(common_assets::ceiling);
+    // auto const floor_texture = asset_store.get_asset(common_assets::floor);
+    // auto const floor_texture2 = asset_store.get_asset(common_assets::floor2);
+    // auto const ceiling_texture = asset_store.get_asset(common_assets::ceiling);
 
     auto const half_height = framebuffer->h / 2;
-    auto const wall_size = hits.empty()
-        ? 0
-        : static_cast<int>(half_height / hits.at(0).distance);
-    auto const wall_start = half_height - wall_size;
-    auto const wall_end = half_height + wall_size;
 
     // Color the texture to apply the fog effect. The "fog scale factor" is
     // used to account for the draw cutoff being determined by euclidean
@@ -243,73 +238,85 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
     auto const fog_distance = _camera.get_far() * fog_scale_factor;
 
     for (auto row = 0; row < framebuffer->h; ++row) {
+        // for (auto const& hit : hits)
         // Draw wall/ceiling
-        if (row < wall_start || row >= wall_end) {
-            if (_debug_no_floor) {
-                set_surface_pixel(framebuffer, column, row, fog_color);
-                continue;
-            }
-
-            // Reverse project each pixel into a world coordinate
-            auto const local_ray_radians
-                = _camera.get_rotation() - candidates.angle;
-            auto const floor_distance = static_cast<float>(half_height)
-                / mymath::abs(half_height - row)
-                / std::sin(PI_OVER_2 - std::abs(local_ray_radians));
-            auto const floor_local_coord = point2f{0.f, 0.f}
-                + vector2f{static_cast<float>(M_PI) - candidates.angle,
-                      floor_distance};
-            auto floor_coord = _camera.get_position()
-                + point2f{-floor_local_coord.x, floor_local_coord.y};
-
-            auto const floor_fog_t = floor_distance / fog_distance;
-
-            if (floor_fog_t >= 1.f) {
-                set_surface_pixel(framebuffer, column, row, fog_color);
-                continue;
-            }
-
-            auto is_ceiling = row < half_height;
-
-            auto const floored_coord = point_cast<int>(floor_coord);
-            auto const is_even = ((floored_coord.x + floored_coord.y) % 2) == 0;
-
-            // wrap the coordinate between [0,1] before querying the texture
-            while (floor_coord.x < 0.f) {
-                floor_coord.x += 1.f;
-            }
-            while (floor_coord.x > 1.f) {
-                floor_coord.x -= 1.f;
-            }
-            while (floor_coord.y < 0.f) {
-                floor_coord.y += 1.f;
-            }
-            while (floor_coord.y > 1.f) {
-                floor_coord.y -= 1.f;
-            }
-
-            auto const tile_color = get_surface_pixel(is_ceiling
-                    ? ceiling_texture
-                    : (is_even ? floor_texture : floor_texture2),
-                floor_coord);
-            auto const foggy_tile_color = _debug_no_fog
-                ? tile_color
-                : linear_interpolate(tile_color, fog_color, floor_fog_t);
-
-            set_surface_pixel(framebuffer, column, row, foggy_tile_color);
+        // if (row < wall_start || row >= wall_end) {
+        //     if (_debug_no_floor) {
+        //         set_surface_pixel(framebuffer, column, row, fog_color);
+        //         continue;
+        //     }
+        //
+        //     // Reverse project each pixel into a world coordinate
+        //     auto const local_ray_radians
+        //         = _camera.get_rotation() - candidates.angle;
+        //     auto const floor_distance = static_cast<float>(half_height)
+        //         / mymath::abs(half_height - row)
+        //         / std::sin(PI_OVER_2 - std::abs(local_ray_radians));
+        //     auto const floor_local_coord = point2f{0.f, 0.f}
+        //         + vector2f{static_cast<float>(M_PI) - candidates.angle,
+        //               floor_distance};
+        //     auto floor_coord = _camera.get_position()
+        //         + point2f{-floor_local_coord.x, floor_local_coord.y};
+        //
+        //     auto const floor_fog_t = floor_distance / fog_distance;
+        //
+        //     if (floor_fog_t >= 1.f) {
+        //         set_surface_pixel(framebuffer, column, row, fog_color);
+        //         continue;
+        //     }
+        //
+        //     auto is_ceiling = row < half_height;
+        //
+        //     auto const floored_coord = point_cast<int>(floor_coord);
+        //     auto const is_even = ((floored_coord.x + floored_coord.y) % 2) == 0;
+        //
+        //     // wrap the coordinate between [0,1] before querying the texture
+        //     while (floor_coord.x < 0.f) {
+        //         floor_coord.x += 1.f;
+        //     }
+        //     while (floor_coord.x > 1.f) {
+        //         floor_coord.x -= 1.f;
+        //     }
+        //     while (floor_coord.y < 0.f) {
+        //         floor_coord.y += 1.f;
+        //     }
+        //     while (floor_coord.y > 1.f) {
+        //         floor_coord.y -= 1.f;
+        //     }
+        //
+        //     auto const tile_color = get_surface_pixel(is_ceiling
+        //             ? ceiling_texture
+        //             : (is_even ? floor_texture : floor_texture2),
+        //         floor_coord);
+        //     auto const foggy_tile_color = _debug_no_fog
+        //         ? tile_color
+        //         : linear_interpolate(tile_color, fog_color, floor_fog_t);
+        //
+        //     set_surface_pixel(framebuffer, column, row, foggy_tile_color);
+        //     continue;
+        // }
+        if (hits.empty()) {
+            set_surface_pixel(framebuffer, column, row, fog_color);
             continue;
         }
 
         auto const& closest_hit = hits.at(0);
 
+        auto const wall_size = half_height / closest_hit.distance;
+        auto const wall_start = half_height - wall_size;
+        auto const wall_end = half_height + wall_size;
+        auto const v
+            = (row - wall_start) / static_cast<float>(wall_end - wall_start);
+        if (v < 0.f || v > 1.f) {
+            set_surface_pixel(framebuffer, column, row, fog_color);
+            continue;
+        }
+
         auto const wall_tex
             = asset_store.get_asset(get_wall_texture(closest_hit.texture));
         auto const fog_t = closest_hit.distance / fog_distance;
 
-        auto const v
-            = (row - wall_start) / static_cast<float>(wall_end - wall_start);
-
-        auto const uv = point2f{hits.at(0).u, v};
+        auto const uv = point2f{closest_hit.u, v};
         auto const texel = _debug_no_textures ? constants::white
                                               : get_surface_pixel(wall_tex, uv);
 
