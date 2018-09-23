@@ -4,6 +4,8 @@
 #include "collision.hpp"
 #include "level.hpp"
 
+#include <SDL.h>
+
 namespace {
 constexpr float PI_OVER_2 = M_PI / 2.f;
 }
@@ -32,16 +34,14 @@ candidate_buffer cast_rays(int num_rays, level const& lvl, camera const& cam)
         // projected on the projection plane using basic trig.
         auto& candidates = buffer.back();
         for (auto& hit : candidates.hits) {
-            // Ignore invalid entries
-            // TODO find_collision should not return invalid entries!
-            if (hit.distance < 0) {
-                continue;
-            }
-
             auto const local_ray_radians
                 = cam.get_rotation() - camera_ray_radians;
-            hit.distance
-                *= sin(PI_OVER_2 - std::abs(local_ray_radians));
+            hit.distance *= sin(PI_OVER_2 - std::abs(local_ray_radians));
+
+            if (hit.distance < 0) {
+                SDL_Log("Invalid ray hit distance!");
+                throw std::runtime_error{"Invalid ray hit distance!"};
+            }
         }
     }
 

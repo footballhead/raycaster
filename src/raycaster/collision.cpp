@@ -19,9 +19,6 @@ render_candidates find_collision(level const& lvl,
     point2f const& origin, float direction, float reference_direction,
     float max_distance)
 {
-    auto const no_hit
-        = ray_hit{-1.f, {-1.f, -1.f}, 0u, 0.f};
-
     auto const march_vector = vector2f{direction, max_distance};
     auto const ray_line = line2f{origin, origin + march_vector};
 
@@ -52,7 +49,7 @@ render_candidates find_collision(level const& lvl,
     }
 
     if (hits.empty()) {
-        return render_candidates{direction, {no_hit}};
+        return render_candidates{direction, {}};
     }
 
     std::sort(hits.begin(), hits.end());

@@ -211,29 +211,30 @@ void raycaster_app::rasterize(candidate_buffer const& buffer)
     int column = -1;
     for (auto const& candidates : buffer) {
         ++column;
-        // TODO intersections may be empty in the future!
-        auto const& closest_hit = candidates.hits.at(0);
-        draw_column(column, candidates.angle, closest_hit);
+        draw_column(column, candidates);
     }
 }
 
-void raycaster_app::draw_column(int column, float angle, ray_hit const& hit)
+void raycaster_app::draw_column(int column, render_candidates const& candidates)
 {
     auto* framebuffer = get_framebuffer();
     auto& asset_store = get_asset_store();
 
+    auto& hits = candidates.hits;
+
     auto const fog_color = _camera.get_fog_color();
 
-    auto const wall_tex
-        = asset_store.get_asset(get_wall_texture(hit.texture));
+    auto const wall_tex = hits.empty()
+        ? nullptr
+        : asset_store.get_asset(get_wall_texture(hits.at(0).texture));
     auto const floor_texture = asset_store.get_asset(common_assets::floor);
     auto const floor_texture2 = asset_store.get_asset(common_assets::floor2);
     auto const ceiling_texture = asset_store.get_asset(common_assets::ceiling);
 
     auto const half_height = framebuffer->h / 2;
-    auto const wall_size = hit.distance <= 0.f
+    auto const wall_size = hits.empty()
         ? 0
-        : static_cast<int>(half_height / hit.distance);
+        : static_cast<int>(half_height / hits.at(0).distance);
     auto const wall_start = half_height - wall_size;
     auto const wall_end = half_height + wall_size;
 
@@ -243,7 +244,7 @@ void raycaster_app::draw_column(int column, float angle, ray_hit const& hit)
     // distance.
     auto const fog_scale_factor = 0.75f;
     auto const fog_distance = _camera.get_far() * fog_scale_factor;
-    auto const fog_t = hit.distance / fog_distance;
+    auto const fog_t = hits.empty() ? 1.f : hits.at(0).distance / fog_distance;
 
     for (auto row = 0; row < framebuffer->h; ++row) {
         // Draw wall/ceiling
@@ -255,12 +256,12 @@ void raycaster_app::draw_column(int column, float angle, ray_hit const& hit)
 
             // Reverse project each pixel into a world coordinate
             auto const local_ray_radians
-                = _camera.get_rotation() - angle;
+                = _camera.get_rotation() - candidates.angle;
             auto const floor_distance = static_cast<float>(half_height)
                 / mymath::abs(half_height - row)
                 / std::sin(PI_OVER_2 - std::abs(local_ray_radians));
             auto const floor_local_coord = point2f{0.f, 0.f}
-                + vector2f{static_cast<float>(M_PI) - angle,
+                + vector2f{static_cast<float>(M_PI) - candidates.angle,
                       floor_distance};
             auto floor_coord = _camera.get_position()
                 + point2f{-floor_local_coord.x, floor_local_coord.y};
@@ -306,7 +307,7 @@ void raycaster_app::draw_column(int column, float angle, ray_hit const& hit)
         auto const v
             = (row - wall_start) / static_cast<float>(wall_end - wall_start);
 
-        auto const uv = point2f{hit.u, v};
+        auto const uv = point2f{hits.at(0).u, v};
         auto const texel = _debug_no_textures ? constants::white
                                               : get_surface_pixel(wall_tex, uv);
 
