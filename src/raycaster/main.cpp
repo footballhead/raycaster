@@ -35,6 +35,7 @@ int main(int argc, char** argv)
     assets->get_asset(common_assets::floor2);
     assets->get_asset(common_assets::ceiling);
     assets->get_asset(common_assets::column);
+    assets->get_asset(common_assets::font);
 
     level test_level = {
         std::vector<wall>{
