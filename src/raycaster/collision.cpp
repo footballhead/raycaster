@@ -15,8 +15,9 @@ constexpr auto PI_OVER_2 = static_cast<float>(M_PI / 2.f);
 
 namespace raycaster {
 
-std::vector<collision_result> find_collision(level const& lvl, point2f const& origin,
-    float direction, float reference_direction, float max_distance)
+std::vector<collision_result> find_collision(level const& lvl,
+    point2f const& origin, float direction, float reference_direction,
+    float max_distance)
 {
     auto const no_result
         = collision_result{-1.f, {-1.f, -1.f}, 0u, 0.f, direction};
@@ -53,16 +54,8 @@ std::vector<collision_result> find_collision(level const& lvl, point2f const& or
         return std::vector<collision_result>{no_result};
     }
 
-    auto closest_I = intersections.cbegin();
-    for (auto I = intersections.cbegin(); I < intersections.cend(); I++) {
-        auto const& collision = *I;
-        auto const& closest_so_far = *closest_I;
-        if (collision.distance < closest_so_far.distance) {
-            closest_I = I;
-        }
-    }
-
-    return std::vector<collision_result>{*closest_I};
+    std::sort(intersections.begin(), intersections.end());
+    return std::vector<collision_result>{intersections.at(0)};
 }
 
 } // namespace raycaster

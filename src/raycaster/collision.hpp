@@ -20,7 +20,15 @@ struct collision_result {
     float angle;
 };
 
-std::vector<collision_result> find_collision(level const& lvl, mymath::point2f const& origin,
-    float direction, float reference_direction, float max_distance);
+inline bool operator<(collision_result const& a, collision_result const& b)
+{
+    return a.distance < b.distance;
+}
+
+/// @returns a depth-sorted (nearest to farthest) list of places the ray
+/// intersected and what it intersected with
+std::vector<collision_result> find_collision(level const& lvl,
+    mymath::point2f const& origin, float direction, float reference_direction,
+    float max_distance);
 
 } // namespace raycaster
