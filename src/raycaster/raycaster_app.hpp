@@ -15,6 +15,8 @@
 
 namespace raycaster {
 
+class collision_result;
+
 namespace common_assets {
 constexpr auto wall_texture = "wall.bmp";
 constexpr auto stone_texture = "stone.bmp";
@@ -51,6 +53,8 @@ protected:
     void render() override;
 
 private:
+    void rasterize(std::vector<collision_result> const& ray_collisions);
+    void draw_column(int column, collision_result const& collision);
     void draw_hud();
     void on_window_event(SDL_WindowEvent const& event);
 
