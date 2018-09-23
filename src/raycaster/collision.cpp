@@ -22,7 +22,7 @@ render_candidates find_collision(level const& lvl,
     auto const march_vector = vector2f{direction, max_distance};
     auto const ray_line = line2f{origin, origin + march_vector};
 
-    render_candidates candidates;
+    render_candidates candidates{direction, {}};
     auto& hits = candidates.hits;
 
     for (auto const& wall : lvl.walls) {
@@ -48,12 +48,8 @@ render_candidates find_collision(level const& lvl,
         }
     }
 
-    if (hits.empty()) {
-        return render_candidates{direction, {}};
-    }
-
     std::sort(hits.begin(), hits.end());
-    return render_candidates{direction, {hits.at(0)}};
+    return candidates;
 }
 
 } // namespace raycaster
