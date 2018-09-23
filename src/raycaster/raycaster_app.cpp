@@ -300,30 +300,37 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
             continue;
         }
 
-        auto const& closest_hit = hits.at(0);
+        for (auto const hit : hits) {
+            auto const wall_size = half_height / hit.distance;
+            auto const wall_start = half_height - wall_size;
+            auto const wall_end = half_height + wall_size;
+            auto const v
+                = (row - wall_start) / static_cast<float>(wall_end - wall_start);
+            if (v < 0.f || v > 1.f) {
+                set_surface_pixel(framebuffer, column, row, fog_color);
+                continue;
+            }
 
-        auto const wall_size = half_height / closest_hit.distance;
-        auto const wall_start = half_height - wall_size;
-        auto const wall_end = half_height + wall_size;
-        auto const v
-            = (row - wall_start) / static_cast<float>(wall_end - wall_start);
-        if (v < 0.f || v > 1.f) {
-            set_surface_pixel(framebuffer, column, row, fog_color);
-            continue;
+            auto const wall_tex
+                = asset_store.get_asset(get_wall_texture(hit.texture));
+            auto const fog_t = hit.distance / fog_distance;
+
+            auto const uv = point2f{hit.u, v};
+            auto const texel = _debug_no_textures ? constants::white
+                                                  : get_surface_pixel(wall_tex, uv);
+
+            if (texel.r == 255 && texel.g == 0 && texel.b == 255) {
+                // for transparent pixels, differ to other walls to blend with
+                continue;
+            }
+
+            auto const texel_after_fog = _debug_no_fog
+                ? texel
+                : linear_interpolate(texel, fog_color, fog_t);
+            set_surface_pixel(framebuffer, column, row, texel_after_fog);
+
+            break;
         }
-
-        auto const wall_tex
-            = asset_store.get_asset(get_wall_texture(closest_hit.texture));
-        auto const fog_t = closest_hit.distance / fog_distance;
-
-        auto const uv = point2f{closest_hit.u, v};
-        auto const texel = _debug_no_textures ? constants::white
-                                              : get_surface_pixel(wall_tex, uv);
-
-        auto const texel_after_fog = _debug_no_fog
-            ? texel
-            : linear_interpolate(texel, fog_color, fog_t);
-        set_surface_pixel(framebuffer, column, row, texel_after_fog);
     }
 }
 
