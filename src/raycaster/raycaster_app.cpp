@@ -84,6 +84,40 @@ bool draw_string(
     return true;
 }
 
+// First "stage" of the pipeline: cast a bunch of rays and find their
+// intersections
+std::vector<collision_result> cast_rays(
+    int num_rays, level const& lvl, camera const& cam)
+{
+    std::vector<collision_result> collision_buffer;
+    collision_buffer.reserve(num_rays);
+
+    // Fire a ray for each column on the screen and save the result.
+    for (int i = 0; i < num_rays; ++i) {
+        auto const width_percent = i / static_cast<float>(num_rays);
+        auto const proj_point_interp
+            = linear_interpolate(cam.get_projection_plane(), width_percent);
+
+        auto const diff = proj_point_interp - cam.get_position();
+        auto const camera_ray_radians = atan2(diff.y, diff.x);
+
+        collision_buffer.push_back(find_collision(lvl, proj_point_interp,
+            camera_ray_radians, cam.get_rotation(), cam.get_far()));
+
+        auto& last_result = collision_buffer.back();
+        if (last_result.distance < 0) {
+            continue;
+        }
+
+        // Fix fish eye distortion by changing distance from euclidean to
+        // projected on the projection plane using basic trig.
+        auto const local_ray_radians = cam.get_rotation() - camera_ray_radians;
+        last_result.distance *= sin(PI_OVER_2 - std::abs(local_ray_radians));
+    }
+
+    return collision_buffer;
+}
+
 } // namespace
 
 namespace raycaster {
@@ -183,38 +217,14 @@ void raycaster_app::render()
 
     auto const fog_color = _camera.get_fog_color();
     auto const max_distance = _camera.get_far();
-    auto const projection_plane = _camera.get_projection_plane();
 
     auto const logical_size = get_surface_size(framebuffer);
     auto const half_height = logical_size.h / 2;
 
     auto const num_rays = logical_size.w;
-    std::vector<collision_result> collision_buffer;
-    collision_buffer.reserve(num_rays);
 
-    // Fire a ray for each column on the screen and save the result.
-    for (int i = 0; i < num_rays; ++i) {
-        auto const width_percent = i / static_cast<float>(num_rays);
-        auto const proj_point_interp
-            = linear_interpolate(projection_plane, width_percent);
-
-        auto const diff = proj_point_interp - _camera.get_position();
-        auto const camera_ray_radians = atan2(diff.y, diff.x);
-
-        collision_buffer.push_back(find_collision(_level, proj_point_interp,
-            camera_ray_radians, _camera.get_rotation(), max_distance));
-
-        auto& last_result = collision_buffer.back();
-        if (last_result.distance < 0) {
-            continue;
-        }
-
-        // Fix fish eye distortion by changing distance from euclidean to
-        // projected on the projection plane using basic trig.
-        auto const local_ray_radians
-            = _camera.get_rotation() - camera_ray_radians;
-        last_result.distance *= sin(PI_OVER_2 - std::abs(local_ray_radians));
-    }
+    std::vector<collision_result> collision_buffer
+        = cast_rays(num_rays, _level, _camera);
 
     // Draw the rays to the screen
     int column = -1;
@@ -330,7 +340,7 @@ void raycaster_app::render()
         _fps = _fps_interval_frames;
         _fps_interval_frames = 0;
     }
-} // namespace raycaster
+}
 
 void raycaster_app::draw_hud()
 {
