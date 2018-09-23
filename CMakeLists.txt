@@ -104,6 +104,7 @@ set(SOURCES
 	src/raycaster/camera.cpp
 	src/raycaster/collision.cpp
 	src/raycaster/intersection.cpp
+    src/raycaster/pipeline.cpp
 	src/raycaster/raycaster_app.cpp
 	src/raycaster/main.cpp
 	)
@@ -113,6 +114,7 @@ set(HEADERS
 	src/raycaster/collision.hpp
 	src/raycaster/intersection.hpp
 	src/raycaster/level.hpp
+    src/raycaster/pipeline.hpp
 	src/raycaster/pixel_format_debug.hpp
 	src/raycaster/raycaster_app.hpp
 	)
