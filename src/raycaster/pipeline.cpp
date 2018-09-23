@@ -27,8 +27,8 @@ std::vector<std::vector<collision_result>> cast_rays(
         auto const camera_ray_radians = atan2(diff.y, diff.x);
 
         collision_buffer.emplace_back(
-            std::vector<collision_result>{find_collision(lvl, proj_point_interp,
-                camera_ray_radians, cam.get_rotation(), cam.get_far())});
+            find_collision(lvl, proj_point_interp,
+                camera_ray_radians, cam.get_rotation(), cam.get_far()));
 
         // Fix fish eye distortion by changing distance from euclidean to
         // projected on the projection plane using basic trig.

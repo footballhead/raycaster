@@ -20,7 +20,7 @@ struct collision_result {
     float angle;
 };
 
-collision_result find_collision(level const& lvl, mymath::point2f const& origin,
+std::vector<collision_result> find_collision(level const& lvl, mymath::point2f const& origin,
     float direction, float reference_direction, float max_distance);
 
 } // namespace raycaster
