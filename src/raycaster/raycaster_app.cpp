@@ -200,7 +200,7 @@ void raycaster_app::render()
 }
 
 void raycaster_app::rasterize(
-    std::vector<collision_result> const& ray_collisions)
+    std::vector<std::vector<collision_result>> const& ray_collisions)
 {
     auto* framebuffer = get_framebuffer();
 
@@ -210,9 +210,11 @@ void raycaster_app::rasterize(
     }
 
     int column = -1;
-    for (auto const& collision : ray_collisions) {
+    for (auto const& intersections : ray_collisions) {
         ++column;
-        draw_column(column, collision);
+        // TODO intersections may be empty in the future!
+        auto const& closest_intersection = intersections.at(0);
+        draw_column(column, closest_intersection);
     }
 }
 

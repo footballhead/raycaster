@@ -53,7 +53,8 @@ protected:
     void render() override;
 
 private:
-    void rasterize(std::vector<collision_result> const& ray_collisions);
+    void rasterize(
+        std::vector<std::vector<collision_result>> const& ray_collisions);
     void draw_column(int column, collision_result const& collision);
     void draw_hud();
     void on_window_event(SDL_WindowEvent const& event);
