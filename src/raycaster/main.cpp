@@ -24,7 +24,7 @@ int main(int argc, char** argv)
     auto sdl = std::make_shared<sdl::sdl_init>();
 
     auto const window_title = "Raycaster";
-    SDL_Point const window_bounds{320, 180};
+    SDL_Point const window_bounds{640, 360};
     auto window = sdl::make_window(window_title, window_bounds);
 
     // Create asset manager and preload assets

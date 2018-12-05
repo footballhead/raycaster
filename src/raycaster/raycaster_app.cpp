@@ -84,6 +84,18 @@ bool draw_string(
     return true;
 }
 
+std::array<SDL_Surface*, 8> makeTextureCache(sdl_app::asset_store& assets)
+{
+	return {assets.get_asset(get_wall_texture(0)),
+		assets.get_asset(get_wall_texture(1)),
+		assets.get_asset(get_wall_texture(2)),
+		assets.get_asset(get_wall_texture(3)),
+		assets.get_asset(get_wall_texture(4)),
+		assets.get_asset(get_wall_texture(5)),
+		assets.get_asset(get_wall_texture(6)),
+		assets.get_asset(get_wall_texture(7)) };
+}
+
 } // namespace
 
 namespace raycaster {
@@ -112,6 +124,8 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
         throw std::runtime_error{
             "set_surface_pixel: invalid surface format! See log"};
     }
+    
+    _texture_cache = makeTextureCache(get_asset_store());
 } // namespace raycaster
 
 void raycaster_app::unhandled_event(SDL_Event const& event)
@@ -224,9 +238,9 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
 
     auto const fog_color = _camera.get_fog_color();
 
-    auto const floor_texture = asset_store.get_asset(common_assets::floor);
-    auto const floor_texture2 = asset_store.get_asset(common_assets::floor2);
-    auto const ceiling_texture = asset_store.get_asset(common_assets::ceiling);
+    auto const floor_texture = _texture_cache[3];
+    auto const floor_texture2 = _texture_cache[5];
+    auto const ceiling_texture = _texture_cache[6];
 
     auto const half_height = framebuffer->h / 2;
 
@@ -255,8 +269,7 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
                 break;
             }
 
-            auto const wall_tex
-                = asset_store.get_asset(get_wall_texture(hit.texture));
+            auto const wall_tex = _texture_cache[hit.texture];
             auto const fog_t = hit.distance / fog_distance;
 
             auto const uv = point2f{hit.u, v};
@@ -343,7 +356,7 @@ void raycaster_app::draw_hud()
     auto* framebuffer = get_framebuffer();
 
     auto& asset_store = get_asset_store();
-    auto* font = asset_store.get_asset(common_assets::font);
+    auto* font = _texture_cache[7];
 
     SDL_CHECK(draw_string(
         "FPS: "s + std::to_string(_fps), point2i{0, 0}, font, framebuffer));

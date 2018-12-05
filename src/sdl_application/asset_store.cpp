@@ -40,6 +40,9 @@ SDL_Surface* asset_store::get_asset(std::string const& path)
     if (_asset_map.find(full_path) == _asset_map.end()) {
         SDL_Log("Loading asset: %s", full_path.c_str());
         _asset_map[full_path] = load_image(full_path);
+    } else {
+        SDL_Log("Retrieving: %s. Don't do this in a loop, it is slow!",
+            full_path.c_str());
     }
 
     return _asset_map[full_path].get();

@@ -11,6 +11,7 @@
 
 #include <SDL.h>
 
+#include <array>
 #include <cstdint>
 #include <vector>
 
@@ -31,12 +32,21 @@ constexpr auto font = "6x8-terminal-mspaint.bmp";
 inline char const* get_wall_texture(unsigned int i)
 {
     switch (i) {
+	case 0:
+	case 1:
+		return common_assets::wall_texture;
     case 2:
         return common_assets::stone_texture;
+    case 3:
+		return common_assets::floor;
     case 4:
         return common_assets::column;
-    case 0:
-    case 1:
+    case 5:
+		return common_assets::floor2;
+	case 6:
+		return common_assets::ceiling;
+	case 7:
+		return common_assets::font;
     default:
         return common_assets::wall_texture;
     }
@@ -71,6 +81,8 @@ private:
     bool _debug_no_floor = false;
 
     bool _screenshot_queued = false;
+    
+    std::array<SDL_Surface*, 8> _texture_cache;
 };
 
 } // namespace raycaster
