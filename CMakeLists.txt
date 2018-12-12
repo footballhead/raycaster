@@ -104,6 +104,7 @@ set(SOURCES
 	src/raycaster/camera.cpp
 	src/raycaster/collision.cpp
 	src/raycaster/intersection.cpp
+	src/raycaster/level.cpp
     src/raycaster/pipeline.cpp
 	src/raycaster/raycaster_app.cpp
 	src/raycaster/main.cpp

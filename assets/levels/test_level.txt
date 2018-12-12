@@ -1,0 +1,34 @@
+#
+# test_level
+#
+
+# There are two basic constructs:
+#
+# 1) wall startx starty endx endy texid
+# 2) sprite x y texid
+#
+# Order of constructs doesn't matter
+
+# Outer perimeter
+wall 1 1 2 1 1
+wall 2 1 2 2 2
+wall 2 2 3 2 2
+wall 3 2 3 1 2
+wall 3 1 7 1 1
+wall 7 1 7 5 1
+wall 7 5 4 5 2
+wall 4 5 4 6 2
+wall 4 6 7 6 2
+wall 7 6 7 7 1
+wall 7 7 2 7 1
+wall 2 7 2 6 2
+wall 2 6 1 6 2
+wall 1 6 1 1 1
+# Inner island
+wall 5 2 6 2 2
+wall 6 2 6 4 2
+wall 6 4 5 4 2
+wall 5 4 5 2 2
+
+sprite 3.5 3.5 4
+sprite 1.5 1.5 4
