@@ -236,7 +236,6 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
     auto& hits = candidates.hits;
 
     auto const floor_texture = _texture_cache[3];
-    auto const floor_texture2 = _texture_cache[5];
     auto const ceiling_texture = _texture_cache[6];
 
     auto const half_height = framebuffer->h / 2;
@@ -307,9 +306,6 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
 
             auto is_ceiling = row < half_height;
 
-            auto const floored_coord = point_cast<int>(floor_coord);
-            auto const is_even = ((floored_coord.x + floored_coord.y) % 2) == 0;
-
             // wrap the coordinate between [0,1] before querying the texture
             while (floor_coord.x <= 0.f) {
                 floor_coord.x += 1.f;
@@ -324,10 +320,8 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
                 floor_coord.y -= 1.f;
             }
 
-            auto const tile_color = get_surface_pixel(is_ceiling
-                    ? ceiling_texture
-                    : (is_even ? floor_texture : floor_texture2),
-                floor_coord);
+            auto const tile_color = get_surface_pixel(
+                is_ceiling ? ceiling_texture : floor_texture, floor_coord);
 
             set_surface_pixel(framebuffer, column, row, tile_color);
             continue;
