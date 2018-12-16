@@ -16,7 +16,6 @@ camera::camera(point2f position, float rotation, float near, float far, float ri
 , _far{far}
 , _right{right}
 , _fov{std::atan(near / right)}
-, _fog_color{constants::black}
 {
 }
 
@@ -37,8 +36,6 @@ float camera::get_right() const { return _right; }
 float camera::get_left() const { return _right; }
 
 float camera::get_fov() const { return _fov; }
-
-color const& camera::get_fog_color() const { return _fog_color; };
 
 line2f camera::get_projection_plane() const
 {

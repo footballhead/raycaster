@@ -24,7 +24,6 @@ public:
     float get_right() const;
     float get_left() const;
     float get_fov() const;
-    mycolor::color const& get_fog_color() const;
 
     mymath::line2f get_projection_plane() const;
 
@@ -40,7 +39,6 @@ private:
     float const _right;
     /// FOV is `atan(near / right)`
     float const _fov;
-    mycolor::color const _fog_color;
 };
 
 } // namespace raycaster

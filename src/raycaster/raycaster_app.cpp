@@ -175,9 +175,6 @@ void raycaster_app::update()
         _screenshot_queued = true;
     }
 
-    if (input_buffer.is_hit(SDL_SCANCODE_1)) {
-        _debug_no_fog = !_debug_no_fog;
-    }
     if (input_buffer.is_hit(SDL_SCANCODE_2)) {
         _debug_no_textures = !_debug_no_textures;
     }
@@ -238,20 +235,11 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
 
     auto& hits = candidates.hits;
 
-    auto const fog_color = _camera.get_fog_color();
-
     auto const floor_texture = _texture_cache[3];
     auto const floor_texture2 = _texture_cache[5];
     auto const ceiling_texture = _texture_cache[6];
 
     auto const half_height = framebuffer->h / 2;
-
-    // Color the texture to apply the fog effect. The "fog scale factor" is
-    // used to account for the draw cutoff being determined by euclidean
-    // distance but the render color being determined by the projected
-    // distance.
-    auto const fog_scale_factor = 0.75f;
-    auto const fog_distance = _camera.get_far() * fog_scale_factor;
 
     for (auto row = 0; row < framebuffer->h; ++row) {
         auto drew_a_hit = false;
@@ -272,7 +260,6 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
             }
 
             auto const wall_tex = _texture_cache[hit.texture];
-            auto const fog_t = hit.distance / fog_distance;
 
             auto const uv = point2f{hit.u, v};
             auto const texel = _debug_no_textures
@@ -284,10 +271,7 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
                 continue;
             }
 
-            auto const texel_after_fog = _debug_no_fog
-                ? texel
-                : linear_interpolate(texel, fog_color, fog_t);
-            set_surface_pixel(framebuffer, column, row, texel_after_fog);
+            set_surface_pixel(framebuffer, column, row, texel);
             drew_a_hit = true;
 
             break;
@@ -297,7 +281,8 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
         // ceiling
         if (!drew_a_hit) {
             if (_debug_no_floor) {
-                set_surface_pixel(framebuffer, column, row, fog_color);
+                set_surface_pixel(
+                    framebuffer, column, row, mycolor::constants::black);
                 continue;
             }
 
@@ -307,18 +292,18 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
             auto const floor_distance = static_cast<float>(half_height)
                 / mymath::abs(half_height - row)
                 / std::sin(PI_OVER_2 - std::abs(local_ray_radians));
+
+            if (floor_distance >= _camera.get_far()) {
+                set_surface_pixel(
+                    framebuffer, column, row, mycolor::constants::black);
+                continue;
+            }
+
             auto const floor_local_coord = point2f{0.f, 0.f}
                 + vector2f{static_cast<float>(M_PI) - candidates.angle,
                       floor_distance};
             auto floor_coord = _camera.get_position()
                 + point2f{-floor_local_coord.x, floor_local_coord.y};
-
-            auto const floor_fog_t = floor_distance / fog_distance;
-
-            if (floor_fog_t >= 1.f) {
-                set_surface_pixel(framebuffer, column, row, fog_color);
-                continue;
-            }
 
             auto is_ceiling = row < half_height;
 
@@ -343,11 +328,8 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
                     ? ceiling_texture
                     : (is_even ? floor_texture : floor_texture2),
                 floor_coord);
-            auto const foggy_tile_color = _debug_no_fog
-                ? tile_color
-                : linear_interpolate(tile_color, fog_color, floor_fog_t);
 
-            set_surface_pixel(framebuffer, column, row, foggy_tile_color);
+            set_surface_pixel(framebuffer, column, row, tile_color);
             continue;
         }
     }
@@ -362,8 +344,6 @@ void raycaster_app::draw_hud()
 
     SDL_CHECK(draw_string(
         "FPS: "s + std::to_string(_fps), point2i{0, 0}, font, framebuffer));
-    SDL_CHECK(draw_string("1: Fog "s + onOrOff(!_debug_no_fog), point2i{0, 10},
-        font, framebuffer));
     SDL_CHECK(draw_string("2: Texture "s + onOrOff(!_debug_no_textures),
         point2i{0, 20}, font, framebuffer));
     SDL_CHECK(draw_string("3: Floor "s + onOrOff(!_debug_no_floor),
