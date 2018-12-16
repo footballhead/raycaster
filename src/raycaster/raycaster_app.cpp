@@ -257,7 +257,7 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
         auto drew_a_hit = false;
 
         for (auto const hit : hits) {
-            auto const wall_size = half_height / hit.distance;
+            auto const wall_size = static_cast<int>(half_height / hit.distance);
             auto const wall_start = half_height - wall_size;
             auto const wall_end = half_height + wall_size;
             auto const v = (row - wall_start)
@@ -266,7 +266,7 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
             // Since everything is the same height, wall_size of farher away
             // objects should never be bigger than closer ones. We can safely
             // stop here.
-            if (v < 0.f || v > 1.f) {
+            if (v < 0.f || v >= 1.f) {
                 drew_a_hit = false;
                 break;
             }
