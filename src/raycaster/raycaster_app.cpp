@@ -235,7 +235,6 @@ void raycaster_app::rasterize(candidate_buffer const& buffer)
 void raycaster_app::draw_column(int column, render_candidates const& candidates)
 {
     auto* framebuffer = get_framebuffer();
-    auto& asset_store = get_asset_store();
 
     auto& hits = candidates.hits;
 
@@ -357,8 +356,6 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
 void raycaster_app::draw_hud()
 {
     auto* framebuffer = get_framebuffer();
-
-    auto& asset_store = get_asset_store();
     auto* font = _texture_cache[7];
 
     auto onOrOff = [](bool b) { return b ? "ON"s : "OFF"s; };
