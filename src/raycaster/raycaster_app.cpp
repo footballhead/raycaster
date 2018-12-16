@@ -326,16 +326,16 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
             auto const is_even = ((floored_coord.x + floored_coord.y) % 2) == 0;
 
             // wrap the coordinate between [0,1] before querying the texture
-            while (floor_coord.x < 0.f) {
+            while (floor_coord.x <= 0.f) {
                 floor_coord.x += 1.f;
             }
-            while (floor_coord.x > 1.f) {
+            while (floor_coord.x >= 1.f) {
                 floor_coord.x -= 1.f;
             }
-            while (floor_coord.y < 0.f) {
+            while (floor_coord.y <= 0.f) {
                 floor_coord.y += 1.f;
             }
-            while (floor_coord.y > 1.f) {
+            while (floor_coord.y >= 1.f) {
                 floor_coord.y -= 1.f;
             }
 
