@@ -20,6 +20,7 @@ struct sprite {
 struct level {
     std::vector<wall> walls;
     std::vector<sprite> sprites;
+    mymath::point2f player_start;
 };
 
 // Doesn't go through the asset manager yet

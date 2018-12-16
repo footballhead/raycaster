@@ -44,10 +44,7 @@ int main(int argc, char** argv)
     auto test_level = load_level(level_file);
 
     camera cam{
-        point2f{
-            3.5f, // x
-            3.5f, // y
-        },
+        test_level.player_start,
         0.f, // rotation
         0.01f, // near
         8.f, // far

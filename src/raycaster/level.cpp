@@ -20,6 +20,8 @@ level load_level(std::string const& filename)
 
     auto new_level = level{};
 
+    auto found_player_start = false;
+
     std::string line;
     while (std::getline(in, line).good()) {
         if (line.empty()) {
@@ -58,10 +60,24 @@ level load_level(std::string const& filename)
             ss >> texid;
 
             new_level.sprites.push_back(sprite{point2f{x, y}, texid});
+        } else if (construct == "player") {
+            auto x = 0.f;
+            auto y = 0.f;
+
+            ss >> x;
+            ss >> y;
+
+            new_level.player_start = point2f{x, y};
+            found_player_start = true;
         } else {
             SDL_Log("Ignoring unknown construct: %s", construct.c_str());
             continue;
         }
+    }
+
+    if (!found_player_start) {
+        SDL_Log("Warning! No `player` construct found! Falling back to (0, 0) "
+                "start coords.");
     }
 
     return new_level;

@@ -32,3 +32,5 @@ wall 5 4 5 2 2
 
 sprite 3.5 3.5 4
 sprite 1.5 1.5 4
+
+player 2.5 3.5
