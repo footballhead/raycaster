@@ -23,7 +23,7 @@ int sdl_application::exec()
 {
     if (_running) {
         SDL_Log("Already running");
-        throw std::runtime_error("Already running");
+        throw std::runtime_error{"Already running"};
     }
 
     _running = true;
