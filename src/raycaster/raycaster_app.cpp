@@ -285,18 +285,19 @@ void raycaster_app::draw_column(int column, render_candidates const& candidates)
                 continue;
             }
 
+            // Prevent division by 0 in reverse projection
+            if (half_height == row) {
+                set_surface_pixel(
+                    framebuffer, column, row, mycolor::constants::black);
+                continue;
+            }
+
             // Reverse project each pixel into a world coordinate
             auto const local_ray_radians
                 = _camera.get_rotation() - candidates.angle;
             auto const floor_distance = static_cast<float>(half_height)
                 / mymath::abs(half_height - row)
                 / std::sin(PI_OVER_2 - std::abs(local_ray_radians));
-
-            if (floor_distance >= _camera.get_far()) {
-                set_surface_pixel(
-                    framebuffer, column, row, mycolor::constants::black);
-                continue;
-            }
 
             auto const floor_local_coord = point2f{0.f, 0.f}
                 + vector2f{static_cast<float>(M_PI) - candidates.angle,
