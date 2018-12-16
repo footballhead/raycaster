@@ -16,6 +16,7 @@ public:
     void rotate(float yaw_delta);
 
     void move(mymath::vector2f const& vec);
+    void set_position(mymath::point2f const& pos);
 
     mymath::point2f const& get_position() const;
     float get_rotation() const;

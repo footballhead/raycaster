@@ -2,6 +2,7 @@
 
 #include "camera.hpp"
 #include "collision.hpp"
+#include "intersection.hpp"
 #include "pipeline.hpp"
 #include "pixel_format_debug.hpp"
 
@@ -151,7 +152,20 @@ void raycaster_app::update()
     auto const move_step = 0.05f;
 
     if (input_buffer.is_pressed(SDL_SCANCODE_W)) {
+        auto const old_pos = _camera.get_position();
         _camera.move({_camera.get_rotation(), move_step});
+        auto const new_pos = _camera.get_position();
+
+        auto const movement_line = line2f{old_pos, new_pos};
+
+        for (auto const& wall : _level.walls) {
+            auto t = 0.f;
+            auto intersection = point2f{0.f, 0.f};
+            if (find_intersection(movement_line, wall.data, intersection, t)) {
+                _camera.set_position(old_pos);
+                break;
+            }
+        }
     }
     if (input_buffer.is_pressed(SDL_SCANCODE_S)) {
         _camera.move({_camera.get_rotation(), -move_step});

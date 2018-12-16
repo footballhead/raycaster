@@ -23,6 +23,8 @@ void camera::rotate(float yaw_delta) { _yaw += yaw_delta; }
 
 void camera::move(vector2f const& vec) { _position = _position + vec; }
 
+void camera::set_position(mymath::point2f const& pos) { _position = pos; }
+
 point2f const& camera::get_position() const { return _position; }
 
 float camera::get_rotation() const { return _yaw; }
