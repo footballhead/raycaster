@@ -2,10 +2,11 @@
 # test_level
 #
 
-# There are two basic constructs:
+# There are several basic constructs:
 #
 # 1) wall startx starty endx endy texid
 # 2) sprite x y texid
+# 3) player x y
 #
 # Order of constructs doesn't matter
 
