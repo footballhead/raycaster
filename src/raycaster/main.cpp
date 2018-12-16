@@ -37,7 +37,11 @@ int main(int argc, char** argv)
     assets->get_asset(common_assets::column);
     assets->get_asset(common_assets::font);
 
-    auto test_level = load_level("../assets/levels/test_level.txt");
+    auto level_file = "../assets/levels/test_level.txt";
+    if (argc >= 2) {
+        level_file = argv[1];
+    }
+    auto test_level = load_level(level_file);
 
     camera cam{
         point2f{

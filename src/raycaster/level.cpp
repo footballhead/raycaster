@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 
 using namespace mymath;
 
@@ -12,6 +13,10 @@ namespace raycaster {
 level load_level(std::string const& filename)
 {
     auto in = std::ifstream{filename};
+    if (!in.is_open()) {
+        throw std::runtime_error{
+            "load_level: filename doesn't exist: " + filename};
+    }
 
     auto new_level = level{};
 
