@@ -64,6 +64,7 @@ protected:
     void render() override;
 
 private:
+    void try_to_move_camera(mymath::vector2f const& vec);
     void rasterize(candidate_buffer const& buffer);
     void draw_column(int column, render_candidates const& candidates);
     void draw_hud();

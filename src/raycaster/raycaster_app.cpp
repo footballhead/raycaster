@@ -152,23 +152,10 @@ void raycaster_app::update()
     auto const move_step = 0.05f;
 
     if (input_buffer.is_pressed(SDL_SCANCODE_W)) {
-        auto const old_pos = _camera.get_position();
-        _camera.move({_camera.get_rotation(), move_step});
-        auto const new_pos = _camera.get_position();
-
-        auto const movement_line = line2f{old_pos, new_pos};
-
-        for (auto const& wall : _level.walls) {
-            auto t = 0.f;
-            auto intersection = point2f{0.f, 0.f};
-            if (find_intersection(movement_line, wall.data, intersection, t)) {
-                _camera.set_position(old_pos);
-                break;
-            }
-        }
+        try_to_move_camera({_camera.get_rotation(), move_step});
     }
     if (input_buffer.is_pressed(SDL_SCANCODE_S)) {
-        _camera.move({_camera.get_rotation(), -move_step});
+        try_to_move_camera({_camera.get_rotation() + M_PI, move_step});
     }
 
     if (input_buffer.is_pressed(SDL_SCANCODE_A)) {
@@ -179,10 +166,10 @@ void raycaster_app::update()
     }
 
     if (input_buffer.is_pressed(SDL_SCANCODE_Q)) {
-        _camera.move({_camera.get_rotation() + PI_OVER_2, move_step});
+        try_to_move_camera({_camera.get_rotation() + PI_OVER_2, move_step});
     }
     if (input_buffer.is_pressed(SDL_SCANCODE_E)) {
-        _camera.move({_camera.get_rotation() + PI_OVER_2, -move_step});
+        try_to_move_camera({_camera.get_rotation() - PI_OVER_2, move_step});
     }
 
     if (input_buffer.is_hit(SDL_SCANCODE_SPACE)) {
@@ -224,6 +211,26 @@ void raycaster_app::render()
         _fps_interval_start = end_time;
         _fps = _fps_interval_frames;
         _fps_interval_frames = 0;
+    }
+}
+
+void raycaster_app::try_to_move_camera(mymath::vector2f const& vec)
+{
+    // Do the movement
+    auto const old_pos = _camera.get_position();
+    _camera.move(vec);
+    auto const new_pos = _camera.get_position();
+
+    auto const movement_line = line2f{old_pos, new_pos};
+
+    // Then figure out if it's valid. If not, reverse it.
+    for (auto const& wall : _level.walls) {
+        auto t = 0.f;
+        auto intersection = point2f{0.f, 0.f};
+        if (find_intersection(movement_line, wall.data, intersection, t)) {
+            _camera.set_position(old_pos);
+            return;
+        }
     }
 }
 
