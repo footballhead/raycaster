@@ -79,6 +79,7 @@ private:
     bool _debug_no_fog = false;
     bool _debug_no_textures = false;
     bool _debug_no_floor = false;
+    bool _debug_no_hud = false;
 
     bool _screenshot_queued = false;
     

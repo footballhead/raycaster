@@ -86,14 +86,14 @@ bool draw_string(
 
 std::array<SDL_Surface*, 8> makeTextureCache(sdl_app::asset_store& assets)
 {
-	return {assets.get_asset(get_wall_texture(0)),
-		assets.get_asset(get_wall_texture(1)),
-		assets.get_asset(get_wall_texture(2)),
-		assets.get_asset(get_wall_texture(3)),
-		assets.get_asset(get_wall_texture(4)),
-		assets.get_asset(get_wall_texture(5)),
-		assets.get_asset(get_wall_texture(6)),
-		assets.get_asset(get_wall_texture(7)) };
+    return {assets.get_asset(get_wall_texture(0)),
+        assets.get_asset(get_wall_texture(1)),
+        assets.get_asset(get_wall_texture(2)),
+        assets.get_asset(get_wall_texture(3)),
+        assets.get_asset(get_wall_texture(4)),
+        assets.get_asset(get_wall_texture(5)),
+        assets.get_asset(get_wall_texture(6)),
+        assets.get_asset(get_wall_texture(7))};
 }
 
 } // namespace
@@ -124,7 +124,7 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
         throw std::runtime_error{
             "set_surface_pixel: invalid surface format! See log"};
     }
-    
+
     _texture_cache = makeTextureCache(get_asset_store());
 } // namespace raycaster
 
@@ -184,6 +184,9 @@ void raycaster_app::update()
     if (input_buffer.is_hit(SDL_SCANCODE_3)) {
         _debug_no_floor = !_debug_no_floor;
     }
+    if (input_buffer.is_hit(SDL_SCANCODE_4)) {
+        _debug_no_hud = !_debug_no_hud;
+    }
 }
 
 void raycaster_app::render()
@@ -199,7 +202,7 @@ void raycaster_app::render()
             SDL_Log("saved screenshot to screenshot.bmp");
         }
         _screenshot_queued = false;
-    } else {
+    } else if (!_debug_no_hud) {
         draw_hud();
     }
 
@@ -358,8 +361,18 @@ void raycaster_app::draw_hud()
     auto& asset_store = get_asset_store();
     auto* font = _texture_cache[7];
 
+    auto onOrOff = [](bool b) { return b ? "ON"s : "OFF"s; };
+
     SDL_CHECK(draw_string(
         "FPS: "s + std::to_string(_fps), point2i{0, 0}, font, framebuffer));
+    SDL_CHECK(draw_string("1: Fog "s + onOrOff(!_debug_no_fog), point2i{0, 10},
+        font, framebuffer));
+    SDL_CHECK(draw_string("2: Texture "s + onOrOff(!_debug_no_textures),
+        point2i{0, 20}, font, framebuffer));
+    SDL_CHECK(draw_string("3: Floor "s + onOrOff(!_debug_no_floor),
+        point2i{0, 30}, font, framebuffer));
+    SDL_CHECK(draw_string("4: HUD "s + onOrOff(!_debug_no_hud), point2i{0, 40},
+        font, framebuffer));
 }
 
 void raycaster_app::on_window_event(SDL_WindowEvent const& event)
