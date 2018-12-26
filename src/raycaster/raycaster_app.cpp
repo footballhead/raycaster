@@ -86,7 +86,7 @@ bool draw_string(
     return true;
 }
 
-std::array<SDL_Surface*, 8> makeTextureCache(sdl_app::asset_store& assets)
+raycaster_app::texture_cache make_texture_cache(sdl_app::asset_store& assets)
 {
     return {assets.get_asset(get_wall_texture(0)),
         assets.get_asset(get_wall_texture(1)),
@@ -95,7 +95,8 @@ std::array<SDL_Surface*, 8> makeTextureCache(sdl_app::asset_store& assets)
         assets.get_asset(get_wall_texture(4)),
         assets.get_asset(get_wall_texture(5)),
         assets.get_asset(get_wall_texture(6)),
-        assets.get_asset(get_wall_texture(7))};
+        assets.get_asset(get_wall_texture(7)),
+        assets.get_asset(get_wall_texture(8))};
 }
 
 } // namespace
@@ -127,7 +128,7 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
             "set_surface_pixel: invalid surface format! See log"};
     }
 
-    _texture_cache = makeTextureCache(get_asset_store());
+    _texture_cache = make_texture_cache(get_asset_store());
 } // namespace raycaster
 
 void raycaster_app::unhandled_event(SDL_Event const& event)

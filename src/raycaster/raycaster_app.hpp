@@ -27,6 +27,7 @@ constexpr auto floor2 = "floor2.bmp";
 constexpr auto ceiling = "ceil.bmp";
 constexpr auto column = "column.bmp";
 constexpr auto font = "6x8-terminal-mspaint.bmp";
+constexpr auto barrel = "barrel.bmp";
 } // namespace common_assets
 
 inline char const* get_wall_texture(unsigned int i)
@@ -47,6 +48,8 @@ inline char const* get_wall_texture(unsigned int i)
 		return common_assets::ceiling;
 	case 7:
 		return common_assets::font;
+    case 8:
+        return common_assets::barrel;
     default:
         return common_assets::wall_texture;
     }
@@ -54,6 +57,8 @@ inline char const* get_wall_texture(unsigned int i)
 
 class raycaster_app : public sdl_app::sdl_application {
 public:
+    using texture_cache = std::array<SDL_Surface*, 9>;
+
     raycaster_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
         std::unique_ptr<sdl_app::input_buffer> input,
         std::unique_ptr<sdl_app::asset_store> assets, level lvl, camera cam);
@@ -78,13 +83,13 @@ private:
     Uint32 _fps = 0u;
 
     bool _debug_no_textures = false;
-    bool _debug_no_floor = false;
+    bool _debug_no_floor = true;
     bool _debug_no_hud = false;
     bool _debug_noclip = false;
 
     bool _screenshot_queued = false;
     
-    std::array<SDL_Surface*, 8> _texture_cache;
+    texture_cache _texture_cache;
 };
 
 } // namespace raycaster
