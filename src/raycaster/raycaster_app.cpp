@@ -59,6 +59,7 @@ void set_surface_pixel(SDL_Surface* surf, int x, int y, color const& c)
 {
     auto const index = y * surf->pitch + x * surf->format->BytesPerPixel;
     auto const pixel = static_cast<Uint8*>(surf->pixels) + index;
+    pixel[3] = 255;
     pixel[2] = c.r;
     pixel[1] = c.g;
     pixel[0] = c.b;
