@@ -30,6 +30,7 @@ namespace {
 using namespace raycaster;
 
 constexpr float PI_OVER_2 = M_PI / 2.f;
+constexpr float PI_FLOAT = M_PI;
 
 // My framebuffer set pixel operation has only been tested on the following
 constexpr Uint32 desired_framebuffer_formats[] = {
@@ -155,7 +156,7 @@ void raycaster_app::update()
         try_to_move_camera({_camera.get_rotation(), move_step});
     }
     if (input_buffer.is_pressed(SDL_SCANCODE_S)) {
-        try_to_move_camera({_camera.get_rotation() + M_PI, move_step});
+        try_to_move_camera({_camera.get_rotation() + PI_FLOAT, move_step});
     }
 
     if (input_buffer.is_pressed(SDL_SCANCODE_A)) {
