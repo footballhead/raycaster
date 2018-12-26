@@ -177,6 +177,9 @@ void raycaster_app::update()
         _screenshot_queued = true;
     }
 
+    if (input_buffer.is_hit(SDL_SCANCODE_1)) {
+        _debug_noclip = !_debug_noclip;
+    }
     if (input_buffer.is_hit(SDL_SCANCODE_2)) {
         _debug_no_textures = !_debug_no_textures;
     }
@@ -220,6 +223,11 @@ void raycaster_app::try_to_move_camera(mymath::vector2f const& vec)
     // Do the movement
     auto const old_pos = _camera.get_position();
     _camera.move(vec);
+
+    if (_debug_noclip) {
+        return;
+    }
+
     auto const new_pos = _camera.get_position();
 
     auto const movement_line = line2f{old_pos, new_pos};
@@ -361,6 +369,8 @@ void raycaster_app::draw_hud()
 
     SDL_CHECK(draw_string(
         "FPS: "s + std::to_string(_fps), point2i{0, 0}, font, framebuffer));
+    SDL_CHECK(draw_string("1: Noclip "s + onOrOff(_debug_noclip),
+        point2i{0, 10}, font, framebuffer));
     SDL_CHECK(draw_string("2: Texture "s + onOrOff(!_debug_no_textures),
         point2i{0, 20}, font, framebuffer));
     SDL_CHECK(draw_string("3: Floor "s + onOrOff(!_debug_no_floor),
