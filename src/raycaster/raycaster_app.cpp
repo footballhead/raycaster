@@ -178,6 +178,39 @@ void raycaster_app::update()
     }
 
     if (input_buffer.is_hit(SDL_SCANCODE_SPACE)) {
+        auto const ray_line = line2f{
+            _camera.get_position(),
+            _camera.get_position()
+                + vector2f{_camera.get_rotation(), _camera.get_far()},
+        };
+        std::vector<sprite*> barrel_hits;
+        for (auto& sprite : _level.sprites) {
+            auto const sprite_plane = line2f{sprite.data
+                    + vector2f{_camera.get_rotation() + PI_OVER_2, 0.5f},
+                sprite.data
+                    + vector2f{_camera.get_rotation() - PI_OVER_2, 0.5f}};
+            point2f cross_point{0.f, 0.f};
+            float t = 0.f;
+            if (find_intersection(ray_line, sprite_plane, cross_point, t)) {
+                if (sprite.texture == 8) {
+                    barrel_hits.push_back(&sprite);
+                }
+            }
+        }
+
+        std::sort(begin(barrel_hits), end(barrel_hits),
+            [this](sprite* a, sprite* b) {
+                return line2f{_camera.get_position(), a->data}.length()
+                    < line2f{_camera.get_position(), b->data}.length();
+            });
+
+        for (auto barrel : barrel_hits) {
+            barrel->texture = 9;
+            break;
+        }
+    }
+
+    if (input_buffer.is_hit(SDL_SCANCODE_TAB)) {
         _screenshot_queued = true;
     }
 
