@@ -4,94 +4,76 @@
 
 using namespace mymath;
 
-namespace {
-
-bool find_intersection_vertical(
-    line2f const& vertical, line2f const& b, point2f& out, float& t)
-{
-    auto const b_low_x = std::min(b.start.x, b.end.x);
-    auto const b_hi_x = std::max(b.start.x, b.end.x);
-    if (vertical.start.x < b_low_x || vertical.start.x > b_hi_x) {
-        return false;
-    }
-
-    auto const x = static_cast<float>(vertical.start.x);
-    auto const y = b.slope() * x + b.y_intercept();
-
-    auto const candidate = point2f{x, y};
-
-    // The point must lie within box bounding boxes to be on the line segment
-    auto const a_bb = vertical.get_bounding_box();
-    auto const b_bb = b.get_bounding_box();
-    if (!a_bb.contains(candidate) || !b_bb.contains(candidate)) {
-        return false;
-    }
-
-    out = candidate;
-    t = candidate.y - std::floor(candidate.y);
-    return true;
-}
-
-bool find_intersection_horizontal(
-    line2f const& horizontal, line2f const& b, point2f& out, float& t)
-{
-    auto const b_low_y = std::min(b.start.y, b.end.y);
-    auto const b_hi_y = std::max(b.start.y, b.end.y);
-    if (horizontal.start.y < b_low_y || horizontal.start.y > b_hi_y) {
-        return false;
-    }
-
-    auto const y = static_cast<float>(horizontal.start.y);
-    auto const x = (y - b.y_intercept()) / b.slope();
-
-    auto const candidate = point2f{x, y};
-
-    // The point must lie within box bounding boxes to be on the line segment
-    auto const a_bb = horizontal.get_bounding_box();
-    auto const b_bb = b.get_bounding_box();
-    if (!a_bb.contains(candidate) || !b_bb.contains(candidate)) {
-        return false;
-    }
-
-    out = candidate;
-    t = candidate.x - std::floor(candidate.x);
-    return true;
-}
-
-} // namespace
-
 namespace raycaster {
 
 bool find_intersection(line2f const& a, line2f const& b, point2f& out, float& t)
 {
-    if (a.is_vertical() && b.is_vertical()) {
-        return false;
-    }
+    // There are a bunch of special cases which we could account for up at the
+    // top before we do any math, but they make this function harder to follow.
+    // For the interim, make this one function really ugly.
+
+    auto candidate = point2f{0.f, 0.f};
+
+    // This entire function is based on using y=mx+b to find the intersection.
+    // Since this requires a slope, there are a bunch of exceptions for vertical
+    // lines (infinite slope) and horizontal lines (no slope).
 
     if (a.is_vertical()) {
-        return find_intersection_vertical(a, b, out, t);
+        if (b.is_vertical()) {
+            // Both have infinite slope, which means 0 or infinite crossings
+            return false;
+        }
+
+        if (b.is_horizontal()) {
+            // This is probably the easiest case. If there is a crossing, it can
+            // only be in one spot since `a`, the vertical line, has constant
+            // `x` and `b`, the horizontal line, has constant `y`.
+            candidate.x = static_cast<float>(a.start.x);
+            candidate.y = static_cast<float>(b.start.y);
+        } else {
+            // Since `a` is vertical, that means `x` remains constant. If there
+            // is an intersection, there is only one x value at which it can
+            // happen. Then apply y=mx+b
+            candidate.x = static_cast<float>(a.start.x);
+            candidate.y = b.slope() * candidate.x + b.y_intercept();
+        }
     } else if (b.is_vertical()) {
-        return find_intersection_vertical(b, a, out, t);
-    }
+        // We know `a` is NOT vertical due to the position in the if statement
 
-    if (a.is_horizontal()) {
-        return find_intersection_horizontal(a, b, out, t);
+        // Like before, but swap `a` and `b`. This is a candidate for
+        // simplifying.
+        if (a.is_horizontal()) {
+            candidate.x = static_cast<float>(b.start.x);
+            candidate.y = static_cast<float>(a.start.y);
+        } else {
+            candidate.x = static_cast<float>(b.start.x);
+            candidate.y = a.slope() * candidate.x + a.y_intercept();
+        }
+    } else if (a.is_horizontal()) {
+        // We know `b` is NOT vertical due to the poisition in the if statement
+        if (b.is_horizontal()) {
+            // Both have same slope, which means 0 or infinite crossings
+            return false;
+        }
+
+        // Since `a` is horizontal, then `y` is fixed. Work backwards from
+        // `y=mx+b` to get `x=(y-b)/m`
+        candidate.y = static_cast<float>(a.start.y);
+        candidate.x = (candidate.y - b.y_intercept()) / b.slope();
     } else if (b.is_horizontal()) {
-        return find_intersection_horizontal(b, a, out, t);
+        // We know `a` is neither horizontal nor vertical due to the position
+        // of this clause in the larger statement.
+
+        // Like above, but reverse `a` and `b`.
+        candidate.y = static_cast<float>(b.start.y);
+        candidate.x = (candidate.y - a.y_intercept()) / a.slope();
+    } else {
+        // This `x` result is obtained by linear algebra. Ask me when I remember
+        // how.
+        candidate.x
+            = (b.y_intercept() - a.y_intercept()) / (a.slope() - b.slope());
+        candidate.y = a.slope() * candidate.x + a.y_intercept();
     }
-
-    if (close_enough(a.slope(), b.slope())) {
-        // Either 0 or infinitely many
-        return false;
-    }
-
-    // ... else neither are vertical so proceed as usual
-
-    auto const x
-        = (b.y_intercept() - a.y_intercept()) / (a.slope() - b.slope());
-    auto const y = a.slope() * x + a.y_intercept();
-
-    auto const candidate = point2f{x, y};
 
     // The point must lie within box bounding boxes to be on the line segment
     auto const a_bb = a.get_bounding_box();
