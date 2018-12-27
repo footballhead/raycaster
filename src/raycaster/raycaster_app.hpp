@@ -28,28 +28,31 @@ constexpr auto ceiling = "ceil.bmp";
 constexpr auto column = "column.bmp";
 constexpr auto font = "6x8-terminal-mspaint.bmp";
 constexpr auto barrel = "barrel.bmp";
+constexpr auto barrel_explode = "barrel_explode.bmp";
 } // namespace common_assets
 
 inline char const* get_wall_texture(unsigned int i)
 {
     switch (i) {
-	case 0:
-	case 1:
-		return common_assets::wall_texture;
+    case 0:
+    case 1:
+        return common_assets::wall_texture;
     case 2:
         return common_assets::stone_texture;
     case 3:
-		return common_assets::floor;
+        return common_assets::floor;
     case 4:
         return common_assets::column;
     case 5:
-		return common_assets::floor2;
-	case 6:
-		return common_assets::ceiling;
-	case 7:
-		return common_assets::font;
+        return common_assets::floor2;
+    case 6:
+        return common_assets::ceiling;
+    case 7:
+        return common_assets::font;
     case 8:
         return common_assets::barrel;
+    case 9:
+        return common_assets::barrel_explode;
     default:
         return common_assets::wall_texture;
     }
@@ -57,7 +60,7 @@ inline char const* get_wall_texture(unsigned int i)
 
 class raycaster_app : public sdl_app::sdl_application {
 public:
-    using texture_cache = std::array<SDL_Surface*, 9>;
+    using texture_cache = std::array<SDL_Surface*, 10>;
 
     raycaster_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
         std::unique_ptr<sdl_app::input_buffer> input,
@@ -83,12 +86,12 @@ private:
     Uint32 _fps = 0u;
 
     bool _debug_no_textures = false;
-    bool _debug_no_floor = true;
+    bool _debug_no_floor = false;
     bool _debug_no_hud = false;
     bool _debug_noclip = false;
 
     bool _screenshot_queued = false;
-    
+
     texture_cache _texture_cache;
 };
 

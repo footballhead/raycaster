@@ -88,7 +88,8 @@ bool draw_string(
 
 raycaster_app::texture_cache make_texture_cache(sdl_app::asset_store& assets)
 {
-    return {assets.get_asset(get_wall_texture(0)),
+    return {
+        assets.get_asset(get_wall_texture(0)),
         assets.get_asset(get_wall_texture(1)),
         assets.get_asset(get_wall_texture(2)),
         assets.get_asset(get_wall_texture(3)),
@@ -96,7 +97,9 @@ raycaster_app::texture_cache make_texture_cache(sdl_app::asset_store& assets)
         assets.get_asset(get_wall_texture(5)),
         assets.get_asset(get_wall_texture(6)),
         assets.get_asset(get_wall_texture(7)),
-        assets.get_asset(get_wall_texture(8))};
+        assets.get_asset(get_wall_texture(8)),
+        assets.get_asset(get_wall_texture(9)),
+    };
 }
 
 } // namespace
