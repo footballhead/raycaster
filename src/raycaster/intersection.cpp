@@ -38,10 +38,9 @@ bool find_intersection(line2f const& a, line2f const& b, point2f& out, float& t)
             candidate.y = b.slope() * candidate.x + b.y_intercept();
         }
     } else if (b.is_vertical()) {
-        // We know `a` is NOT vertical due to the position in the if statement
+        // We know `a` is NOT vertical due to our place in the if statement
 
-        // Like before, but swap `a` and `b`. This is a candidate for
-        // simplifying.
+        // Like before, but swap `a` and `b`
         if (a.is_horizontal()) {
             candidate.x = static_cast<float>(b.start.x);
             candidate.y = static_cast<float>(a.start.y);
@@ -50,7 +49,7 @@ bool find_intersection(line2f const& a, line2f const& b, point2f& out, float& t)
             candidate.y = a.slope() * candidate.x + a.y_intercept();
         }
     } else if (a.is_horizontal()) {
-        // We know `b` is NOT vertical due to the poisition in the if statement
+        // We know `b` is NOT vertical due to our place in the if statement
         if (b.is_horizontal()) {
             // Both have same slope, which means 0 or infinite crossings
             return false;
@@ -68,14 +67,17 @@ bool find_intersection(line2f const& a, line2f const& b, point2f& out, float& t)
         candidate.y = static_cast<float>(b.start.y);
         candidate.x = (candidate.y - a.y_intercept()) / a.slope();
     } else {
-        // This `x` result is obtained by linear algebra. Ask me when I remember
-        // how.
+        // Since we assume both lines cross, that means they must share a `y`
+        // and `x`. With `y=m_1x+b_1` and `y=m_2x+b_2`, this implies
+        // `m_1x+b_1=m_2x+b_2`. Rearrange for `x`.
         candidate.x
             = (b.y_intercept() - a.y_intercept()) / (a.slope() - b.slope());
         candidate.y = a.slope() * candidate.x + a.y_intercept();
     }
 
-    // The point must lie within box bounding boxes to be on the line segment
+    // We were assuming up to this point that the two lines did cross. Here, we
+    // must validate that assumption. The point must lie within both bounding
+    // boxes.
     auto const a_bb = a.get_bounding_box();
     auto const b_bb = b.get_bounding_box();
     if (!a_bb.contains(candidate) || !b_bb.contains(candidate)) {
