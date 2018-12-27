@@ -15,9 +15,8 @@ constexpr auto PI_OVER_2 = static_cast<float>(M_PI / 2.f);
 
 namespace raycaster {
 
-render_candidates find_collision(level const& lvl,
-    point2f const& origin, float direction, float reference_direction,
-    float max_distance)
+render_candidates find_collision(level const& lvl, point2f const& origin,
+    float direction, float reference_direction, float max_distance)
 {
     auto const march_vector = vector2f{direction, max_distance};
     auto const ray_line = line2f{origin, origin + march_vector};
@@ -30,8 +29,13 @@ render_candidates find_collision(level const& lvl,
         float t = 0.f;
         if (find_intersection(ray_line, wall.data, cross_point, t)) {
             auto const exact_line = line2f{origin, cross_point};
-            hits.push_back(ray_hit{
-                exact_line.length(), cross_point, wall.texture, t});
+            // HACK! For walls, we want the texture to repeat across the length,
+            // but the `t` we get normalizes across the line. So correct for
+            // that here.
+            t *= wall.data.length();
+            t -= std::floor(t);
+            hits.push_back(
+                ray_hit{exact_line.length(), cross_point, wall.texture, t});
         }
     }
 
@@ -43,8 +47,8 @@ render_candidates find_collision(level const& lvl,
         float t = 0.f;
         if (find_intersection(ray_line, sprite_plane, cross_point, t)) {
             auto const exact_line = line2f{origin, cross_point};
-            hits.push_back(ray_hit{exact_line.length(),
-                cross_point, sprite.texture, t});
+            hits.push_back(
+                ray_hit{exact_line.length(), cross_point, sprite.texture, t});
         }
     }
 
