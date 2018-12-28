@@ -113,7 +113,7 @@ set(HEADERS
 	src/raycaster/camera.hpp
 	src/raycaster/intersection.hpp
 	src/raycaster/level.hpp
-    src/raycaster/pipeline.hpp
+	src/raycaster/pipeline.hpp
 	src/raycaster/pixel_format_debug.hpp
 	src/raycaster/raycaster_app.hpp
 	src/raycaster/texture_cache.hpp
@@ -121,6 +121,12 @@ set(HEADERS
 
 add_executable(raycaster ${SOURCES} ${HEADERS})
 
+set(ADDITIONAL_LIBS "")
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+	set(ADDITIONAL_LIBS ${ADDITIONAL_LIBS} "pthread")
+endif()
+
 target_link_libraries(raycaster
 	sdl_application
+	${ADDITIONAL_LIBS}
 	)

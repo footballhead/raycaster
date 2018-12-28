@@ -9,8 +9,11 @@
 
 #include <SDL.h>
 
+#include <chrono>
+
 using namespace mymath;
 using namespace sdl_app;
+using namespace std::chrono_literals;
 
 namespace {
 
@@ -36,24 +39,67 @@ namespace raycaster {
 render_pipeline::render_pipeline(texture_cache cache)
 : _texture_cache{std::move(cache)}
 {
+    for (int i = 0; i < detail::num_threads; ++i) {
+        auto& context = _contexts[i];
+        auto& thread = _threads[i];
+
+        context.id = i;
+        thread = std::thread(
+            [this](rendering_context* context) {
+                while (true) {
+                    // Spin, because I'm too lazy to figure out a CV solution
+                    while (!context->can_start.exchange(false)) {
+                        std::this_thread::sleep_for(1ms);
+                    }
+
+                    context->work(context->id);
+
+                    context->done.store(true);
+                }
+            },
+            &context);
+        thread.detach();
+    }
 }
 
 void render_pipeline::render(
     level const& lvl, camera const& cam, SDL_Surface& framebuffer)
 {
-    rasterize(cast_rays(framebuffer.w, lvl, cam), framebuffer, cam);
+    for (auto& context : _contexts) {
+        // tell what the thread should do
+        context.work = [&lvl, &cam, &framebuffer, this](unsigned id) {
+            rasterize(
+                cast_rays(framebuffer.w,
+                    id * framebuffer.w / detail::num_threads,
+                    (id + 1) * framebuffer.w / detail::num_threads, lvl, cam),
+                id * framebuffer.w / detail::num_threads, framebuffer, cam);
+        };
+
+        // start thread
+        context.can_start.store(true);
+    }
+
+    // wait for results before returning
+    for (auto& context : _contexts) {
+        // Spin, because I'm too lazy to figure out a CV solution
+        while (!context.done.exchange(false)) {
+            std::this_thread::sleep_for(1ms);
+        }
+    }
 }
 
 // First "stage" of the pipeline:
-auto render_pipeline::cast_rays(
-    int num_rays, level const& lvl, camera const& cam) -> candidate_buffer
+auto render_pipeline::cast_rays(int image_width, int start_ray_id,
+    int end_ray_id, level const& lvl, camera const& cam) -> candidate_buffer
 {
     candidate_buffer buffer;
+
+    const auto num_rays = end_ray_id - start_ray_id;
     buffer.reserve(num_rays);
 
     // Fire a ray for each column on the screen and save the result.
-    for (int i = 0; i < num_rays; ++i) {
-        auto const width_percent = i / static_cast<float>(num_rays);
+    for (int i = start_ray_id; i < end_ray_id; ++i) {
+        auto const width_percent = i / static_cast<float>(image_width);
         auto const proj_point_interp
             = linear_interpolate(cam.get_projection_plane(), width_percent);
 
@@ -123,10 +169,10 @@ auto render_pipeline::find_collision(level const& lvl, point2f const& origin,
     return candidates;
 }
 
-void render_pipeline::rasterize(
-    candidate_buffer const& buffer, SDL_Surface& framebuffer, camera const& cam)
+void render_pipeline::rasterize(candidate_buffer const& buffer,
+    int start_column, SDL_Surface& framebuffer, camera const& cam)
 {
-    int column = -1;
+    int column = start_column - 1;
     for (auto const& candidates : buffer) {
         ++column;
         draw_column(column, candidates, framebuffer, cam);

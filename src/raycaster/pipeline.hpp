@@ -4,6 +4,9 @@
 
 #include <mymath/mymath.hpp>
 
+#include <atomic>
+#include <functional>
+#include <thread>
 #include <vector>
 
 struct SDL_Surface;
@@ -12,6 +15,10 @@ namespace raycaster {
 
 class camera;
 struct level;
+
+namespace detail {
+constexpr auto num_threads = 6;
+} // namespace detail
 
 class render_pipeline {
 public:
@@ -54,8 +61,8 @@ private:
     using candidate_buffer = std::vector<render_candidates>;
 
     /// Stage 1: cast a bunch of rays and find their intersections
-    candidate_buffer cast_rays(
-        int num_rays, level const& lvl, camera const& cam);
+    candidate_buffer cast_rays(int image_width, int start_ray_id,
+        int end_ray_id, level const& lvl, camera const& cam);
 
     /// Stage 1 helper function
     render_candidates find_collision(level const& lvl,
@@ -63,14 +70,27 @@ private:
         float reference_direction, float max_distance);
 
     /// Stage 2: rasterize
-    void rasterize(candidate_buffer const& buffer, SDL_Surface& framebuffer,
-        camera const& cam);
+    void rasterize(candidate_buffer const& buffer, int start_column,
+        SDL_Surface& framebuffer, camera const& cam);
 
     // Stage 2 helper function
     void draw_column(int column, render_candidates const& candidates,
         SDL_Surface& framebuffer, camera const& cam);
 
     texture_cache _texture_cache;
+
+    using rendering_fn = std::function<void(unsigned)>;
+
+    struct rendering_context {
+        unsigned id;
+        std::atomic<bool> can_start{false};
+        std::atomic<bool> done{false};
+        std::function<void(unsigned)> work;
+    };
+
+    std::array<rendering_context, detail::num_threads> _contexts;
+    std::array<std::thread, detail::num_threads> _threads;
+
     bool _debug_no_textures = false;
     bool _debug_no_floor = false;
 };

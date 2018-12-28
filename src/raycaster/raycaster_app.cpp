@@ -264,12 +264,14 @@ void raycaster_app::draw_hud()
         "FPS: "s + std::to_string(_fps), point2i{0, 0}, font, framebuffer));
     SDL_CHECK(draw_string("1: Noclip "s + onOrOff(_debug_noclip),
         point2i{0, 10}, font, framebuffer));
-    SDL_CHECK(draw_string("2: Texture "s + onOrOff(!_debug_no_textures),
-        point2i{0, 20}, font, framebuffer));
-    SDL_CHECK(draw_string("3: Floor "s + onOrOff(!_debug_no_floor),
-        point2i{0, 30}, font, framebuffer));
+    // SDL_CHECK(draw_string("2: Texture "s + onOrOff(!_debug_no_textures),
+    //     point2i{0, 20}, font, framebuffer));
+    // SDL_CHECK(draw_string("3: Floor "s + onOrOff(!_debug_no_floor),
+    //     point2i{0, 30}, font, framebuffer));
     SDL_CHECK(draw_string("4: HUD "s + onOrOff(!_debug_no_hud), point2i{0, 40},
         font, framebuffer));
+    SDL_CHECK(draw_string("# threads: "s + std::to_string(detail::num_threads),
+        point2i{0, 50}, font, framebuffer));
 }
 
 void raycaster_app::on_window_event(SDL_WindowEvent const& event)
