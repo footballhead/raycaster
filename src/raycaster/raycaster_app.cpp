@@ -99,6 +99,7 @@ raycaster_app::texture_cache make_texture_cache(sdl_app::asset_store& assets)
         assets.get_asset(get_wall_texture(7)),
         assets.get_asset(get_wall_texture(8)),
         assets.get_asset(get_wall_texture(9)),
+        assets.get_asset(get_wall_texture(10)),
     };
 }
 

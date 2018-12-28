@@ -29,6 +29,7 @@ constexpr auto column = "column.bmp";
 constexpr auto font = "6x8-terminal-mspaint.bmp";
 constexpr auto barrel = "barrel.bmp";
 constexpr auto barrel_explode = "barrel_explode.bmp";
+constexpr auto bat = "bat.bmp";
 } // namespace common_assets
 
 inline char const* get_wall_texture(unsigned int i)
@@ -53,6 +54,8 @@ inline char const* get_wall_texture(unsigned int i)
         return common_assets::barrel;
     case 9:
         return common_assets::barrel_explode;
+    case 10:
+        return common_assets::bat;
     default:
         return common_assets::wall_texture;
     }
@@ -60,7 +63,7 @@ inline char const* get_wall_texture(unsigned int i)
 
 class raycaster_app : public sdl_app::sdl_application {
 public:
-    using texture_cache = std::array<SDL_Surface*, 10>;
+    using texture_cache = std::array<SDL_Surface*, 11>;
 
     raycaster_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
         std::unique_ptr<sdl_app::input_buffer> input,

@@ -33,9 +33,9 @@ wall 5 4 5 2 2
 
 # Barrel
 sprite 3.5 3.5 8
-# Exploded barrel
-sprite 3.5 2.5 9
 # Column
 sprite 1.5 1.5 4
+# Test enemy
+sprite 3.5 2.5 10
 
 player 2.5 3.5

@@ -38,6 +38,7 @@ int main(int argc, char** argv)
     assets->get_asset(common_assets::font);
     assets->get_asset(common_assets::barrel);
     assets->get_asset(common_assets::barrel_explode);
+    assets->get_asset(common_assets::bat);
 
     auto level_file = "../assets/levels/test_level.txt";
     if (argc >= 2) {
