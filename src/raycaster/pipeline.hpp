@@ -11,7 +11,7 @@ struct SDL_Surface;
 namespace raycaster {
 
 class camera;
-class level;
+struct level;
 
 class render_pipeline {
 public:
@@ -34,7 +34,7 @@ private:
         /// Texture U coordinate (V is generated on-the-fly).
         float u;
 
-        bool operator<(ray_hit const& other)
+        bool operator<(ray_hit const& other) const
         {
             return this->distance < other.distance;
         }

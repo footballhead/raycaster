@@ -2,6 +2,8 @@
 
 #include <sdl_application/asset_store.hpp>
 
+#include <array>
+
 namespace raycaster {
 
 namespace common_assets {
@@ -52,7 +54,7 @@ using texture_cache = std::array<SDL_Surface*, 11>;
 
 inline texture_cache make_texture_cache(sdl_app::asset_store& assets)
 {
-    return {
+    return {{
         assets.get_asset(get_wall_texture(0)),
         assets.get_asset(get_wall_texture(1)),
         assets.get_asset(get_wall_texture(2)),
@@ -64,7 +66,7 @@ inline texture_cache make_texture_cache(sdl_app::asset_store& assets)
         assets.get_asset(get_wall_texture(8)),
         assets.get_asset(get_wall_texture(9)),
         assets.get_asset(get_wall_texture(10)),
-    };
+    }};
 }
 
 } // namespace raycaster
