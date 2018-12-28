@@ -1,7 +1,6 @@
 #include "raycaster_app.hpp"
 
 #include "camera.hpp"
-#include "collision.hpp"
 #include "intersection.hpp"
 #include "pipeline.hpp"
 #include "pixel_format_debug.hpp"
@@ -53,17 +52,6 @@ bool save_screenshot(SDL_Surface* framebuffer, const char* filename)
     return true;
 }
 
-// This function is only confirmed to work if the surface has a pixel format
-// that is in desired_framebuffer_formats.
-void set_surface_pixel(SDL_Surface* surf, int x, int y, color const& c)
-{
-    auto const index = y * surf->pitch + x * surf->format->BytesPerPixel;
-    auto const pixel = static_cast<Uint8*>(surf->pixels) + index;
-    pixel[2] = c.r;
-    pixel[1] = c.g;
-    pixel[0] = c.b;
-}
-
 bool draw_string(
     std::string const& str, point2i pos, SDL_Surface* font, SDL_Surface* dest)
 {
@@ -86,32 +74,17 @@ bool draw_string(
     return true;
 }
 
-raycaster_app::texture_cache make_texture_cache(sdl_app::asset_store& assets)
-{
-    return {
-        assets.get_asset(get_wall_texture(0)),
-        assets.get_asset(get_wall_texture(1)),
-        assets.get_asset(get_wall_texture(2)),
-        assets.get_asset(get_wall_texture(3)),
-        assets.get_asset(get_wall_texture(4)),
-        assets.get_asset(get_wall_texture(5)),
-        assets.get_asset(get_wall_texture(6)),
-        assets.get_asset(get_wall_texture(7)),
-        assets.get_asset(get_wall_texture(8)),
-        assets.get_asset(get_wall_texture(9)),
-        assets.get_asset(get_wall_texture(10)),
-    };
-}
-
 } // namespace
 
 namespace raycaster {
 
 raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
     sdl::window window, std::unique_ptr<input_buffer> input,
-    std::unique_ptr<asset_store> assets, level lvl, camera cam)
+    std::unique_ptr<asset_store> assets,
+    std::unique_ptr<render_pipeline> pipeline, level lvl, camera cam)
 : sdl_application(
       std::move(sdl), std::move(window), std::move(input), std::move(assets))
+, _pipeline{std::move(pipeline)}
 , _level{lvl}
 , _camera{cam}
 {
@@ -128,11 +101,10 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
         SDL_Log("Invalid surface format!");
         SDL_Log("GOT:");
         print_pixel_format(framebuffer->format->format);
-        throw std::runtime_error{
-            "set_surface_pixel: invalid surface format! See log"};
+        throw std::runtime_error{"invalid surface format! See log"};
     }
 
-    _texture_cache = make_texture_cache(get_asset_store());
+    _font_texture = get_asset_store().get_asset(common_assets::font);
 } // namespace raycaster
 
 void raycaster_app::unhandled_event(SDL_Event const& event)
@@ -199,8 +171,8 @@ void raycaster_app::update()
             }
         }
 
-        std::sort(begin(barrel_hits), end(barrel_hits),
-            [this](sprite* a, sprite* b) {
+        std::sort(
+            begin(barrel_hits), end(barrel_hits), [this](sprite* a, sprite* b) {
                 return line2f{_camera.get_position(), a->data}.length()
                     < line2f{_camera.get_position(), b->data}.length();
             });
@@ -233,7 +205,7 @@ void raycaster_app::render()
 {
     auto* framebuffer = get_framebuffer();
 
-    rasterize(cast_rays(framebuffer->w, _level, _camera));
+    _pipeline->render(_level, _camera, *framebuffer);
 
     if (_screenshot_queued) {
         if (!save_screenshot(framebuffer, "screenshot.bmp")) {
@@ -281,127 +253,10 @@ void raycaster_app::try_to_move_camera(mymath::vector2f const& vec)
     }
 }
 
-void raycaster_app::rasterize(candidate_buffer const& buffer)
-{
-    auto* framebuffer = get_framebuffer();
-
-    if (buffer.size() != static_cast<size_t>(framebuffer->w)) {
-        SDL_Log("Not enough ray collisions!");
-        throw std::runtime_error{"Not enough ray collisions!"};
-    }
-
-    int column = -1;
-    for (auto const& candidates : buffer) {
-        ++column;
-        draw_column(column, candidates);
-    }
-}
-
-void raycaster_app::draw_column(int column, render_candidates const& candidates)
-{
-    auto* framebuffer = get_framebuffer();
-
-    auto& hits = candidates.hits;
-
-    auto const floor_texture = _texture_cache[3];
-    auto const ceiling_texture = _texture_cache[6];
-
-    auto const half_height = framebuffer->h / 2;
-
-    for (auto row = 0; row < framebuffer->h; ++row) {
-        auto drew_a_hit = false;
-
-        for (auto const hit : hits) {
-            auto const wall_size = static_cast<int>(half_height / hit.distance);
-            auto const wall_start = half_height - wall_size;
-            auto const wall_end = half_height + wall_size;
-            auto const v = (row - wall_start)
-                / static_cast<float>(wall_end - wall_start);
-
-            // Since everything is the same height, wall_size of farher away
-            // objects should never be bigger than closer ones. We can safely
-            // stop here.
-            if (v < 0.f || v >= 1.f) {
-                drew_a_hit = false;
-                break;
-            }
-
-            auto const wall_tex = _texture_cache[hit.texture];
-
-            auto const uv = point2f{hit.u, v};
-            auto const texel = _debug_no_textures
-                ? constants::white
-                : get_surface_pixel(wall_tex, uv);
-
-            if (texel.r == 255 && texel.g == 0 && texel.b == 255) {
-                // for transparent pixels, differ to other walls to blend with
-                continue;
-            }
-
-            set_surface_pixel(framebuffer, column, row, texel);
-            drew_a_hit = true;
-
-            break;
-        }
-
-        // If we didn't draw a hit (e.g. a wall) then it must be a floor or
-        // ceiling
-        if (!drew_a_hit) {
-            if (_debug_no_floor) {
-                set_surface_pixel(
-                    framebuffer, column, row, mycolor::constants::black);
-                continue;
-            }
-
-            // Prevent division by 0 in reverse projection
-            if (half_height == row) {
-                set_surface_pixel(
-                    framebuffer, column, row, mycolor::constants::black);
-                continue;
-            }
-
-            // Reverse project each pixel into a world coordinate
-            auto const local_ray_radians
-                = _camera.get_rotation() - candidates.angle;
-            auto const floor_distance = static_cast<float>(half_height)
-                / mymath::abs(half_height - row)
-                / std::sin(PI_OVER_2 - std::abs(local_ray_radians));
-
-            auto const floor_local_coord = point2f{0.f, 0.f}
-                + vector2f{static_cast<float>(M_PI) - candidates.angle,
-                      floor_distance};
-            auto floor_coord = _camera.get_position()
-                + point2f{-floor_local_coord.x, floor_local_coord.y};
-
-            auto is_ceiling = row < half_height;
-
-            // wrap the coordinate between [0,1] before querying the texture
-            while (floor_coord.x <= 0.f) {
-                floor_coord.x += 1.f;
-            }
-            while (floor_coord.x >= 1.f) {
-                floor_coord.x -= 1.f;
-            }
-            while (floor_coord.y <= 0.f) {
-                floor_coord.y += 1.f;
-            }
-            while (floor_coord.y >= 1.f) {
-                floor_coord.y -= 1.f;
-            }
-
-            auto const tile_color = get_surface_pixel(
-                is_ceiling ? ceiling_texture : floor_texture, floor_coord);
-
-            set_surface_pixel(framebuffer, column, row, tile_color);
-            continue;
-        }
-    }
-}
-
 void raycaster_app::draw_hud()
 {
     auto* framebuffer = get_framebuffer();
-    auto* font = _texture_cache[7];
+    auto* font = _font_texture;
 
     auto onOrOff = [](bool b) { return b ? "ON"s : "OFF"s; };
 

@@ -1,6 +1,8 @@
 #include "camera.hpp"
 #include "level.hpp"
+#include "pipeline.hpp"
 #include "raycaster_app.hpp"
+#include "texture_cache.hpp"
 
 #include <mymath/mymath.hpp>
 #include <sdl_application/asset_store.hpp>
@@ -56,9 +58,11 @@ int main(int argc, char** argv)
 
     auto input = std::make_unique<sdl_app::input_buffer>();
 
+    auto pipeline = std::make_unique<raycaster::render_pipeline>(make_texture_cache(*assets));
+
     SDL_Log("Creating raycaster_app...");
     raycaster_app app{std::move(sdl), std::move(window), std::move(input),
-        std::move(assets), test_level, cam};
+        std::move(assets), std::move(pipeline), test_level, cam};
     SDL_Log("Running app...");
     try {
         app.exec();
