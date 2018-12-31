@@ -19,6 +19,13 @@ add_definitions("-Wall")
 add_subdirectory(ext)
 
 #
+# lua test
+#
+
+add_executable(luatest src/luatest/test.cpp)
+target_link_libraries(luatest lua)
+
+#
 # mycolor
 #
 
