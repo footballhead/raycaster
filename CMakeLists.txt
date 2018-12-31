@@ -13,6 +13,12 @@ cmake_policy(SET CMP0004 OLD)
 add_definitions("-Wall")
 
 #
+# third-party requirements
+#
+
+add_subdirectory(ext)
+
+#
 # mycolor
 #
 
