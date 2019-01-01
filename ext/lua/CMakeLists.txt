@@ -1,9 +1,9 @@
 #
 # Basic CMake config good enough for my purposes
 #
-project(lua C)
+project(lua CXX)
 
-add_definitions("-std=gnu99")
+#add_definitions("-std=gnu99")
 
 set(LUA_SOURCES
     src/lapi.c
@@ -68,6 +68,9 @@ set(LUA_HEADERS
     src/lvm.h
     src/lzio.h
     )
+
+# Compile as C++ for exceptions
+set_source_files_properties(${LUA_SOURCES} ${LUA_HEADERS} PROPERTIES LANGUAGE CXX)
 
 add_library(lua STATIC ${LUA_SOURCES} ${LUA_HEADERS})
 target_include_directories(lua
