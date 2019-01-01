@@ -3,6 +3,7 @@
 #include <lauxlib.h>
 
 #include <stdexcept>
+#include <string>
 
 int main(int /*argc*/, char** /*argv*/)
 {
@@ -13,9 +14,10 @@ int main(int /*argc*/, char** /*argv*/)
 
     luaL_openlibs(L);
 
-    if (!luaL_dostring(L, "io.stdout:write(5)")) {
+    if (luaL_dostring(L, R"(print("hello world"))")) {
+        auto const lua_error = std::string{lua_tostring(L, lua_gettop(L))};
         lua_close(L);
-        throw std::runtime_error{"luaL_dostring: failed!"};
+        throw std::runtime_error{lua_error};
     }
 
     lua_close(L);
