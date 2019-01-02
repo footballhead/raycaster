@@ -32,6 +32,8 @@ constexpr float PI_OVER_2 = M_PI / 2.f;
 constexpr float PI_FLOAT = M_PI;
 
 constexpr auto L_g_app = "g_app";
+constexpr auto L_g_level = "g_level";
+constexpr auto L_g_camera = "g_camera";
 
 // My framebuffer set pixel operation has only been tested on the following
 constexpr Uint32 desired_framebuffer_formats[] = {
@@ -90,6 +92,27 @@ static int test_quit(lua_State* L)
     return 0;
 }
 
+static int mylua_spawn_barrel(lua_State* L)
+{
+    lua_getglobal(L, L_g_level);
+    auto level = static_cast<raycaster::level*>(lua_touserdata(L, -1));
+    if (!level) {
+        SDL_Log("for some reason, can't get g_level");
+        return 0;
+    }
+
+    lua_getglobal(L, L_g_camera);
+    auto camera = static_cast<raycaster::camera*>(lua_touserdata(L, -1));
+    if (!camera) {
+        SDL_Log("for some reason, can't get g_camera");
+        return 0;
+    }
+
+    level->sprites.push_back(raycaster::sprite{camera->get_position(), 8});
+
+    return 0;
+}
+
 namespace raycaster {
 
 raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
@@ -125,9 +148,16 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
 
     // register a basic C function
     lua_register(_L.get(), "quit", &test_quit);
+    lua_register(_L.get(), "spawn_barrel", &mylua_spawn_barrel);
 
     lua_pushlightuserdata(_L.get(), this);
     lua_setglobal(_L.get(), L_g_app);
+
+    lua_pushlightuserdata(_L.get(), &_level);
+    lua_setglobal(_L.get(), L_g_level);
+
+    lua_pushlightuserdata(_L.get(), &_camera);
+    lua_setglobal(_L.get(), L_g_camera);
 } // namespace raycaster
 
 void raycaster_app::unhandled_event(SDL_Event const& event)
