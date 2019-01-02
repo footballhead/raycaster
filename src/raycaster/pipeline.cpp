@@ -120,9 +120,18 @@ void render_pipeline::do_work(
         auto const diff = proj_point_ws - cam.get_position();
         auto const ray_radians_ws = atan2(diff.y, diff.x);
 
+        // Calculate fish eye distortion correction. This value translates
+        // euclidean to projected-on-the-projection-plane distance using trig.
+        // This is precalculated and used throughout both steps.
+        auto const ray_radians_vs = cam.get_rotation() - ray_radians_ws;
+        auto const euclidean_to_projected_correction
+            = std::sin(PI_OVER_2 - std::abs(ray_radians_vs));
+
         // Now that we have a point and an angle, we can define a line to
-        // represent the ray in worldspace.
-        auto const ray_vector_ws = vector2f{ray_radians_ws, cam.get_far()};
+        // represent the ray in worldspace. To account for the fish-eye
+        // correction later, we premultiply the length of the vector.
+        auto const ray_vector_ws = vector2f{
+            ray_radians_ws, cam.get_far() / euclidean_to_projected_correction};
         auto const ray_line_ws
             = line2f{proj_point_ws, proj_point_ws + ray_vector_ws};
 
@@ -186,13 +195,6 @@ void render_pipeline::do_work(
         // to back to make rendering simpler
         std::sort(candidates.begin(), candidates.end());
 
-        // Fix fish eye distortion by changing distance from euclidean to
-        // projected-on-the-projection-plane (using basic trig). This is
-        // precalculated and used in the next step on-demand.
-        auto const ray_radians_vs = cam.get_rotation() - ray_radians_ws;
-        auto const euclidean_to_projected_correction
-            = std::sin(PI_OVER_2 - std::abs(ray_radians_vs));
-
         //
         // STEP 2: Now draw them
         //
@@ -216,8 +218,10 @@ void render_pipeline::do_work(
                 // Compute how much screen real estate the hit will take up. The
                 // nice thing about raycasters is that everthing is the same
                 // height in worldspace so this step is easy.
-                auto const wall_size = static_cast<int>(half_height
-                    / (hit.distance * euclidean_to_projected_correction));
+                auto const corrected_distance
+                    = hit.distance * euclidean_to_projected_correction;
+                auto const wall_size
+                    = static_cast<int>(half_height / corrected_distance);
                 auto const wall_start = half_height - wall_size;
                 auto const wall_end = half_height + wall_size;
 
@@ -237,18 +241,22 @@ void render_pipeline::do_work(
                 auto const texel
                     = get_surface_pixel(_texture_cache[hit.texture], uv);
 
-                // If the pixel is transparent then don't render this hit. Keep
-                // iterating through farther back hits to find a non transparent
-                // pixel.
+                // If the pixel is transparent then don't render this hit.
+                // Keep iterating through farther back hits to find a non
+                // transparent pixel.
                 //
                 // HACK! Magenta is hardcoded as the translucent pixel.
                 if (texel.r == 255 && texel.g == 0 && texel.b == 255) {
                     continue;
                 }
 
-                // Otherwise, place the pixel onto the framebuffer and move onto
-                // the next row.
-                set_surface_pixel(fb, column, row, texel);
+                // Otherwise, apply fog affect
+                auto const fog_texel
+                    = linear_interpolate(texel, mycolor::constants::black,
+                        corrected_distance / cam.get_far());
+
+                // Then set the pixel in the framebuffer
+                set_surface_pixel(fb, column, row, fog_texel);
                 drew_a_hit = true;
                 break;
             }
@@ -269,13 +277,15 @@ void render_pipeline::do_work(
             // We want to transform each pixel from framebuffer space into world
             // space so that the resulting pixel is chosen with the right
             // perspective. Start by finding the distance in view space,
-            // then use that to construct a point in world space.
+            // then use that to construct a point in world space. The distance
+            // is purposefully distorted with a fish-eye so the trig will work.
             auto const floor_distance_vs = static_cast<float>(half_height)
-                / mymath::abs(half_height - row)
-                / euclidean_to_projected_correction;
+                / mymath::abs(half_height - row);
+            auto const floor_distance_distorted_vs
+                = floor_distance_vs / euclidean_to_projected_correction;
             auto const floor_coord_local_ws = point2f{0.f, 0.f}
                 + vector2f{static_cast<float>(M_PI) - ray_radians_ws,
-                      floor_distance_vs};
+                      floor_distance_distorted_vs};
             // TODO: Why are the signs weird here...
             auto floor_coord_ws = cam.get_position()
                 + point2f{-floor_coord_local_ws.x, floor_coord_local_ws.y};
@@ -301,7 +311,13 @@ void render_pipeline::do_work(
             auto const tile_color = get_surface_pixel(
                 is_ceiling ? _texture_cache[6] : _texture_cache[3],
                 floor_coord_ws);
-            set_surface_pixel(fb, column, row, tile_color);
+
+            // Apply fog effect
+            auto const fog_texel = linear_interpolate(tile_color,
+                mycolor::constants::black, floor_distance_vs / cam.get_far());
+
+            // Finalize pixel color
+            set_surface_pixel(fb, column, row, fog_texel);
         }
     }
 }

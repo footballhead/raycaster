@@ -17,7 +17,7 @@ class camera;
 struct level;
 
 namespace detail {
-constexpr auto num_threads = 6;
+constexpr auto num_threads = 4;
 } // namespace detail
 
 class render_pipeline {
@@ -28,8 +28,6 @@ public:
 
 private:
     texture_cache _texture_cache;
-
-    using rendering_fn = std::function<void(unsigned)>;
 
     // Purposefully generic name for a mess of a function
     void do_work(unsigned thread_id, level const& lvl, camera const& cam, SDL_Surface& fb);
