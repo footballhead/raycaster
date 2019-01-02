@@ -17,6 +17,7 @@ using namespace std::chrono_literals;
 
 namespace {
 
+constexpr float F_PI = static_cast<float>(M_PI);
 constexpr float PI_OVER_2 = M_PI / 2.f;
 
 using namespace mycolor;
@@ -67,13 +68,8 @@ void render_pipeline::render(
 {
     for (auto& context : _contexts) {
         // tell what the thread should do
-        context.work = [&lvl, &cam, &framebuffer, this](unsigned id) {
-            rasterize(
-                cast_rays(framebuffer.w,
-                    id * framebuffer.w / detail::num_threads,
-                    (id + 1) * framebuffer.w / detail::num_threads, lvl, cam),
-                id * framebuffer.w / detail::num_threads, framebuffer, cam);
-        };
+        context.work = [&lvl, &cam, &framebuffer, this](
+                           unsigned id) { do_work(id, lvl, cam, framebuffer); };
 
         // start thread
         context.can_start.store(true);
@@ -88,194 +84,228 @@ void render_pipeline::render(
     }
 }
 
-// First "stage" of the pipeline:
-auto render_pipeline::cast_rays(int image_width, int start_ray_id,
-    int end_ray_id, level const& lvl, camera const& cam) -> candidate_buffer
+void render_pipeline::do_work(
+    unsigned thread_id, level const& lvl, camera const& cam, SDL_Surface& fb)
 {
-    candidate_buffer buffer;
+    // Some helper vars.
+    auto const half_height = fb.h / 2;
 
-    const auto num_rays = end_ray_id - start_ray_id;
-    buffer.reserve(num_rays);
+    // We can nicely partition the rectangular framebuffer into sets of
+    // contiguous, non-overlapping columns; this thread will only be responsible
+    // for rendering one of those sets (here called a workset)
+    int start_column = thread_id * fb.w / detail::num_threads;
+    int end_column = (thread_id + 1) * fb.w / detail::num_threads;
+    for (auto column = start_column; column < end_column; ++column) {
+        // This loop can be split roughly in two:
+        //
+        // 1. Figure out which things to draw
+        // 2. Draw them
+        //
+        // It can be split like this because each step has different
+        // dependencies.
 
-    // Fire a ray for each column on the screen and save the result.
-    for (int i = start_ray_id; i < end_ray_id; ++i) {
-        auto const width_percent = i / static_cast<float>(image_width);
-        auto const proj_point_interp
-            = linear_interpolate(cam.get_projection_plane(), width_percent);
+        //
+        // STEP 1: Figure out which things to draw
+        //
 
-        auto const diff = proj_point_interp - cam.get_position();
-        auto const camera_ray_radians = atan2(diff.y, diff.x);
+        // We shoot rays through a projection plane, so find the plane point
+        // corresponding to the screen column. (This is a transformation from
+        // one space to another [framebuffer space to world space])
+        auto const proj_point_ws = linear_interpolate(
+            cam.get_projection_plane(), column / static_cast<float>(fb.w));
 
-        buffer.emplace_back(find_collision(lvl, proj_point_interp,
-            camera_ray_radians, cam.get_rotation(), cam.get_far()));
+        // Determine the world space angle that this represents. The angle does
+        // not increase linearly across the plane, hence why the trig is
+        // necessary (although a sufficient approximation might speed this up)
+        auto const diff = proj_point_ws - cam.get_position();
+        auto const ray_radians_ws = atan2(diff.y, diff.x);
 
-        // Fix fish eye distortion by changing distance from euclidean to
-        // projected on the projection plane using basic trig.
-        auto& candidates = buffer.back();
-        for (auto& hit : candidates.hits) {
-            auto const local_ray_radians
-                = cam.get_rotation() - camera_ray_radians;
-            hit.distance *= sin(PI_OVER_2 - std::abs(local_ray_radians));
+        // Now that we have a point and an angle, we can define a line to
+        // represent the ray in worldspace.
+        auto const ray_vector_ws = vector2f{ray_radians_ws, cam.get_far()};
+        auto const ray_line_ws
+            = line2f{proj_point_ws, proj_point_ws + ray_vector_ws};
 
-            if (hit.distance < 0) {
-                SDL_Log("Invalid ray hit distance!");
-                throw std::runtime_error{"Invalid ray hit distance!"};
+        // Now that we have a ray, we can start testing it against level
+        // geometry to find hits (which we will later render). We can't render
+        // right now because we want to do depth-sorting and translucency
+        // effects.
+        struct ray_hit {
+            float distance;
+            mymath::point2f position;
+            unsigned int texture;
+            float u;
+
+            // Used to depth-sort by comparing distances
+            bool operator<(ray_hit const& other) const
+            {
+                return this->distance < other.distance;
+            }
+        };
+        std::vector<ray_hit> candidates;
+
+        for (auto const& wall : lvl.walls) {
+            // Walls are lines in worldspace, and the ray is a line in
+            // worldspace, so finding the candidate is as easy as finding the
+            // algrebraic intersection between them
+            point2f cross_point{0.f, 0.f};
+            float t = 0.f;
+            if (find_intersection(ray_line_ws, wall.data, cross_point, t)) {
+                auto const exact_line = line2f{proj_point_ws, cross_point};
+                // HACK! For walls, we want the texture to repeat across the
+                // length, but the `t` we get normalizes across the line and
+                // causes the texture to stretch. So correct for that here.
+                t *= wall.data.length();
+                t -= std::floor(t);
+                candidates.push_back(
+                    ray_hit{exact_line.length(), cross_point, wall.texture, t});
             }
         }
-    }
 
-    return buffer;
-}
-
-auto render_pipeline::find_collision(level const& lvl, point2f const& origin,
-    float direction, float reference_direction, float max_distance)
-    -> render_candidates
-{
-    auto const march_vector = vector2f{direction, max_distance};
-    auto const ray_line = line2f{origin, origin + march_vector};
-
-    render_candidates candidates{direction, {}};
-    auto& hits = candidates.hits;
-
-    for (auto const& wall : lvl.walls) {
-        point2f cross_point{0.f, 0.f};
-        float t = 0.f;
-        if (find_intersection(ray_line, wall.data, cross_point, t)) {
-            auto const exact_line = line2f{origin, cross_point};
-            // HACK! For walls, we want the texture to repeat across the length,
-            // but the `t` we get normalizes across the line. So correct for
-            // that here.
-            t *= wall.data.length();
-            t -= std::floor(t);
-            hits.push_back(
-                ray_hit{exact_line.length(), cross_point, wall.texture, t});
+        for (auto const& sprite : lvl.sprites) {
+            // Sprites, unlike lines, rotate to face the camera. As such, they
+            // are modeled as points that we turn into lines in order to work
+            // with. Sprites always take up 1 unit, which means 0.5 on either
+            // side.
+            auto const sprite_plane = line2f{
+                sprite.data + vector2f{cam.get_rotation() + PI_OVER_2, 0.5f},
+                sprite.data + vector2f{cam.get_rotation() - PI_OVER_2, 0.5f}};
+            point2f cross_point{0.f, 0.f};
+            float t = 0.f;
+            if (find_intersection(ray_line_ws, sprite_plane, cross_point, t)) {
+                auto const exact_line = line2f{proj_point_ws, cross_point};
+                candidates.push_back(ray_hit{
+                    exact_line.length(), cross_point, sprite.texture, t});
+            }
         }
-    }
 
-    for (auto const& sprite : lvl.sprites) {
-        auto const sprite_plane = line2f{
-            sprite.data + vector2f{reference_direction + PI_OVER_2, 0.5f},
-            sprite.data + vector2f{reference_direction - PI_OVER_2, 0.5f}};
-        point2f cross_point{0.f, 0.f};
-        float t = 0.f;
-        if (find_intersection(ray_line, sprite_plane, cross_point, t)) {
-            auto const exact_line = line2f{origin, cross_point};
-            hits.push_back(
-                ray_hit{exact_line.length(), cross_point, sprite.texture, t});
+        // TODO: It would be nice if both for loops above could be combined into
+        // one...
+
+        // Depth-sort the hits. This way, we can traverse the vector from front
+        // to back to make rendering simpler
+        std::sort(candidates.begin(), candidates.end());
+
+        // Fix fish eye distortion by changing distance from euclidean to
+        // projected-on-the-projection-plane (using basic trig). Now we're
+        // operating in viewspace.
+        //
+        // TODO: Might be better to do this later to prevent error accumulation.
+        // This is a problem when rendering floors/ceilings...
+        auto const ray_radians_vs = cam.get_rotation() - ray_radians_ws;
+        for (auto& hit : candidates) {
+            hit.distance *= sin(PI_OVER_2 - std::abs(ray_radians_vs));
         }
-    }
 
-    std::sort(hits.begin(), hits.end());
-    return candidates;
-}
+        //
+        // STEP 2: Now draw them
+        //
 
-void render_pipeline::rasterize(candidate_buffer const& buffer,
-    int start_column, SDL_Surface& framebuffer, camera const& cam)
-{
-    int column = start_column - 1;
-    for (auto const& candidates : buffer) {
-        ++column;
-        draw_column(column, candidates, framebuffer, cam);
-    }
-}
+        // Now that we know what to render and in which order, start placing
+        // pixels down a row! Worksets are rectangles with height of the
+        // framebuffer, only the width is partitioned.
+        for (auto row = 0; row < fb.h; ++row) {
+            // Track whether something was drawn, if not then the floor/ceiling
+            // should be rendered to fill in the space.
+            bool drew_a_hit = false;
 
-void render_pipeline::draw_column(int column,
-    render_candidates const& candidates, SDL_Surface& framebuffer,
-    camera const& cam)
-{
-    auto& hits = candidates.hits;
+            for (auto const& hit : candidates) {
+                // Sanity check: never try to render something with bad
+                // distance
+                if (hit.distance <= 0) {
+                    SDL_Log("Invalid ray hit distance!");
+                    throw std::runtime_error{"Invalid ray hit distance!"};
+                }
 
-    auto const floor_texture = _texture_cache[3];
-    auto const ceiling_texture = _texture_cache[6];
+                // Compute how much screen real estate the hit will take up. The
+                // nice thing about raycasters is that everthing is the same
+                // height in worldspace so this step is easy.
+                auto const wall_size
+                    = static_cast<int>(half_height / hit.distance);
+                auto const wall_start = half_height - wall_size;
+                auto const wall_end = half_height + wall_size;
 
-    auto const half_height = framebuffer.h / 2;
+                // Since everything is the same height, wall_size of farher away
+                // objects should never be bigger than closer ones. We can
+                // safely stop here.
+                if (row < wall_start || row >= wall_end) {
+                    break;
+                }
 
-    for (auto row = 0; row < framebuffer.h; ++row) {
-        auto drew_a_hit = false;
+                // Compute the vertical texture coordinate based on size.
+                auto const v = (row - wall_start)
+                    / static_cast<float>(wall_end - wall_start);
+                auto const uv = point2f{hit.u, v};
 
-        for (auto const hit : hits) {
-            auto const wall_size = static_cast<int>(half_height / hit.distance);
-            auto const wall_start = half_height - wall_size;
-            auto const wall_end = half_height + wall_size;
-            auto const v = (row - wall_start)
-                / static_cast<float>(wall_end - wall_start);
+                // Get the color of the pixel based on the wall texture.
+                auto const texel
+                    = get_surface_pixel(_texture_cache[hit.texture], uv);
 
-            // Since everything is the same height, wall_size of farher away
-            // objects should never be bigger than closer ones. We can safely
-            // stop here.
-            if (v < 0.f || v >= 1.f) {
-                drew_a_hit = false;
+                // If the pixel is transparent then don't render this hit. Keep
+                // iterating through farther back hits to find a non transparent
+                // pixel.
+                //
+                // HACK! Magenta is hardcoded as the translucent pixel.
+                if (texel.r == 255 && texel.g == 0 && texel.b == 255) {
+                    continue;
+                }
+
+                // Otherwise, place the pixel onto the framebuffer and move onto
+                // the next row.
+                set_surface_pixel(fb, column, row, texel);
+                drew_a_hit = true;
                 break;
             }
 
-            auto const wall_tex = _texture_cache[hit.texture];
-
-            auto const uv = point2f{hit.u, v};
-            auto const texel = _debug_no_textures
-                ? constants::white
-                : get_surface_pixel(wall_tex, uv);
-
-            if (texel.r == 255 && texel.g == 0 && texel.b == 255) {
-                // for transparent pixels, differ to other walls to blend with
+            // Since a pixel was placed, move onto the next row
+            if (drew_a_hit) {
                 continue;
             }
 
-            set_surface_pixel(framebuffer, column, row, texel);
-            drew_a_hit = true;
-
-            break;
-        }
-
-        // If we didn't draw a hit (e.g. a wall) then it must be a floor or
-        // ceiling
-        if (!drew_a_hit) {
-            if (_debug_no_floor) {
-                set_surface_pixel(
-                    framebuffer, column, row, mycolor::constants::black);
-                continue;
-            }
+            // Otherwise: draw a floor/ceiling in its place.
 
             // Prevent division by 0 in reverse projection
             if (half_height == row) {
-                set_surface_pixel(
-                    framebuffer, column, row, mycolor::constants::black);
+                set_surface_pixel(fb, column, row, mycolor::constants::black);
                 continue;
             }
 
-            // Reverse project each pixel into a world coordinate
-            auto const local_ray_radians
-                = cam.get_rotation() - candidates.angle;
-            auto const floor_distance = static_cast<float>(half_height)
+            // We want to transform each pixel from framebuffer space into world
+            // space so that the resulting pixel is chosen with the right
+            // perspective. Start by finding the distance in view space,
+            // then use that to construct a point in world space.
+            auto const floor_distance_vs = static_cast<float>(half_height)
                 / mymath::abs(half_height - row)
-                / std::sin(PI_OVER_2 - std::abs(local_ray_radians));
+                / std::sin(PI_OVER_2 - std::abs(ray_radians_vs));
+            auto const floor_coord_local_ws = point2f{0.f, 0.f}
+                + vector2f{static_cast<float>(M_PI) - ray_radians_ws,
+                      floor_distance_vs};
+            // TODO: Why are the signs weird here...
+            auto floor_coord_ws = cam.get_position()
+                + point2f{-floor_coord_local_ws.x, floor_coord_local_ws.y};
 
-            auto const floor_local_coord = point2f{0.f, 0.f}
-                + vector2f{static_cast<float>(M_PI) - candidates.angle,
-                      floor_distance};
-            auto floor_coord = cam.get_position()
-                + point2f{-floor_local_coord.x, floor_local_coord.y};
-
+            // Figure out if we're rendering the floor or ceiling.
             auto is_ceiling = row < half_height;
 
-            // wrap the coordinate between [0,1] before querying the texture
-            while (floor_coord.x <= 0.f) {
-                floor_coord.x += 1.f;
+            // Wrap the coordinate between [0,1] before querying the texture
+            while (floor_coord_ws.x <= 0.f) {
+                floor_coord_ws.x += 1.f;
             }
-            while (floor_coord.x >= 1.f) {
-                floor_coord.x -= 1.f;
+            while (floor_coord_ws.x >= 1.f) {
+                floor_coord_ws.x -= 1.f;
             }
-            while (floor_coord.y <= 0.f) {
-                floor_coord.y += 1.f;
+            while (floor_coord_ws.y <= 0.f) {
+                floor_coord_ws.y += 1.f;
             }
-            while (floor_coord.y >= 1.f) {
-                floor_coord.y -= 1.f;
+            while (floor_coord_ws.y >= 1.f) {
+                floor_coord_ws.y -= 1.f;
             }
 
+            // Query the texture then place the pixel.
             auto const tile_color = get_surface_pixel(
-                is_ceiling ? ceiling_texture : floor_texture, floor_coord);
-
-            set_surface_pixel(framebuffer, column, row, tile_color);
-            continue;
+                is_ceiling ? _texture_cache[6] : _texture_cache[3],
+                floor_coord_ws);
+            set_surface_pixel(fb, column, row, tile_color);
         }
     }
 }
