@@ -19,11 +19,27 @@ add_definitions("-Wall")
 add_subdirectory(ext)
 
 #
+# lua_raii
+#
+
+set(LUA_RAII_HEADERS
+	${CMAKE_CURRENT_SOURCE_DIR}/src/lua_raii/lua_raii.hpp
+	)
+
+add_library(lua_raii INTERFACE)
+target_sources(lua_raii INTERFACE ${LUA_RAII_HEADERS})
+target_include_directories(lua_raii INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+
+#
 # lua test
 #
 
 add_executable(luatest src/luatest/test.cpp)
-target_link_libraries(luatest lua)
+target_link_libraries(luatest
+	lua
+	lua_raii
+	)
 
 #
 # mycolor
