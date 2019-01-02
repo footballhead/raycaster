@@ -1,5 +1,6 @@
 #pragma once
 
+#include <lua_raii/lua_raii.hpp>
 #include <mymath/mymath.hpp>
 
 #include <string>
@@ -24,6 +25,6 @@ struct level {
 };
 
 // Doesn't go through the asset manager yet
-level load_level(std::string const& filename);
+level load_level(std::string const& filename, lua_State* L);
 
 } // namespace raycaster

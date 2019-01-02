@@ -1,5 +1,7 @@
 #include "level.hpp"
 
+#include <lua_raii/lua_raii.hpp>
+
 #include <SDL.h>
 
 #include <fstream>
@@ -10,75 +12,81 @@ using namespace mymath;
 
 namespace raycaster {
 
-level load_level(std::string const& filename)
+level load_level(std::string const& filename, lua_State* L)
 {
-    auto in = std::ifstream{filename};
-    if (!in.is_open()) {
-        throw std::runtime_error{
-            "load_level: filename doesn't exist: " + filename};
+    if (luaL_dofile(L, filename.c_str())) {
+        throw std::runtime_error{lua_tostring(L, -1)};
     }
 
     auto new_level = level{};
 
-    auto found_player_start = false;
+    //
+    // player_start
+    //
 
-    std::string line;
-    while (std::getline(in, line).good()) {
-        if (line.empty()) {
-            continue;
-        }
-        if (*line.begin() == '#') {
-            continue;
-        }
-
-        auto ss = std::istringstream{line};
-
-        std::string construct;
-        ss >> construct;
-        if (construct == "wall") {
-            auto startx = 0.f;
-            auto starty = 0.f;
-            auto endx = 0.f;
-            auto endy = 0.f;
-            auto texid = 0u;
-
-            ss >> startx;
-            ss >> starty;
-            ss >> endx;
-            ss >> endy;
-            ss >> texid;
-
-            new_level.walls.push_back(
-                wall{line2f{{startx, starty}, {endx, endy}}, texid});
-        } else if (construct == "sprite") {
-            auto x = 0.f;
-            auto y = 0.f;
-            auto texid = 0u;
-
-            ss >> x;
-            ss >> y;
-            ss >> texid;
-
-            new_level.sprites.push_back(sprite{point2f{x, y}, texid});
-        } else if (construct == "player") {
-            auto x = 0.f;
-            auto y = 0.f;
-
-            ss >> x;
-            ss >> y;
-
-            new_level.player_start = point2f{x, y};
-            found_player_start = true;
-        } else {
-            SDL_Log("Ignoring unknown construct: %s", construct.c_str());
-            continue;
-        }
+    if (lua_getfield(L, 1, "player_start") != LUA_TTABLE
+        || lua_getfield(L, 2, "x") != LUA_TNUMBER
+        || lua_getfield(L, 2, "y") != LUA_TNUMBER) {
+        throw std::runtime_error{"Bad or missing player_start"};
     }
+    new_level.player_start = point2f{lua_tonumber(L, -2), lua_tonumber(L, -1)};
+    lua_pop(L, 3); // y, x, player_start
 
-    if (!found_player_start) {
-        SDL_Log("Warning! No `player` construct found! Falling back to (0, 0) "
-                "start coords.");
+    //
+    // walls
+    //
+
+    if (lua_getfield(L, 1, "walls") != LUA_TTABLE) {
+        throw std::runtime_error{"Bad or missing walls"};
     }
+    auto const walls_length = luaL_len(L, 2);
+    SDL_Log("#level.walls: %d", walls_length);
+    for (auto i = 1; i <= walls_length; ++i) {
+        if (lua_geti(L, 2, i) != LUA_TTABLE
+            || lua_getfield(L, 3, "x1") != LUA_TNUMBER
+            || lua_getfield(L, 3, "y1") != LUA_TNUMBER
+            || lua_getfield(L, 3, "x2") != LUA_TNUMBER
+            || lua_getfield(L, 3, "y2") != LUA_TNUMBER
+            || lua_getfield(L, 3, "texid") != LUA_TNUMBER) {
+            throw std::runtime_error{"Bad or missing wall entry"};
+        }
+
+        new_level.walls.push_back(wall{
+            line2f{
+                {lua_tonumber(L, 4), lua_tonumber(L, 5)},
+                {lua_tonumber(L, 6), lua_tonumber(L, 7)},
+            },
+            lua_tointeger(L, 8),
+        });
+        lua_pop(L, 6); // texid, y2, x2, y2, y1, walls[i]
+    }
+    lua_pop(L, 1); // walls
+
+    //
+    // sprites
+    //
+
+    if (lua_getfield(L, 1, "sprites") != LUA_TTABLE) {
+        throw std::runtime_error{"Bad or missing sprites"};
+    }
+    auto const spritres_length = luaL_len(L, 2);
+    for (auto i = 1; i <= spritres_length; ++i) {
+        if (lua_geti(L, 2, i) != LUA_TTABLE
+            || lua_getfield(L, 3, "x") != LUA_TNUMBER
+            || lua_getfield(L, 3, "y") != LUA_TNUMBER
+            || lua_getfield(L, 3, "texid") != LUA_TNUMBER) {
+            throw std::runtime_error{"Bad or missing sprites entry"};
+        }
+
+        new_level.sprites.push_back(sprite{
+            {lua_tonumber(L, 4), lua_tonumber(L, 5)},
+            lua_tointeger(L, 6),
+        });
+        lua_pop(L, 4); // texid, y, x, sprites[i]
+    }
+    lua_pop(L, 1); // sprites
+
+    lua_pop(L, 1); // from dofile
 
     return new_level;
 }

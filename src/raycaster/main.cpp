@@ -43,11 +43,13 @@ int main(int argc, char** argv)
     assets->get_asset(common_assets::barrel_explode);
     assets->get_asset(common_assets::bat);
 
-    auto level_file = "../assets/levels/test_level.txt";
+    auto L = lua::make_state();
+
+    auto level_file = "../assets/levels/test_level.lua";
     if (argc >= 2) {
         level_file = argv[1];
     }
-    auto test_level = load_level(level_file);
+    auto test_level = load_level(level_file, L.get());
 
     camera cam{
         test_level.player_start,
@@ -59,12 +61,11 @@ int main(int argc, char** argv)
 
     auto input = std::make_unique<sdl_app::input_buffer>();
 
-    auto pipeline = std::make_unique<raycaster::render_pipeline>(make_texture_cache(*assets));
-
-    auto L = lua::make_state();
+    auto pipeline = std::make_unique<raycaster::render_pipeline>(
+        make_texture_cache(*assets));
 
     if (luaL_dofile(L.get(), "../assets/lua/main.lua")) {
-        SDL_Log("Failed to find main.lua!");
+        SDL_Log("Failed to do main.lua!");
         throw std::runtime_error{lua_tostring(L.get(), -1)};
     }
 
