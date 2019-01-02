@@ -13,6 +13,24 @@ cmake_policy(SET CMP0004 OLD)
 add_definitions("-Wall")
 
 #
+# third-party requirements
+#
+
+add_subdirectory(ext)
+
+#
+# lua_raii
+#
+
+set(LUA_RAII_HEADERS
+	${CMAKE_CURRENT_SOURCE_DIR}/src/lua_raii/lua_raii.hpp
+	)
+
+add_library(lua_raii INTERFACE)
+target_sources(lua_raii INTERFACE ${LUA_RAII_HEADERS})
+target_include_directories(lua_raii INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+#
 # mycolor
 #
 
@@ -128,5 +146,7 @@ endif()
 
 target_link_libraries(raycaster
 	sdl_application
+	lua
+	lua_raii
 	${ADDITIONAL_LIBS}
 	)

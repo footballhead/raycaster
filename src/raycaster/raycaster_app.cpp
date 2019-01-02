@@ -31,6 +31,11 @@ using namespace raycaster;
 constexpr float PI_OVER_2 = M_PI / 2.f;
 constexpr float PI_FLOAT = M_PI;
 
+constexpr auto L_g_app = "g_app";
+constexpr auto L_g_level = "g_level";
+constexpr auto L_g_camera = "g_camera";
+constexpr auto L_update = "update";
+
 // My framebuffer set pixel operation has only been tested on the following
 constexpr Uint32 desired_framebuffer_formats[] = {
     // macOS 10.12
@@ -76,17 +81,53 @@ bool draw_string(
 
 } // namespace
 
+static int test_quit(lua_State* L)
+{
+    lua_getglobal(L, L_g_app);
+    auto app = static_cast<raycaster::raycaster_app*>(lua_touserdata(L, -1));
+    if (!app) {
+        SDL_Log("for some reason, can't get g_app");
+        return 0;
+    }
+    app->quit();
+    return 0;
+}
+
+static int mylua_spawn_barrel(lua_State* L)
+{
+    lua_getglobal(L, L_g_level);
+    auto level = static_cast<raycaster::level*>(lua_touserdata(L, -1));
+    if (!level) {
+        SDL_Log("for some reason, can't get g_level");
+        return 0;
+    }
+
+    lua_getglobal(L, L_g_camera);
+    auto camera = static_cast<raycaster::camera*>(lua_touserdata(L, -1));
+    if (!camera) {
+        SDL_Log("for some reason, can't get g_camera");
+        return 0;
+    }
+
+    level->sprites.push_back(raycaster::sprite{camera->get_position(), 8});
+
+    return 0;
+}
+
 namespace raycaster {
 
 raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
     sdl::window window, std::unique_ptr<input_buffer> input,
     std::unique_ptr<asset_store> assets,
-    std::unique_ptr<render_pipeline> pipeline, level lvl, camera cam)
+    std::unique_ptr<render_pipeline> pipeline, lua::state L, level lvl,
+    camera cam)
 : sdl_application(
       std::move(sdl), std::move(window), std::move(input), std::move(assets))
 , _pipeline{std::move(pipeline)}
+, _L{std::move(L)}
 , _level{lvl}
 , _camera{cam}
+, _console_open{SDL_IsTextInputActive()}
 {
     auto framebuffer = get_framebuffer();
     auto found_format = false;
@@ -105,6 +146,19 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
     }
 
     _font_texture = get_asset_store().get_asset(common_assets::font);
+
+    // register a basic C function
+    lua_register(_L.get(), "quit", &test_quit);
+    lua_register(_L.get(), "spawn_barrel", &mylua_spawn_barrel);
+
+    lua_pushlightuserdata(_L.get(), this);
+    lua_setglobal(_L.get(), L_g_app);
+
+    lua_pushlightuserdata(_L.get(), &_level);
+    lua_setglobal(_L.get(), L_g_level);
+
+    lua_pushlightuserdata(_L.get(), &_camera);
+    lua_setglobal(_L.get(), L_g_camera);
 } // namespace raycaster
 
 void raycaster_app::unhandled_event(SDL_Event const& event)
@@ -113,16 +167,48 @@ void raycaster_app::unhandled_event(SDL_Event const& event)
     case SDL_WINDOWEVENT:
         on_window_event(event.window);
         break;
+    case SDL_TEXTINPUT:
+        _console_input_buffer += event.text.text;
+        break;
+    case SDL_TEXTEDITING:
+        SDL_Log("EDITING!");
+        break;
     }
 }
 
 void raycaster_app::update()
 {
+    lua_getglobal(_L.get(), L_update);
+    if (lua_pcall(_L.get(), 0, 0, 0)) {
+        throw std::runtime_error{"update() lua failed"};
+    }
+
     auto& input_buffer = get_input_buffer();
 
     if (input_buffer.is_quit()
         || input_buffer.is_pressed(SDL_SCANCODE_ESCAPE)) {
         quit();
+        return;
+    }
+
+    if (_console_open) {
+        // TODO do console stuff
+        if (input_buffer.is_hit(SDL_SCANCODE_RETURN)) {
+            _console_open = false;
+            SDL_StopTextInput();
+            SDL_Log("%s", _console_input_buffer.c_str());
+
+            if (luaL_dostring(_L.get(), _console_input_buffer.data())) {
+                SDL_Log("LUA ERROR: %s",
+                    lua_tostring(_L.get(), lua_gettop(_L.get())));
+            }
+            _console_input_buffer.clear();
+        }
+        if (input_buffer.is_hit(SDL_SCANCODE_BACKSPACE)) {
+            if (!_console_input_buffer.empty()) {
+                _console_input_buffer.pop_back();
+            }
+        }
         return;
     }
 
@@ -199,6 +285,11 @@ void raycaster_app::update()
     if (input_buffer.is_hit(SDL_SCANCODE_4)) {
         _debug_no_hud = !_debug_no_hud;
     }
+
+    if (input_buffer.is_hit(SDL_SCANCODE_RETURN)) {
+        _console_open = true;
+        SDL_StartTextInput();
+    }
 }
 
 void raycaster_app::render()
@@ -258,10 +349,17 @@ void raycaster_app::draw_hud()
     auto* framebuffer = get_framebuffer();
     auto* font = _font_texture;
 
+    if (_console_open) {
+        SDL_CHECK(draw_string("> "s + _console_input_buffer + "_",
+            point2i{0, 0}, font, framebuffer));
+        return;
+    }
+
     auto onOrOff = [](bool b) { return b ? "ON"s : "OFF"s; };
 
     SDL_CHECK(draw_string(
         "FPS: "s + std::to_string(_fps), point2i{0, 0}, font, framebuffer));
+
     SDL_CHECK(draw_string("1: Noclip "s + onOrOff(_debug_noclip),
         point2i{0, 10}, font, framebuffer));
     // SDL_CHECK(draw_string("2: Texture "s + onOrOff(!_debug_no_textures),

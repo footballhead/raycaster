@@ -4,6 +4,7 @@
 #include "raycaster_app.hpp"
 #include "texture_cache.hpp"
 
+#include <lua_raii/lua_raii.hpp>
 #include <mymath/mymath.hpp>
 #include <sdl_application/asset_store.hpp>
 #include <sdl_application/sdl_mymath.hpp>
@@ -60,9 +61,16 @@ int main(int argc, char** argv)
 
     auto pipeline = std::make_unique<raycaster::render_pipeline>(make_texture_cache(*assets));
 
+    auto L = lua::make_state();
+
+    if (luaL_dofile(L.get(), "../assets/lua/main.lua")) {
+        SDL_Log("Failed to find main.lua!");
+        throw std::runtime_error{lua_tostring(L.get(), -1)};
+    }
+
     SDL_Log("Creating raycaster_app...");
     raycaster_app app{std::move(sdl), std::move(window), std::move(input),
-        std::move(assets), std::move(pipeline), test_level, cam};
+        std::move(assets), std::move(pipeline), std::move(L), test_level, cam};
     SDL_Log("Running app...");
     try {
         app.exec();
