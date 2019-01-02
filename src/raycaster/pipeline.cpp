@@ -187,15 +187,11 @@ void render_pipeline::do_work(
         std::sort(candidates.begin(), candidates.end());
 
         // Fix fish eye distortion by changing distance from euclidean to
-        // projected-on-the-projection-plane (using basic trig). Now we're
-        // operating in viewspace.
-        //
-        // TODO: Might be better to do this later to prevent error accumulation.
-        // This is a problem when rendering floors/ceilings...
+        // projected-on-the-projection-plane (using basic trig). This is
+        // precalculated and used in the next step on-demand.
         auto const ray_radians_vs = cam.get_rotation() - ray_radians_ws;
-        for (auto& hit : candidates) {
-            hit.distance *= sin(PI_OVER_2 - std::abs(ray_radians_vs));
-        }
+        auto const euclidean_to_projected_correction
+            = std::sin(PI_OVER_2 - std::abs(ray_radians_vs));
 
         //
         // STEP 2: Now draw them
@@ -220,8 +216,8 @@ void render_pipeline::do_work(
                 // Compute how much screen real estate the hit will take up. The
                 // nice thing about raycasters is that everthing is the same
                 // height in worldspace so this step is easy.
-                auto const wall_size
-                    = static_cast<int>(half_height / hit.distance);
+                auto const wall_size = static_cast<int>(half_height
+                    / (hit.distance * euclidean_to_projected_correction));
                 auto const wall_start = half_height - wall_size;
                 auto const wall_end = half_height + wall_size;
 
@@ -276,7 +272,7 @@ void render_pipeline::do_work(
             // then use that to construct a point in world space.
             auto const floor_distance_vs = static_cast<float>(half_height)
                 / mymath::abs(half_height - row)
-                / std::sin(PI_OVER_2 - std::abs(ray_radians_vs));
+                / euclidean_to_projected_correction;
             auto const floor_coord_local_ws = point2f{0.f, 0.f}
                 + vector2f{static_cast<float>(M_PI) - ray_radians_ws,
                       floor_distance_vs};
