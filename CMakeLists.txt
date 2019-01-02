@@ -157,5 +157,7 @@ endif()
 
 target_link_libraries(raycaster
 	sdl_application
+	lua
+	lua_raii
 	${ADDITIONAL_LIBS}
 	)
