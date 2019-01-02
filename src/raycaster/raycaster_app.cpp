@@ -31,6 +31,8 @@ using namespace raycaster;
 constexpr float PI_OVER_2 = M_PI / 2.f;
 constexpr float PI_FLOAT = M_PI;
 
+constexpr auto L_g_app = "g_app";
+
 // My framebuffer set pixel operation has only been tested on the following
 constexpr Uint32 desired_framebuffer_formats[] = {
     // macOS 10.12
@@ -76,6 +78,18 @@ bool draw_string(
 
 } // namespace
 
+static int test_quit(lua_State* L)
+{
+    lua_getglobal(L, L_g_app);
+    auto app = static_cast<raycaster::raycaster_app*>(lua_touserdata(L, -1));
+    if (!app) {
+        SDL_Log("for some reason, can't get g_app");
+        return 0;
+    }
+    app->quit();
+    return 0;
+}
+
 namespace raycaster {
 
 raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
@@ -108,6 +122,12 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
     }
 
     _font_texture = get_asset_store().get_asset(common_assets::font);
+
+    // register a basic C function
+    lua_register(_L.get(), "quit", &test_quit);
+
+    lua_pushlightuserdata(_L.get(), this);
+    lua_setglobal(_L.get(), L_g_app);
 } // namespace raycaster
 
 void raycaster_app::unhandled_event(SDL_Event const& event)
@@ -141,10 +161,7 @@ void raycaster_app::update()
             _console_open = false;
             SDL_StopTextInput();
             SDL_Log("%s", _console_input_buffer.c_str());
-            if (_console_input_buffer == "quit") {
-                quit();
-                return;
-            }
+
             if (luaL_dostring(_L.get(), _console_input_buffer.data())) {
                 SDL_Log("LUA ERROR: %s",
                     lua_tostring(_L.get(), lua_gettop(_L.get())));
