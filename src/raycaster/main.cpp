@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 
     auto L = lua::make_state();
 
-    auto level_file = "../assets/levels/test_level.lua";
+    auto level_file = "../assets/levels/test_level.tmx.lua";
     if (argc >= 2) {
         level_file = argv[1];
     }

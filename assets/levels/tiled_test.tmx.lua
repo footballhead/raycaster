@@ -1,5 +1,5 @@
 return {
-  player_start = {x = 1.5, y = 5.75},
+  player_start = {x = 1.5, y = 5.5},
   walls = {
     {x1 = 0.0, y1 = 0.0, x2 = 0.0, y2 = 4.0, texid = 2},
     {x1 = 0.0, y1 = 4.0, x2 = 1.0, y2 = 4.0, texid = 2},
@@ -13,16 +13,16 @@ return {
   sprites = {
     {x = 0.5, y = 2.5, texid = 4},
     {x = 0.5, y = 0.5, texid = 4},
-    {x = 2.5, y = 0.5, texid = 4},
     {x = 2.5, y = 1.5, texid = 4},
-    {x = 0.5, y = 1.5, texid = 4},
     {x = 2.5, y = 2.5, texid = 4},
+    {x = 0.5, y = 1.5, texid = 4},
+    {x = 2.5, y = 0.5, texid = 4},
     {x = 2.5, y = 3.5, texid = 4},
     {x = 0.5, y = 3.5, texid = 4},
-    {x = 0.5, y = 3.0, texid = 8},
     {x = 0.5, y = 2.0, texid = 8},
-    {x = 0.5, y = 1.0, texid = 8},
     {x = 2.5, y = 3.0, texid = 8},
+    {x = 0.5, y = 3.0, texid = 8},
+    {x = 0.5, y = 1.0, texid = 8},
     {x = 2.5, y = 2.0, texid = 8},
     {x = 2.5, y = 1.0, texid = 8},
   },

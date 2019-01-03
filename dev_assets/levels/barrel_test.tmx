@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.0" tiledversion="1.1.5" orientation="orthogonal" renderorder="right-down" width="10" height="10" tilewidth="50" tileheight="50" infinite="0" nextobjectid="53">
+ <objectgroup name="Object Layer 1">
+  <object id="5" name="player_start" type="player_start" x="125" y="125">
+   <point/>
+  </object>
+  <object id="25" name="barrel" type="sprite" x="25" y="25">
+   <properties>
+    <property name="texid" type="int" value="8"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="40" type="wall" x="0" y="0">
+   <properties>
+    <property name="texid" type="int" value="1"/>
+   </properties>
+   <polyline points="0,0 250,0"/>
+  </object>
+  <object id="42" type="wall" x="250" y="0">
+   <properties>
+    <property name="texid" type="int" value="2"/>
+   </properties>
+   <polyline points="0,0 0,250"/>
+  </object>
+  <object id="43" type="wall" x="250" y="250">
+   <properties>
+    <property name="texid" type="int" value="1"/>
+   </properties>
+   <polyline points="0,0 -250,0"/>
+  </object>
+  <object id="44" type="wall" x="0" y="250">
+   <properties>
+    <property name="texid" type="int" value="2"/>
+   </properties>
+   <polyline points="0,0 0,-250"/>
+  </object>
+  <object id="45" name="barrel" type="sprite" x="75" y="25">
+   <properties>
+    <property name="texid" type="int" value="8"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="46" name="barrel" type="sprite" x="125" y="25">
+   <properties>
+    <property name="texid" type="int" value="8"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="47" name="barrel" type="sprite" x="175" y="25">
+   <properties>
+    <property name="texid" type="int" value="8"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="48" name="barrel" type="sprite" x="50" y="50">
+   <properties>
+    <property name="texid" type="int" value="8"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="49" name="barrel" type="sprite" x="100" y="50">
+   <properties>
+    <property name="texid" type="int" value="8"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="50" name="barrel" type="sprite" x="150" y="50">
+   <properties>
+    <property name="texid" type="int" value="8"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="51" name="barrel" type="sprite" x="200" y="50">
+   <properties>
+    <property name="texid" type="int" value="8"/>
+   </properties>
+   <point/>
+  </object>
+  <object id="52" name="barrel" type="sprite" x="225" y="25">
+   <properties>
+    <property name="texid" type="int" value="8"/>
+   </properties>
+   <point/>
+  </object>
+ </objectgroup>
+</map>
