@@ -26,6 +26,13 @@ int main(int argc, char** argv)
     SDL_Log("Starting application main...");
     auto sdl = std::make_shared<sdl::sdl_init>();
 
+    // Text input, for some reason, might be active right after init. Bad! Turn
+    // off!
+    if (SDL_IsTextInputActive()) {
+        SDL_StopTextInput();
+        SDL_Log("Text input was active on init, turn off");
+    }
+
     auto const window_title = "Raycaster";
     SDL_Point const window_bounds{640, 360};
     auto window = sdl::make_window(window_title, window_bounds);

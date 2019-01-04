@@ -288,6 +288,7 @@ void raycaster_app::update()
 
     if (input_buffer.is_hit(SDL_SCANCODE_RETURN)) {
         _console_open = true;
+        SDL_Log("Console opened by button press");
         SDL_StartTextInput();
     }
 }
