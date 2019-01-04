@@ -162,7 +162,6 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
 , _pipeline{std::move(pipeline)}
 , _L{std::move(L)}
 , _camera{cam}
-, _console_open{SDL_IsTextInputActive()}
 {
     auto framebuffer = get_framebuffer();
     auto found_format = false;
@@ -192,6 +191,12 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
 
     lua_pushlightuserdata(_L.get(), &_camera);
     lua_setglobal(_L.get(), L_g_camera);
+
+    _console.set_callback([this](std::string const& cmd) {
+        if (luaL_dostring(_L.get(), cmd.data())) {
+            _console.log("LUA ERROR: "s + lua::to<char const*>(_L.get()));
+        }
+    });
 } // namespace raycaster
 
 void raycaster_app::change_level(std::unique_ptr<level> level)
@@ -212,10 +217,7 @@ void raycaster_app::unhandled_event(SDL_Event const& event)
         on_window_event(event.window);
         break;
     case SDL_TEXTINPUT:
-        _console_input_buffer += event.text.text;
-        break;
-    case SDL_TEXTEDITING:
-        SDL_Log("EDITING!");
+        _console.handle_event(event);
         break;
     }
 }
@@ -236,54 +238,11 @@ void raycaster_app::update()
     }
 
     if (input_buffer.is_hit(SDL_SCANCODE_GRAVE)) {
-        if (_console_open) {
-            _console_open = false;
-            SDL_StopTextInput();
-            _console_input_buffer.clear();
-            _console_history_top_offset = 0;
-        } else {
-            _console_open = true;
-            SDL_StartTextInput();
-        }
+        _console.toggle_open();
     }
 
-    if (_console_open) {
-        if (input_buffer.is_hit(SDL_SCANCODE_RETURN)) {
-            _console_open = false;
-            SDL_StopTextInput();
-            SDL_Log("%s", _console_input_buffer.c_str());
-
-            if (luaL_dostring(_L.get(), _console_input_buffer.data())) {
-                SDL_Log("LUA ERROR: %s", lua::to<char const*>(_L.get()));
-            }
-            _console_history.push_back(_console_input_buffer);
-            _console_input_buffer.clear();
-            _console_history_top_offset = 0;
-        }
-        if (input_buffer.is_hit(SDL_SCANCODE_BACKSPACE)) {
-            if (!_console_input_buffer.empty()) {
-                _console_input_buffer.pop_back();
-            }
-        }
-        if (input_buffer.is_hit(SDL_SCANCODE_UP)) {
-            if (_console_history_top_offset
-                < static_cast<int>(_console_history.size())) {
-                ++_console_history_top_offset;
-                _console_input_buffer
-                    = *(end(_console_history) - _console_history_top_offset);
-            }
-        }
-        if (input_buffer.is_hit(SDL_SCANCODE_DOWN)) {
-            --_console_history_top_offset;
-
-            if (_console_history_top_offset <= 0) {
-                _console_input_buffer.clear();
-                _console_history_top_offset = 0;
-            } else {
-                _console_input_buffer
-                    = *(end(_console_history) - _console_history_top_offset);
-            }
-        }
+    if (_console.is_open()) {
+        _console.update(input_buffer);
         return;
     }
 
@@ -422,12 +381,11 @@ void raycaster_app::try_to_move_camera(mymath::vector2f const& vec)
 
 void raycaster_app::draw_hud()
 {
-    auto* framebuffer = get_framebuffer();
-    auto* font = _font_texture;
+    auto framebuffer = get_framebuffer();
+    auto font = _font_texture;
 
-    if (_console_open) {
-        SDL_CHECK(draw_string("> "s + _console_input_buffer + "_",
-            point2i{0, 0}, font, framebuffer));
+    if (_console.is_open()) {
+        _console.draw(*framebuffer, *font);
         return;
     }
 

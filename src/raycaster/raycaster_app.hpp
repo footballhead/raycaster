@@ -1,6 +1,7 @@
 #pragma once
 
 #include "camera.hpp"
+#include "console.hpp"
 #include "level.hpp"
 #include "pipeline.hpp"
 
@@ -41,6 +42,7 @@ private:
     lua::state _L;
     std::unique_ptr<level> _level;
     camera _camera;
+    console _console;
 
     Uint32 _fps_interval_start = 0u;
     Uint32 _fps_interval_frames = 0u;
@@ -50,13 +52,8 @@ private:
     bool _debug_no_floor = false;
     bool _debug_no_hud = false;
     bool _debug_noclip = false;
-    bool _console_open = false;
 
     bool _screenshot_queued = false;
-
-    std::string _console_input_buffer;
-    std::vector<std::string> _console_history;
-    int _console_history_top_offset = 0;
 
     SDL_Surface* _font_texture = nullptr;
 };

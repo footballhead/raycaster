@@ -120,6 +120,7 @@ target_link_libraries(sdl_application
 
 set(SOURCES
 	src/raycaster/camera.cpp
+	src/raycaster/console.cpp
 	src/raycaster/intersection.cpp
 	src/raycaster/level.cpp
 	src/raycaster/pipeline.cpp
@@ -129,6 +130,7 @@ set(SOURCES
 
 set(HEADERS
 	src/raycaster/camera.hpp
+	src/raycaster/console.hpp
 	src/raycaster/intersection.hpp
 	src/raycaster/level.hpp
 	src/raycaster/pipeline.hpp
