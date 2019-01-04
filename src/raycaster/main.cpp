@@ -56,8 +56,8 @@ int main(int argc, char** argv)
         make_texture_cache(*assets));
 
     if (luaL_dofile(L.get(), "../assets/lua/main.lua")) {
-        SDL_Log("Failed to do main.lua!");
-        throw std::runtime_error{lua_tostring(L.get(), -1)};
+        SDL_Log("Failed to load main.lua!");
+        throw std::runtime_error{lua::to<std::string>(L.get())};
     }
 
     SDL_Log("Creating raycaster_app...");

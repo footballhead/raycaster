@@ -15,7 +15,7 @@ namespace raycaster {
 std::unique_ptr<level> load_level(std::string const& filename, lua_State* L)
 {
     if (luaL_dofile(L, filename.c_str())) {
-        throw std::runtime_error{lua_tostring(L, -1)};
+        throw std::runtime_error{lua::to<std::string>(L)};
     }
 
     auto new_level = std::make_unique<level>();
@@ -29,7 +29,8 @@ std::unique_ptr<level> load_level(std::string const& filename, lua_State* L)
         || lua_getfield(L, 2, "y") != LUA_TNUMBER) {
         throw std::runtime_error{"Bad or missing player_start"};
     }
-    new_level->player_start = point2f{lua_tonumber(L, -2), lua_tonumber(L, -1)};
+    new_level->player_start
+        = point2f{lua::to<float>(L, -2), lua::to<float>(L, -1)};
     lua_pop(L, 3); // y, x, player_start
 
     //
@@ -40,7 +41,6 @@ std::unique_ptr<level> load_level(std::string const& filename, lua_State* L)
         throw std::runtime_error{"Bad or missing walls"};
     }
     auto const walls_length = luaL_len(L, 2);
-    SDL_Log("#level.walls: %d", walls_length);
     for (auto i = 1; i <= walls_length; ++i) {
         if (lua_geti(L, 2, i) != LUA_TTABLE
             || lua_getfield(L, 3, "x1") != LUA_TNUMBER
@@ -53,10 +53,10 @@ std::unique_ptr<level> load_level(std::string const& filename, lua_State* L)
 
         new_level->walls.push_back(wall{
             line2f{
-                {lua_tonumber(L, 4), lua_tonumber(L, 5)},
-                {lua_tonumber(L, 6), lua_tonumber(L, 7)},
+                {lua::to<float>(L, -5), lua::to<float>(L, -4)},
+                {lua::to<float>(L, -3), lua::to<float>(L, -2)},
             },
-            lua_tointeger(L, 8),
+            lua::to<unsigned>(L, -1),
         });
         lua_pop(L, 6); // texid, y2, x2, y2, y1, walls[i]
     }
@@ -79,8 +79,8 @@ std::unique_ptr<level> load_level(std::string const& filename, lua_State* L)
         }
 
         new_level->sprites.push_back(sprite{
-            {lua_tonumber(L, 4), lua_tonumber(L, 5)},
-            lua_tointeger(L, 6),
+            {lua::to<float>(L, -3), lua::to<float>(L, -2)},
+            lua::to<unsigned>(L, -1),
         });
         lua_pop(L, 4); // texid, y, x, sprites[i]
     }

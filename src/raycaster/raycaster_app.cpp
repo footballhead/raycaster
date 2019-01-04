@@ -84,30 +84,35 @@ bool draw_string(
 static int luabind_quit(lua_State* L)
 {
     lua_getglobal(L, L_g_app);
-    auto app = static_cast<raycaster::raycaster_app*>(lua_touserdata(L, -1));
+    auto app = lua::to<raycaster::raycaster_app*>(L);
     if (!app) {
         SDL_Log("for some reason, can't get g_app");
         return 0;
     }
+    lua_pop(L, 1); // g_app
+
     app->quit();
+
     return 0;
 }
 
 static int luabind_spawn_barrel(lua_State* L)
 {
     lua_getglobal(L, L_g_level);
-    auto level = static_cast<raycaster::level*>(lua_touserdata(L, -1));
+    auto level = lua::to<raycaster::level*>(L);
     if (!level) {
         SDL_Log("for some reason, can't get g_level");
         return 0;
     }
+    lua_pop(L, 1); // g_level
 
     lua_getglobal(L, L_g_camera);
-    auto camera = static_cast<raycaster::camera*>(lua_touserdata(L, -1));
+    auto camera = lua::to<raycaster::camera*>(L);
     if (!camera) {
         SDL_Log("for some reason, can't get g_camera");
         return 0;
     }
+    lua_pop(L, 1); // g_camera
 
     level->sprites.push_back(raycaster::sprite{camera->get_position(), 8});
 
@@ -117,28 +122,24 @@ static int luabind_spawn_barrel(lua_State* L)
 static int luabind_load_level(lua_State* L)
 {
     if (lua_gettop(L) != 1) {
-        SDL_Log("Not enough args");
+        SDL_Log("Not enough args!");
         return 0;
     }
 
-    auto filename_cstr = lua_tostring(L, -1);
-    if (!filename_cstr) {
-        SDL_Log("Invalid filename parameter");
+    if (lua_type(L, -1) != LUA_TSTRING) {
+        SDL_Log("Expected string for filename, didn't get!");
         return 0;
     }
-    auto filename = std::string{filename_cstr};
+    auto filename = lua::to<std::string>(L);
+    lua_pop(L, 1); // filename
 
     lua_getglobal(L, L_g_app);
-    auto app = static_cast<raycaster::raycaster_app*>(lua_touserdata(L, -1));
+    auto app = lua::to<raycaster::raycaster_app*>(L);
     if (!app) {
-        SDL_Log("couldn't get g_app, bad lua state?");
+        SDL_Log("Couldn't get g_app, bad lua state?");
         return 0;
     }
-
-    // Since level loading is... rough... right now, make sure state is clean
-    // before calling load_level. All relevant variables should be stored in
-    // the this stack frame because there are no guarantees given Lua GC.
-    lua_pop(L, 2); // filename, g_app
+    lua_pop(L, 1); // g_app
 
     try {
         app->change_level(raycaster::load_level(filename, L));
@@ -241,8 +242,7 @@ void raycaster_app::update()
             SDL_Log("%s", _console_input_buffer.c_str());
 
             if (luaL_dostring(_L.get(), _console_input_buffer.data())) {
-                SDL_Log("LUA ERROR: %s",
-                    lua_tostring(_L.get(), lua_gettop(_L.get())));
+                SDL_Log("LUA ERROR: %s", lua::to<char const*>(_L.get()));
             }
             _console_input_buffer.clear();
         }
