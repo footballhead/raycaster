@@ -145,7 +145,7 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
         throw std::runtime_error{"invalid surface format! See log"};
     }
 
-    _font_texture = get_asset_store().get_asset(common_assets::font);
+    _font_texture = get_asset_store().get_asset("6x8-terminal-mspaint.bmp");
 
     // register a basic C function
     lua_register(_L.get(), "quit", &test_quit);

@@ -39,16 +39,6 @@ int main(int argc, char** argv)
 
     // Create asset manager and preload assets
     auto assets = std::make_unique<asset_store>("../assets");
-    assets->get_asset(common_assets::wall_texture);
-    assets->get_asset(common_assets::stone_texture);
-    assets->get_asset(common_assets::floor);
-    assets->get_asset(common_assets::floor2);
-    assets->get_asset(common_assets::ceiling);
-    assets->get_asset(common_assets::column);
-    assets->get_asset(common_assets::font);
-    assets->get_asset(common_assets::barrel);
-    assets->get_asset(common_assets::barrel_explode);
-    assets->get_asset(common_assets::bat);
 
     auto L = lua::make_state();
 
