@@ -235,6 +235,18 @@ void raycaster_app::update()
         return;
     }
 
+    if (input_buffer.is_hit(SDL_SCANCODE_GRAVE)) {
+        if (_console_open) {
+            _console_open = false;
+            SDL_StopTextInput();
+            _console_input_buffer.clear();
+            _console_history_top_offset = 0;
+        } else {
+            _console_open = true;
+            SDL_StartTextInput();
+        }
+    }
+
     if (_console_open) {
         if (input_buffer.is_hit(SDL_SCANCODE_RETURN)) {
             _console_open = false;
@@ -276,11 +288,6 @@ void raycaster_app::update()
     }
 
     if (!_level) {
-        if (input_buffer.is_hit(SDL_SCANCODE_RETURN)) {
-            _console_open = true;
-            SDL_Log("Console opened by button press");
-            SDL_StartTextInput();
-        }
         return;
     }
 
@@ -356,12 +363,6 @@ void raycaster_app::update()
     }
     if (input_buffer.is_hit(SDL_SCANCODE_4)) {
         _debug_no_hud = !_debug_no_hud;
-    }
-
-    if (input_buffer.is_hit(SDL_SCANCODE_RETURN)) {
-        _console_open = true;
-        SDL_Log("Console opened by button press");
-        SDL_StartTextInput();
     }
 }
 
