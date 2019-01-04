@@ -81,7 +81,7 @@ bool draw_string(
 
 } // namespace
 
-static int test_quit(lua_State* L)
+static int luabind_quit(lua_State* L)
 {
     lua_getglobal(L, L_g_app);
     auto app = static_cast<raycaster::raycaster_app*>(lua_touserdata(L, -1));
@@ -93,7 +93,7 @@ static int test_quit(lua_State* L)
     return 0;
 }
 
-static int mylua_spawn_barrel(lua_State* L)
+static int luabind_spawn_barrel(lua_State* L)
 {
     lua_getglobal(L, L_g_level);
     auto level = static_cast<raycaster::level*>(lua_touserdata(L, -1));
@@ -114,18 +114,52 @@ static int mylua_spawn_barrel(lua_State* L)
     return 0;
 }
 
+static int luabind_load_level(lua_State* L)
+{
+    if (lua_gettop(L) != 1) {
+        SDL_Log("Not enough args");
+        return 0;
+    }
+
+    auto filename_cstr = lua_tostring(L, -1);
+    if (!filename_cstr) {
+        SDL_Log("Invalid filename parameter");
+        return 0;
+    }
+    auto filename = std::string{filename_cstr};
+
+    lua_getglobal(L, L_g_app);
+    auto app = static_cast<raycaster::raycaster_app*>(lua_touserdata(L, -1));
+    if (!app) {
+        SDL_Log("couldn't get g_app, bad lua state?");
+        return 0;
+    }
+
+    // Since level loading is... rough... right now, make sure state is clean
+    // before calling load_level. All relevant variables should be stored in
+    // the this stack frame because there are no guarantees given Lua GC.
+    lua_pop(L, 2); // filename, g_app
+
+    try {
+        app->change_level(raycaster::load_level(filename, L));
+    } catch (std::exception& e) {
+        SDL_Log("Failed to load level: %s", e.what());
+        return 0;
+    }
+
+    return 0;
+}
+
 namespace raycaster {
 
 raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
     sdl::window window, std::unique_ptr<input_buffer> input,
     std::unique_ptr<asset_store> assets,
-    std::unique_ptr<render_pipeline> pipeline, lua::state L, level lvl,
-    camera cam)
+    std::unique_ptr<render_pipeline> pipeline, lua::state L, camera cam)
 : sdl_application(
       std::move(sdl), std::move(window), std::move(input), std::move(assets))
 , _pipeline{std::move(pipeline)}
 , _L{std::move(L)}
-, _level{lvl}
 , _camera{cam}
 , _console_open{SDL_IsTextInputActive()}
 {
@@ -148,18 +182,27 @@ raycaster_app::raycaster_app(std::shared_ptr<sdl::sdl_init> sdl,
     _font_texture = get_asset_store().get_asset("6x8-terminal-mspaint.bmp");
 
     // register a basic C function
-    lua_register(_L.get(), "quit", &test_quit);
-    lua_register(_L.get(), "spawn_barrel", &mylua_spawn_barrel);
+    lua_register(_L.get(), "quit", &luabind_quit);
+    lua_register(_L.get(), "spawn_barrel", &luabind_spawn_barrel);
+    lua_register(_L.get(), "load_level", &luabind_load_level);
 
     lua_pushlightuserdata(_L.get(), this);
     lua_setglobal(_L.get(), L_g_app);
 
-    lua_pushlightuserdata(_L.get(), &_level);
-    lua_setglobal(_L.get(), L_g_level);
-
     lua_pushlightuserdata(_L.get(), &_camera);
     lua_setglobal(_L.get(), L_g_camera);
 } // namespace raycaster
+
+void raycaster_app::change_level(std::unique_ptr<level> level)
+{
+    _level = std::move(level);
+
+    lua_pushlightuserdata(_L.get(), _level.get());
+    lua_setglobal(_L.get(), L_g_level);
+
+    _camera.set_position(_level->player_start);
+    _camera.set_rotation(0.f);
+}
 
 void raycaster_app::unhandled_event(SDL_Event const& event)
 {
@@ -192,7 +235,6 @@ void raycaster_app::update()
     }
 
     if (_console_open) {
-        // TODO do console stuff
         if (input_buffer.is_hit(SDL_SCANCODE_RETURN)) {
             _console_open = false;
             SDL_StopTextInput();
@@ -208,6 +250,15 @@ void raycaster_app::update()
             if (!_console_input_buffer.empty()) {
                 _console_input_buffer.pop_back();
             }
+        }
+        return;
+    }
+
+    if (!_level) {
+        if (input_buffer.is_hit(SDL_SCANCODE_RETURN)) {
+            _console_open = true;
+            SDL_Log("Console opened by button press");
+            SDL_StartTextInput();
         }
         return;
     }
@@ -243,7 +294,7 @@ void raycaster_app::update()
                 + vector2f{_camera.get_rotation(), _camera.get_far()},
         };
         std::vector<sprite*> barrel_hits;
-        for (auto& sprite : _level.sprites) {
+        for (auto& sprite : _level->sprites) {
             auto const sprite_plane = line2f{sprite.data
                     + vector2f{_camera.get_rotation() + PI_OVER_2, 0.5f},
                 sprite.data
@@ -297,7 +348,9 @@ void raycaster_app::render()
 {
     auto* framebuffer = get_framebuffer();
 
-    _pipeline->render(_level, _camera, *framebuffer);
+    if (_level) {
+        _pipeline->render(*_level, _camera, *framebuffer);
+    }
 
     if (_screenshot_queued) {
         if (!save_screenshot(framebuffer, "screenshot.bmp")) {
@@ -335,7 +388,7 @@ void raycaster_app::try_to_move_camera(mymath::vector2f const& vec)
     auto const movement_line = line2f{old_pos, new_pos};
 
     // Then figure out if it's valid. If not, reverse it.
-    for (auto const& wall : _level.walls) {
+    for (auto const& wall : _level->walls) {
         auto t = 0.f;
         auto intersection = point2f{0.f, 0.f};
         if (find_intersection(movement_line, wall.data, intersection, t)) {

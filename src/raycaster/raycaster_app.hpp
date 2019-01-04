@@ -23,8 +23,9 @@ public:
     raycaster_app(std::shared_ptr<sdl::sdl_init> sdl, sdl::window window,
         std::unique_ptr<sdl_app::input_buffer> input,
         std::unique_ptr<sdl_app::asset_store> assets,
-        std::unique_ptr<render_pipeline> pipeline, lua::state L, level lvl,
-        camera cam);
+        std::unique_ptr<render_pipeline> pipeline, lua::state L, camera cam);
+
+    void change_level(std::unique_ptr<level> level);
 
 protected:
     void unhandled_event(SDL_Event const& event) override;
@@ -38,7 +39,7 @@ private:
 
     std::unique_ptr<render_pipeline> _pipeline;
     lua::state _L;
-    level _level;
+    std::unique_ptr<level> _level;
     camera _camera;
 
     Uint32 _fps_interval_start = 0u;

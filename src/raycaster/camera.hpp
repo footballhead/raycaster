@@ -17,6 +17,7 @@ public:
 
     void move(mymath::vector2f const& vec);
     void set_position(mymath::point2f const& pos);
+    void set_rotation(float rotation);
 
     mymath::point2f const& get_position() const;
     float get_rotation() const;

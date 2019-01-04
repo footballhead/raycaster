@@ -42,14 +42,8 @@ int main(int argc, char** argv)
 
     auto L = lua::make_state();
 
-    auto level_file = "../assets/levels/test_level.tmx.lua";
-    if (argc >= 2) {
-        level_file = argv[1];
-    }
-    auto test_level = load_level(level_file, L.get());
-
     camera cam{
-        test_level.player_start,
+        {0.f, 0.f},
         0.f, // rotation
         0.01f, // near
         8.f, // far
@@ -68,7 +62,7 @@ int main(int argc, char** argv)
 
     SDL_Log("Creating raycaster_app...");
     raycaster_app app{std::move(sdl), std::move(window), std::move(input),
-        std::move(assets), std::move(pipeline), std::move(L), test_level, cam};
+        std::move(assets), std::move(pipeline), std::move(L), cam};
     SDL_Log("Running app...");
     try {
         app.exec();

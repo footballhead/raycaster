@@ -12,13 +12,13 @@ using namespace mymath;
 
 namespace raycaster {
 
-level load_level(std::string const& filename, lua_State* L)
+std::unique_ptr<level> load_level(std::string const& filename, lua_State* L)
 {
     if (luaL_dofile(L, filename.c_str())) {
         throw std::runtime_error{lua_tostring(L, -1)};
     }
 
-    auto new_level = level{};
+    auto new_level = std::make_unique<level>();
 
     //
     // player_start
@@ -29,7 +29,7 @@ level load_level(std::string const& filename, lua_State* L)
         || lua_getfield(L, 2, "y") != LUA_TNUMBER) {
         throw std::runtime_error{"Bad or missing player_start"};
     }
-    new_level.player_start = point2f{lua_tonumber(L, -2), lua_tonumber(L, -1)};
+    new_level->player_start = point2f{lua_tonumber(L, -2), lua_tonumber(L, -1)};
     lua_pop(L, 3); // y, x, player_start
 
     //
@@ -51,7 +51,7 @@ level load_level(std::string const& filename, lua_State* L)
             throw std::runtime_error{"Bad or missing wall entry"};
         }
 
-        new_level.walls.push_back(wall{
+        new_level->walls.push_back(wall{
             line2f{
                 {lua_tonumber(L, 4), lua_tonumber(L, 5)},
                 {lua_tonumber(L, 6), lua_tonumber(L, 7)},
@@ -78,7 +78,7 @@ level load_level(std::string const& filename, lua_State* L)
             throw std::runtime_error{"Bad or missing sprites entry"};
         }
 
-        new_level.sprites.push_back(sprite{
+        new_level->sprites.push_back(sprite{
             {lua_tonumber(L, 4), lua_tonumber(L, 5)},
             lua_tointeger(L, 6),
         });

@@ -3,6 +3,7 @@
 #include <lua_raii/lua_raii.hpp>
 #include <mymath/mymath.hpp>
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -25,6 +26,6 @@ struct level {
 };
 
 // Doesn't go through the asset manager yet
-level load_level(std::string const& filename, lua_State* L);
+std::unique_ptr<level> load_level(std::string const& filename, lua_State* L);
 
 } // namespace raycaster
