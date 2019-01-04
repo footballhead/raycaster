@@ -55,6 +55,7 @@ private:
     bool _screenshot_queued = false;
 
     std::string _console_input_buffer;
+    std::vector<std::string> _console_history;
 
     SDL_Surface* _font_texture = nullptr;
 };

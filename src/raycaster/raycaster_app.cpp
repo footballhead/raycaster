@@ -244,11 +244,18 @@ void raycaster_app::update()
             if (luaL_dostring(_L.get(), _console_input_buffer.data())) {
                 SDL_Log("LUA ERROR: %s", lua::to<char const*>(_L.get()));
             }
+            _console_history.push_back(_console_input_buffer);
             _console_input_buffer.clear();
         }
         if (input_buffer.is_hit(SDL_SCANCODE_BACKSPACE)) {
             if (!_console_input_buffer.empty()) {
                 _console_input_buffer.pop_back();
+            }
+        }
+        if (input_buffer.is_hit(SDL_SCANCODE_UP)) {
+            if (!_console_history.empty()) {
+                _console_input_buffer = _console_history.back();
+                _console_history.pop_back();
             }
         }
         return;
