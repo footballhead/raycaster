@@ -56,6 +56,7 @@ private:
 
     std::string _console_input_buffer;
     std::vector<std::string> _console_history;
+    int _console_history_top_offset = 0;
 
     SDL_Surface* _font_texture = nullptr;
 };

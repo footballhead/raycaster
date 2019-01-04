@@ -246,6 +246,7 @@ void raycaster_app::update()
             }
             _console_history.push_back(_console_input_buffer);
             _console_input_buffer.clear();
+            _console_history_top_offset = 0;
         }
         if (input_buffer.is_hit(SDL_SCANCODE_BACKSPACE)) {
             if (!_console_input_buffer.empty()) {
@@ -253,9 +254,22 @@ void raycaster_app::update()
             }
         }
         if (input_buffer.is_hit(SDL_SCANCODE_UP)) {
-            if (!_console_history.empty()) {
-                _console_input_buffer = _console_history.back();
-                _console_history.pop_back();
+            if (_console_history_top_offset
+                < static_cast<int>(_console_history.size())) {
+                ++_console_history_top_offset;
+                _console_input_buffer
+                    = *(end(_console_history) - _console_history_top_offset);
+            }
+        }
+        if (input_buffer.is_hit(SDL_SCANCODE_DOWN)) {
+            --_console_history_top_offset;
+
+            if (_console_history_top_offset <= 0) {
+                _console_input_buffer.clear();
+                _console_history_top_offset = 0;
+            } else {
+                _console_input_buffer
+                    = *(end(_console_history) - _console_history_top_offset);
             }
         }
         return;
