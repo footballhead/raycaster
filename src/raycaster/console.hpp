@@ -20,6 +20,7 @@ public:
     bool is_open() const;
 
     void log(std::string const& msg);
+    void do_command(std::string const& cmd);
 
     void handle_event(SDL_Event const& event);
     void update(sdl_app::input_buffer& input_buffer);

@@ -78,6 +78,14 @@ bool console::is_open() const { return _opened; }
 
 void console::log(std::string const& msg) { _log.push_back(msg); }
 
+void console::do_command(std::string const& cmd)
+{
+    _history.push_back(cmd);
+    _log.push_back(">> "s + cmd);
+
+    _callback(cmd);
+}
+
 void console::handle_event(SDL_Event const& event)
 {
     switch (event.type) {
@@ -91,12 +99,9 @@ void console::update(sdl_app::input_buffer& input_buffer)
 {
     using namespace std::string_literals;
     if (input_buffer.is_hit(SDL_SCANCODE_RETURN)) {
-        _history.push_back(_keyboard_string);
-        _log.push_back(">> "s + _keyboard_string);
+        do_command(_keyboard_string);
 
-        _callback(_keyboard_string);
-
-        // reset state but allow the user to enter mroe commands
+        // reset state but allow the user to enter more commands
         _keyboard_string.clear();
         _history_top_offset = 0;
     }

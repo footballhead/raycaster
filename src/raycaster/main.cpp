@@ -1,4 +1,5 @@
 #include "camera.hpp"
+#include "console.hpp"
 #include "level.hpp"
 #include "pipeline.hpp"
 #include "raycaster_app.hpp"
@@ -60,9 +61,22 @@ int main(int argc, char** argv)
         throw std::runtime_error{lua::to<std::string>(L.get())};
     }
 
+    auto console = std::make_unique<console>();
+
     SDL_Log("Creating raycaster_app...");
     raycaster_app app{std::move(sdl), std::move(window), std::move(input),
-        std::move(assets), std::move(pipeline), std::move(L), cam};
+        std::move(assets), std::move(pipeline), std::move(L),
+        std::move(console), cam};
+
+        // ths won't work beause console is std::moved...
+
+    if (argc >= 2) {
+        if (console->do_command(argv[1])) {
+            SDL_Log("Command failed!");
+            throw std::runtime_error{"Command failed!"};
+        }
+    }
+
     SDL_Log("Running app...");
     try {
         app.exec();
